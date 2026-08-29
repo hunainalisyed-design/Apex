@@ -1,0 +1,950 @@
+# Virtual Car Configurator — 3D Interactive Automotive Experience
+
+## 1. Project Overview
+
+Build a premium, highly interactive 3D Virtual Car Configurator and Digital Showroom.
+
+The website should feel like a futuristic luxury automotive website rather than a traditional car dealership website.
+
+The core experience is a fully interactive 3D vehicle that users can rotate, zoom, inspect, customize, and configure in real time.
+
+The website should combine:
+
+- 3D graphics
+- Real-time vehicle customization
+- Cinematic animations
+- Interactive UI
+- Dynamic pricing
+- AI-powered configuration recommendations
+- Car comparison
+- Configuration saving and sharing
+- Responsive design
+- Premium automotive visual design
+
+The final result should be suitable as a high-end Full Stack + AI + 3D portfolio project.
+
+---
+
+## 2. Main User Experience
+
+The primary user journey should be:
+
+Landing Page → Explore Cars → Select Vehicle → Enter 3D Showroom → Customize Vehicle → AI Recommendations → Dynamic Price → Review Build → Save/Share Configuration
+
+The experience should feel smooth, cinematic, and premium.
+
+---
+
+## 3. Landing Page
+
+Create a cinematic landing page featuring a large 3D vehicle.
+
+### Hero Section
+
+Display:
+
+- Large interactive 3D car
+- Premium dark showroom environment
+- Dramatic lighting
+- Subtle particles
+- Animated background
+- Large headline
+- Short description
+- "Configure Your Car" CTA
+- "Explore Models" CTA
+
+Example headline:
+
+> **"BUILD YOUR VISION."**
+
+Subheading:
+
+> "Configure every detail of your vehicle in an immersive 3D experience."
+
+### Hero Animations
+
+On page load:
+
+1. Fade in the background.
+2. Slowly reveal the vehicle.
+3. Animate camera movement toward the car.
+4. Reveal the headline.
+5. Reveal CTA buttons.
+6. Begin subtle idle car rotation.
+
+---
+
+## 4. 3D Virtual Showroom
+
+Create a dedicated 3D showroom where the user can interact with the vehicle.
+
+### 3D Controls
+
+Users should be able to:
+
+- Rotate the vehicle 360°
+- Zoom in/out
+- Inspect different angles
+- Pan around the vehicle where appropriate
+- Reset camera position
+- Switch camera angles
+- Enter interior view
+- Return to exterior view
+
+Use smooth interpolation rather than instant camera jumps.
+
+### Camera Presets
+
+Provide camera buttons such as:
+
+- Front
+- Rear
+- Left
+- Right
+- Side
+- Interior
+- Cockpit
+- Top
+
+Camera transitions should be animated.
+
+---
+
+## 5. 3D Vehicle Animations
+
+The car should not remain static.
+
+Implement animations such as:
+
+- Slow idle rotation
+- Wheel rotation
+- Headlight activation
+- Brake light activation
+- Door opening
+- Door closing
+- Interior camera transition
+- Camera orbit
+- Smooth showroom movement
+
+When the user interacts with a specific component, highlight that component.
+
+For example:
+
+Hovering over the wheel should create a subtle highlight and display:
+
+> "SPORT ALLOY WHEELS"
+
+---
+
+## 6. Vehicle Models
+
+Support multiple vehicles.
+
+### Example models
+
+**Model A — Apex GT**
+
+- Performance sports car
+- 450 HP
+- 0–100 km/h: 4.2 sec
+- Starting price: €85,000
+
+**Model B — Apex RS**
+
+- High-performance sports car
+- 510 HP
+- 0–100 km/h: 3.8 sec
+- Starting price: €105,000
+
+The architecture should allow additional vehicles to be added later without rewriting the application.
+
+Use `.GLB` / `.GLTF` models.
+
+The project should clearly separate:
+
+- Vehicle model
+- Materials
+- Wheels
+- Interior
+- Accessories
+- Configuration data
+- Pricing data
+
+---
+
+## 7. Car Customization System
+
+Create a professional configuration panel.
+
+The configuration panel should be visually integrated with the 3D showroom.
+
+### Exterior
+
+Allow users to customize:
+
+- Paint
+- Wheels
+- Brake calipers
+- Window tint
+- Spoiler
+- Front accessories
+- Rear accessories
+- Body package
+- Carbon components
+
+### Paint Options
+
+Example:
+
+- Obsidian Black
+- Pearl White
+- Racing Red
+- Metallic Blue
+- Titanium Grey
+- Custom Color
+
+When a color is selected, update the 3D material immediately.
+
+---
+
+## 8. Wheel Customization
+
+Provide multiple wheel designs.
+
+Example:
+
+- Standard Wheels
+- Sport Wheels
+- Performance Wheels
+- Carbon Wheels
+
+When the user selects a wheel:
+
+Update the actual 3D wheel model on the vehicle. Do not simply change an image.
+
+---
+
+## 9. Brake Calipers
+
+Allow users to select:
+
+- Black
+- Silver
+- Red
+- Yellow
+- Blue
+
+The selected color should update the corresponding 3D material.
+
+---
+
+## 10. Interior Configurator
+
+Create an interior customization section.
+
+Allow customization of:
+
+- Seats
+- Dashboard
+- Steering wheel
+- Door panels
+- Interior materials
+- Interior lighting
+- Floor/carpet materials
+
+### Example interior options
+
+**Premium Leather**
+
+- Black
+- Tan
+- Burgundy
+- Grey
+
+**Interior Lighting**
+
+- White
+- Blue
+- Purple
+- Red
+
+The 3D interior should update instantly.
+
+---
+
+## 11. Accessories
+
+Allow users to add optional accessories.
+
+Examples:
+
+- Carbon spoiler
+- Carbon mirror caps
+- Sport exhaust
+- Premium lighting
+- Performance package
+- Carbon roof
+- Special interior package
+
+Each accessory should:
+
+1. Update the 3D vehicle.
+2. Update the configuration summary.
+3. Update the price.
+
+---
+
+## 12. Dynamic Pricing
+
+Create a real-time pricing engine.
+
+### Example
+
+Base Price: €85,000
+
+Optional features:
+
+- Premium Paint: +€2,000
+- Sport Wheels: +€4,500
+- Premium Interior: +€6,000
+- Carbon Package: +€5,000
+- Performance Package: +€8,000
+
+**Total: €110,500**
+
+The price must update immediately whenever the configuration changes.
+
+Use a centralized configuration state so that pricing cannot become inconsistent with the selected options.
+
+---
+
+## 13. AI Car Configuration Assistant
+
+Create an AI assistant called: **CarAI**
+
+The assistant should help users build their ideal vehicle.
+
+The user can type natural-language requests.
+
+Example:
+
+> "I want a sporty car for daily driving."
+
+The AI should analyze the request and recommend a configuration.
+
+### Example response
+
+**Recommended Configuration**
+
+- Paint: Metallic Blue
+- Wheels: 20" Sport Wheels
+- Interior: Black Leather
+- Brake Calipers: Red
+- Package: Sport Package
+
+Add an **Apply Configuration** button.
+
+When clicked, the recommended options should automatically be applied to the 3D vehicle.
+
+---
+
+## 14. AI Configuration Commands
+
+Support natural-language requests such as:
+
+- "Make the car look aggressive."
+- "Give me a luxury configuration."
+- "Create a racing-inspired setup."
+- "I want something elegant and minimal."
+- "Make the interior darker."
+- "Give me a configuration under €100,000."
+- "Recommend the best daily-driver configuration."
+
+The AI should return structured configuration data rather than only plain text.
+
+The frontend should safely map AI recommendations to available configuration options.
+
+Do not allow the AI to invent unavailable options.
+
+---
+
+## 15. AI Assistant UI
+
+Create a futuristic floating AI assistant.
+
+Features:
+
+- Floating AI button
+- Expandable chat window
+- Message history
+- User messages
+- AI responses
+- Recommended configuration cards
+- Apply Configuration button
+- Loading animation
+- Error handling
+
+The assistant should visually match the premium automotive design.
+
+---
+
+## 16. AI API Architecture
+
+Keep API keys secure.
+
+Never expose API keys inside frontend code.
+
+Use a backend API endpoint such as:
+
+```
+POST /api/ai/configure
+```
+
+The frontend sends the user's request.
+
+The backend communicates with the AI provider.
+
+The backend returns structured configuration data.
+
+### Example structure
+
+```json
+{
+  "paint": "metallic-blue",
+  "wheels": "sport-20",
+  "interior": "black-leather",
+  "brakes": "red",
+  "package": "sport"
+}
+```
+
+Validate the AI response before applying it to the vehicle.
+
+---
+
+## 17. Build Summary
+
+Create a "Your Build" panel.
+
+Display:
+
+- Vehicle name
+- Exterior color
+- Wheels
+- Brake calipers
+- Interior
+- Accessories
+- Packages
+- Base price
+- Options price
+- Total price
+
+### Example
+
+**YOUR APEX GT**
+
+- Exterior: Metallic Blue
+- Wheels: 20" Sport Wheels
+- Interior: Black Premium Leather
+- Accessories: Carbon Spoiler
+- **Total: €102,500**
+
+---
+
+## 18. Save Configuration
+
+Allow users to save their build.
+
+Features:
+
+- Save configuration
+- Load configuration
+- Reset configuration
+- Generate configuration ID
+- Copy configuration ID
+- Share configuration
+
+Example ID: `APEX-7F82-K91X`
+
+A shared configuration should recreate the same vehicle setup.
+
+---
+
+## 19. Screenshot / Build Image
+
+Add a button: **Capture Build**
+
+The application should capture the current 3D showroom configuration and create an image that users can save/share.
+
+The image should include:
+
+- Vehicle
+- Vehicle name
+- Selected configuration
+- Total price
+- Configuration ID
+
+---
+
+## 20. Car Comparison
+
+Create a dedicated comparison section.
+
+Users should be able to compare two vehicles.
+
+### Example
+
+| Specification | Apex GT | Apex RS |
+|---|---|---|
+| Power | 450 HP | 510 HP |
+| 0–100 km/h | 4.2 sec | 3.8 sec |
+| Top Speed | 280 km/h | 305 km/h |
+| Starting Price | €85,000 | €105,000 |
+
+Where possible, show both vehicles inside an interactive 3D comparison environment.
+
+---
+
+## 21. Premium UI Design
+
+The visual design should feel like a combination of:
+
+- Luxury automotive showroom
+- Futuristic technology
+- Minimalist premium interface
+- Cinematic 3D presentation
+
+Avoid making it look like a generic dashboard.
+
+### Design Direction
+
+Use:
+
+- Dark background
+- Large typography
+- Glassmorphism panels
+- Subtle borders
+- Soft shadows
+- Minimal icons
+- Smooth transitions
+- Premium spacing
+- Cinematic lighting
+- High-quality 3D assets
+
+The interface should prioritize the vehicle rather than covering the screen with UI elements.
+
+---
+
+## 22. Navigation
+
+Create a minimal navigation bar.
+
+**Sections:**
+
+- Home
+- Models
+- Configurator
+- Compare
+- About
+
+**Right side:**
+
+- AI Assistant
+- Saved Builds
+
+On mobile, use an animated hamburger menu.
+
+---
+
+## 23. Scroll Animations
+
+Use cinematic scroll-based transitions.
+
+**Example:**
+
+- **Section 1** — Car appears in the showroom.
+- **Section 2** — Camera moves toward the exterior.
+- **Section 3** — Camera focuses on wheels.
+- **Section 4** — Camera transitions into the interior.
+- **Section 5** — Camera returns to the full vehicle.
+- **Section 6** — Configuration summary appears.
+
+Animations should remain smooth and performant.
+
+---
+
+## 24. Technology Stack
+
+### Frontend
+
+- React.js
+- Vite
+- Three.js
+- React Three Fiber
+- Drei
+- Tailwind CSS
+- GSAP
+- Framer Motion
+
+### Backend
+
+- Node.js
+- Express.js
+
+### Database
+
+Use either:
+
+- MongoDB
+- PostgreSQL
+
+Store:
+
+- Vehicle data
+- Configuration options
+- Prices
+- Saved builds
+- Shared configuration IDs
+
+### AI
+
+Support:
+
+- OpenAI API
+- Claude API
+
+Use environment variables for API credentials.
+
+### 3D
+
+- Blender
+- GLB / GLTF
+- Three.js
+- React Three Fiber
+
+### Deployment
+
+- **Frontend:** Vercel
+- **Backend:** Render / Railway
+- **Database:** MongoDB Atlas / PostgreSQL hosting
+
+---
+
+## 25. Suggested Project Architecture
+
+Use a clean, scalable architecture.
+
+```
+virtual-car-configurator/
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── 3d/
+│   │   ├── configurator/
+│   │   ├── ai/
+│   │   ├── animations/
+│   │   ├── hooks/
+│   │   ├── utils/
+│   │   └── data/
+│   │
+│   └── public/
+│       └── models/
+│
+├── backend/
+│   ├── controllers/
+│   ├── routes/
+│   ├── models/
+│   ├── services/
+│   ├── middleware/
+│   └── server.js
+│
+├── README.md
+└── package.json
+```
+
+Keep the 3D rendering system, configuration system, AI system, pricing system, and backend services modular.
+
+---
+
+## 26. Performance Requirements
+
+3D websites can become heavy, so performance is extremely important.
+
+Implement:
+
+- Lazy loading for 3D models
+- Optimized GLB files
+- Texture compression
+- Progressive loading
+- Loading screen
+- Suspense boundaries
+- Efficient React state management
+- Avoid unnecessary re-renders
+- Mobile-friendly 3D quality
+- Adaptive rendering where possible
+
+Show a premium loading screen while the 3D model loads.
+
+Example: **"INITIALIZING SHOWROOM..."** with a progress indicator.
+
+---
+
+## 27. Responsive Design
+
+The website must work on:
+
+- Desktop
+- Laptop
+- Tablet
+- Mobile
+
+**On desktop:** 3D vehicle on the left + configuration panel on the right
+
+**On mobile:** 3D vehicle on top + configuration controls below
+
+The 3D experience must remain usable on touch devices.
+
+Support:
+
+- Touch rotation
+- Pinch zoom
+- Swipe interaction
+
+---
+
+## 28. Error Handling
+
+Implement proper error states.
+
+**3D Model Error**
+> "Unable to load vehicle. Please try again."
+
+**AI Error**
+> "CarAI is temporarily unavailable. You can continue configuring manually."
+
+**Backend Error**
+> "Something went wrong while saving your configuration."
+
+Never expose API keys, stack traces, or sensitive backend information to users.
+
+---
+
+## 29. Accessibility
+
+Include:
+
+- Keyboard navigation
+- Accessible buttons
+- Proper labels
+- Sufficient text contrast
+- Focus states
+- Reduced-motion option
+- Screen-reader-friendly configuration controls
+
+Users who prefer reduced motion should receive a less animated version of the experience.
+
+---
+
+## 30. Final Experience
+
+The final website should feel like a real next-generation automotive configurator.
+
+The user should be able to:
+
+1. Enter the website.
+2. See a cinematic 3D vehicle.
+3. Rotate and inspect it.
+4. Choose a vehicle.
+5. Change paint.
+6. Change wheels.
+7. Change brake calipers.
+8. Customize the interior.
+9. Add accessories.
+10. Watch the 3D vehicle update instantly.
+11. See the price update.
+12. Ask CarAI for recommendations.
+13. Apply AI-generated configurations.
+14. Compare vehicles.
+15. Review the final build.
+16. Capture the configuration.
+17. Save/share the configuration.
+
+---
+
+## 31. Development Goal
+
+Build this as a production-quality portfolio project, not as a simple demo.
+
+Prioritize:
+
+- Beautiful UI
+- Realistic 3D interaction
+- Smooth animations
+- Clean architecture
+- Reusable components
+- Secure API integration
+- Responsive design
+- Performance
+- AI integration
+- Professional code quality
+
+The final result should demonstrate strong skills in:
+
+React + Three.js + React Three Fiber + JavaScript + Node.js + Database + AI APIs + 3D Graphics + Animation + Full Stack Development.
+
+---
+
+## 32. Important Implementation Rule
+
+Do not create fake interactions where a button only changes text.
+
+Whenever the user changes a configuration:
+
+The actual 3D vehicle must visually change whenever the required 3D asset/material is available.
+
+For features that require separate 3D assets, structure the application so those assets can be replaced or added later without changing the core architecture.
+
+Use realistic placeholder assets only when necessary during development, but keep the system ready for high-quality production GLB/GLTF vehicle models.
+
+---
+
+## 33. Definition of Done
+
+The project is considered complete when:
+
+- The 3D vehicle loads successfully.
+- The vehicle can be rotated and zoomed.
+- Multiple camera views work.
+- Vehicle customization updates the 3D model.
+- Pricing updates dynamically.
+- Interior customization works.
+- Accessories can be added/removed.
+- AI assistant provides structured recommendations.
+- AI recommendations can be applied to the vehicle.
+- Configurations can be saved.
+- Configurations can be shared.
+- Vehicle comparison works.
+- The UI is responsive.
+- Loading and error states work.
+- The website has cinematic animations.
+- The application is optimized for performance.
+- API keys remain secure.
+- The codebase is modular and maintainable.
+- The final interface looks like a premium automotive product.
+
+### Final Objective
+
+Create a cinematic, futuristic, interactive 3D automotive platform where the user does not simply browse a car — they experience it, customize it, and build their own virtual vehicle.
+
+---
+
+## 34. Professional Developer Recommendations (Production Readiness)
+
+The sections above define the product experience. To make this a genuinely production-grade, business-viable, portfolio-worthy build, also plan for the following.
+
+### 34.1 Business & Conversion
+
+- Lead capture / dealer handoff: a "Request Quote" or "Book a Test Drive" flow tied to a saved build.
+- Reservation/checkout stub (e.g. Stripe "Reserve with Deposit") so the product feels like real commerce, not just a showcase.
+- Admin/CMS panel for non-technical staff to add vehicles, edit prices/options, and swap 3D assets without a code deploy.
+
+### 34.2 Engineering Hygiene
+
+- Automated testing: unit tests for pricing logic, integration tests for AI response validation, E2E tests for the configure → save → share flow.
+- CI/CD pipeline with lint/type-check/test/build gates and preview deployments.
+- Error monitoring (e.g. Sentry) on both frontend and backend — critical for hard-to-reproduce WebGL/3D bugs.
+- Structured backend logging, especially around AI calls and pricing calculations.
+- `.env.example` and setup documentation so the project is runnable by others.
+
+### 34.3 SEO & Growth
+
+- On-page SEO: meta tags, Open Graph/Twitter cards (ideally a dynamic preview image per shared build), sitemap, structured data (schema.org Vehicle/Product).
+- Analytics/funnel tracking across landing → configure → save → share/quote to measure real engagement.
+
+### 34.4 Compliance & Trust
+
+- Cookie consent / privacy policy, required given EU (€) pricing and any analytics/AI logging.
+- GDPR-compliant handling of any personal data attached to saved builds or leads.
+
+### 34.5 Resilience for the 3D Experience
+
+- WebGL capability detection with a graceful static/2D fallback for unsupported devices/browsers.
+- Asset versioning and CDN cache strategy for GLB files so updates don't break previously shared configuration IDs.
+
+### 34.6 Polish
+
+- i18n readiness: locale-aware currency/number formatting at minimum, structured for future language support.
+- Public API documentation (e.g. minimal OpenAPI/Swagger) — useful operationally and as portfolio evidence of API design quality.
+
+---
+
+## 35. Trending Differentiation Features (Optional Enhancements)
+
+These are current, high-impact ideas from leading automotive configurators (Porsche, BMW, Genesis-class experiences) that would make the product feel more attractive and shareable. They are optional layers on top of the core Definition of Done in §33, not required for launch.
+
+### 35.1 High-Impact / Genuinely Trending
+
+- **AR "View in your driveway"** (WebXR / `<model-viewer>` AR) — the user points their phone at a real space and the configured car appears life-size in it. Currently the single biggest "wow" feature in premium automotive configurators.
+- **Dynamic environments** — let users place the finished build into different scenes (night city, coastal road, track, showroom) with matching lighting/reflections, showcasing paint metallic/pearl properties.
+- **Sound design toggle** — engine start-up, door-close thud, ambient showroom audio on interaction. Low cost, disproportionately raises perceived quality.
+- **Shareable video, not just image** — an auto-generated 3–5 second vertical orbit clip of the finished build, built for Instagram/TikTok sharing rather than a static screenshot.
+
+### 35.2 Social / Community Layer
+
+- **Public build gallery** — "Most Popular Builds This Week" with likes/remix, turning individual configuration into a social feed that drives return visits.
+- **Rarity/achievement badges** — e.g. "Only 3% of users chose this paint + wheel combo," gamifying configuration without cheapening the brand.
+- **Live collaborative build** — a shareable link that lets a friend join and configure the same build together in real time (Figma-style multiplayer cursors, applied to a car).
+
+### 35.3 AI-Forward (extends the existing CarAI assistant)
+
+- **Voice-driven CarAI** — spoken commands ("make it more aggressive") with the assistant narrating changes back, instead of typed-only input.
+- **AI-generated concept renders** — an aspirational, clearly-labeled "dream concept" image of an even more extreme version of the build, positioned as inspiration rather than a purchasable configuration — a fun top-of-funnel hook.
+
+### 35.4 Lower-Effort, Still Worth It
+
+- **Before/after slider** on AI recommendations — drag to compare the current build against the AI-suggested one.
+- **"Drive it" mini-mode** — a lightweight arcade-style camera fly-through/drive simulation on the finished build screen, purely for delight, not a real driving game.
+
+---
+
+## 36. Authentication & Accounts
+
+Several already-specified features implicitly require knowing who the user is — **Saved Builds** (§18, nav in §22), **shared configurations**, plus the newer **lead capture/reservations (§34.1)**, **public gallery with likes (§35.2)**, and **live collaborative build (§35.2)**. This section makes that explicit.
+
+### 36.1 Login Page
+
+- Email + password login.
+- Optional social login (Google, Apple) — fits a premium-brand experience and reduces signup friction.
+- "Forgot password?" link.
+- Visually consistent with the rest of the site: dark background, glassmorphism panel, minimal fields, no clutter.
+
+### 36.2 Sign-Up Page
+
+- Name, email, password (with confirmation and strength indicator).
+- Optional social sign-up (Google, Apple).
+- Clear link back to Login for existing users.
+- Terms of service / privacy policy checkbox (ties into §34.4 compliance).
+
+### 36.3 Password Reset Flow
+
+- "Forgot password" → email with a time-limited reset link → new password form.
+- Standard security practices: reset tokens single-use and expiring, no user enumeration in error messages.
+
+### 36.4 Account Dashboard ("My Garage")
+
+- Lists the user's saved builds (from §18), with load/edit/delete actions.
+- Shows submitted quote requests/reservations (from §34.1), if any.
+- Shows the user's published gallery entries (from §35.2), if any.
+- Basic profile settings: name, email, password change, connected social accounts.
+
+### 36.5 Guest Mode
+
+- Users can configure, price, and even locally save a build **without** creating an account.
+- An account is only required at the point of: publishing to the public gallery, generating a permanent shareable link tied to an account, submitting a lead/reservation, or starting a live collaborative session.
+- This keeps the core "wow" experience (§30) frictionless while still gating account-dependent features appropriately.
+
+### 36.6 Navigation Update
+
+- The nav bar (§22) gains an **Account** area on the right, alongside **AI Assistant** and **Saved Builds**: shows "Log In / Sign Up" when signed out, and the user's avatar/name (linking to "My Garage") when signed in.
