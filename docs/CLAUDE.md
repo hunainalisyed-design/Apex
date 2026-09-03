@@ -56,7 +56,9 @@ Later specs and implementations must follow these rather than inventing alternat
 
 ## Known open blocker across multiple specs
 
-No production 3D asset exists yet. Multiple Phase 1 specs (`02-vehicle-catalog-data-model.md` Risk #1, and the landing page, showroom core, and exterior customization specs that depend on it) are blocked on choosing one free, portfolio-safe (CC0/permissive license) GLB car model with separately addressable wheel meshes, a body material slot, and door hinge/animation support. Resolve this before implementation begins on any of those specs, even though the specs themselves can be reviewed and approved without it.
+No production 3D asset exists yet. Multiple Phase 1 specs (`02-vehicle-catalog-data-model.md` Risk #1, and the showroom core and exterior customization specs that depend on it) are blocked on choosing one free, portfolio-safe (CC0/permissive license) GLB car model with separately addressable wheel meshes, a body material slot, and door hinge/animation support. Resolve this before implementation begins on any of those specs, even though the specs themselves can be reviewed and approved without it.
+
+`04-landing-page.md` is no longer blocked by this: its hero uses a procedural placeholder mesh (primitive Three.js geometry, not a GLB) since a single decorative hero object doesn't need per-part addressability the way the showroom/customization specs do. Swapping in the real GLB later is a one-line change there, once chosen.
 
 ## Repository layout
 

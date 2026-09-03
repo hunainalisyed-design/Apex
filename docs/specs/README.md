@@ -22,7 +22,7 @@ Status values: **Backlog** (not yet spec'd) → **Draft** → **Approved** → *
 | 1 | `01-project-foundation.md` | §24, §25 | Implemented |
 | 2 | `02-vehicle-catalog-data-model.md` | §6, §7, §10, §12 (entities) | Implemented |
 | 3 | `03-dynamic-pricing-engine.md` | §12 | Implemented |
-| 4 | `04-landing-page.md` | §3 | Approved |
+| 4 | `04-landing-page.md` | §3 | Implemented |
 | 5 | `05-3d-showroom-core.md` | §4, §5 | Approved |
 | 6 | `06-exterior-customization.md` | §7, §8, §9 | Approved |
 | 7 | `07-interior-customization.md` | §10 | Approved |

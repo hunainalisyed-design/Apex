@@ -1,22 +1,26 @@
-import { SystemStatus } from "@/components/shell/SystemStatus";
+import { Hero } from "@/components/landing/Hero";
 
-export default function Home() {
-  return (
-    <main className="flex min-h-full flex-1 flex-col items-center justify-center gap-8 px-6 py-24 text-center">
-      <div className="glass-panel flex max-w-2xl flex-col items-center gap-6 rounded-2xl px-10 py-14">
-        <p className="text-xs uppercase tracking-[0.3em] text-white/50">Apex Showroom</p>
-        <h1
-          className="text-4xl font-bold tracking-tight sm:text-6xl"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          BUILD YOUR VISION.
-        </h1>
-        <p className="max-w-md text-balance text-white/70">
-          Configure every detail of your vehicle in an immersive 3D experience. The
-          showroom is under construction — check back soon.
-        </p>
-        <SystemStatus />
-      </div>
-    </main>
-  );
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
+const FEATURED_VEHICLE_SLUG = "apex-gt";
+
+const FALLBACK_VEHICLE = { name: "Apex GT", tagline: "Performance sports car." };
+
+async function getFeaturedVehicle() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/vehicles/${FEATURED_VEHICLE_SLUG}`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return FALLBACK_VEHICLE;
+
+    const { data } = (await res.json()) as { data: { name: string; tagline: string } };
+    return { name: data.name, tagline: data.tagline };
+  } catch {
+    return FALLBACK_VEHICLE;
+  }
+}
+
+export default async function Home() {
+  const vehicle = await getFeaturedVehicle();
+
+  return <Hero vehicle={vehicle} />;
 }

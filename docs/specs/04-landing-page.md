@@ -1,7 +1,7 @@
 # Spec: Cinematic Landing Page
 
 **File:** `docs/specs/04-landing-page.md`
-**Status:** Approved
+**Status:** Implemented
 **Author:** Syed Hunain Raza
 **Reviewer:** hunainalisyed@gmail.com
 **Related:** SRS §3 (Landing Page); depends on `01-project-foundation.md`
@@ -105,7 +105,7 @@ Also specify:
 
 | # | Risk / question | Owner | Resolution |
 |---|---|---|---|
-| 1 | Depends on the placeholder 3D asset decision flagged as open in Spec 2, Risk #1. | Product owner | Open — same resolution needed before implementation. |
+| 1 | Depends on the placeholder 3D asset decision flagged as open in Spec 2, Risk #1. | Product owner | Resolved for Phase 1 implementation — the hero renders a procedural placeholder mesh (`frontend/src/components/landing/PlaceholderVehicleMesh.tsx`), built from primitive Three.js geometry inside the same R3F `<Canvas>`/camera/`OrbitControls` pipeline Spec 5 will reuse, per SRS §32's explicit allowance for placeholder assets during development. It's genuinely interactive (real idle rotation, real drag response), not an image. Swapping in a real GLB is a one-line change once the asset is sourced; the open question from Spec 2 Risk #1 (choosing the actual model) is still unresolved and still blocks Spec 5. One consequence: since the placeholder has no network download, AC-5's "network error" failure mode doesn't apply yet — only "WebGL unsupported" does (`HeroErrorBoundary` + `HeroFallback`, tested in `Hero.test.tsx`). Revisit AC-5's test coverage once a real GLB with an actual load step is wired in. |
 | 2 | Exact headline/subheading copy — SRS §3 gives examples ("BUILD YOUR VISION.") rather than final copy. | Product owner | Resolved for Phase 1 — use the SRS's example copy verbatim; revisit with real marketing copy later without needing a spec change. |
 
 ---
