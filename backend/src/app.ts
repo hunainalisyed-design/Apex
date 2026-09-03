@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
 import { healthRouter } from "./routes/health.js";
+import { pricingRouter } from "./routes/pricing.js";
 import { vehiclesRouter } from "./routes/vehicles.js";
 
 export function createApp() {
@@ -15,6 +16,7 @@ export function createApp() {
 
   app.use("/api", healthRouter);
   app.use("/api", vehiclesRouter);
+  app.use("/api", pricingRouter);
 
   return app;
 }

@@ -1,4 +1,5 @@
 import type { CustomizationOption, Vehicle } from "@prisma/client";
+import { prisma } from "../lib/prisma.js";
 import {
   ALL_CATEGORIES,
   SINGLE_SELECT_CATEGORIES,
@@ -7,6 +8,23 @@ import {
   type VehicleDetailDto,
   type VehicleSummaryDto,
 } from "../types/catalog.js";
+
+export async function getVehicleWithOptions(slug: string) {
+  const vehicle = await prisma.vehicle.findFirst({
+    where: { slug, isActive: true },
+  });
+
+  if (!vehicle) {
+    return null;
+  }
+
+  const options = await prisma.customizationOption.findMany({
+    where: { vehicleId: vehicle.id },
+    orderBy: [{ category: "asc" }, { sortOrder: "asc" }],
+  });
+
+  return { vehicle, options };
+}
 
 export function mapOptionToDto(option: CustomizationOption): CustomizationOptionDto {
   return {

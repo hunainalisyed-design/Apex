@@ -1,0 +1,256 @@
+[
+  {
+    "name": "sums every required single-select category (AC-1)",
+    "input": {
+      "vehicle": { "slug": "fixture-car", "basePriceCents": 1000000, "currency": "EUR" },
+      "options": [
+        { "id": "paint-red", "category": "PAINT", "name": "Racing Red", "priceDeltaCents": 150000 },
+        { "id": "wheels-sport", "category": "WHEELS", "name": "Sport Wheels", "priceDeltaCents": 450000 },
+        { "id": "brake-red", "category": "BRAKE_CALIPER", "name": "Red", "priceDeltaCents": 45000 },
+        { "id": "tint-none", "category": "WINDOW_TINT", "name": "None", "priceDeltaCents": 0 },
+        { "id": "spoiler-none", "category": "SPOILER", "name": "None", "priceDeltaCents": 0 },
+        { "id": "front-none", "category": "FRONT_ACCESSORY", "name": "None", "priceDeltaCents": 0 },
+        { "id": "rear-none", "category": "REAR_ACCESSORY", "name": "None", "priceDeltaCents": 0 },
+        { "id": "body-standard", "category": "BODY_PACKAGE", "name": "Standard", "priceDeltaCents": 0 },
+        { "id": "carbon-none", "category": "CARBON_COMPONENT", "name": "None", "priceDeltaCents": 0 },
+        { "id": "material-premium", "category": "INTERIOR_MATERIAL", "name": "Premium Leather", "priceDeltaCents": 600000 },
+        { "id": "lighting-white", "category": "INTERIOR_LIGHTING", "name": "White", "priceDeltaCents": 0 },
+        { "id": "seats-black", "category": "INTERIOR_SEATS", "name": "Black", "priceDeltaCents": 0 },
+        { "id": "dash-black", "category": "INTERIOR_DASHBOARD", "name": "Black", "priceDeltaCents": 0 },
+        { "id": "wheel-leather", "category": "INTERIOR_STEERING_WHEEL", "name": "Leather", "priceDeltaCents": 0 },
+        { "id": "door-black", "category": "INTERIOR_DOOR_PANELS", "name": "Black", "priceDeltaCents": 0 },
+        { "id": "floor-standard", "category": "INTERIOR_FLOOR", "name": "Standard", "priceDeltaCents": 0 },
+        { "id": "acc-exhaust", "category": "ACCESSORY", "name": "Sport Exhaust", "priceDeltaCents": 250000 },
+        { "id": "acc-mirrors", "category": "ACCESSORY", "name": "Carbon Mirror Caps", "priceDeltaCents": 60000 },
+        { "id": "pkg-performance", "category": "PACKAGE", "name": "Performance Package", "priceDeltaCents": 800000 }
+      ],
+      "singleSelections": {
+        "PAINT": "paint-red",
+        "WHEELS": "wheels-sport",
+        "BRAKE_CALIPER": "brake-red",
+        "WINDOW_TINT": "tint-none",
+        "SPOILER": "spoiler-none",
+        "FRONT_ACCESSORY": "front-none",
+        "REAR_ACCESSORY": "rear-none",
+        "BODY_PACKAGE": "body-standard",
+        "CARBON_COMPONENT": "carbon-none",
+        "INTERIOR_MATERIAL": "material-premium",
+        "INTERIOR_LIGHTING": "lighting-white",
+        "INTERIOR_SEATS": "seats-black",
+        "INTERIOR_DASHBOARD": "dash-black",
+        "INTERIOR_STEERING_WHEEL": "wheel-leather",
+        "INTERIOR_DOOR_PANELS": "door-black",
+        "INTERIOR_FLOOR": "floor-standard"
+      },
+      "multiSelections": { "ACCESSORY": [], "PACKAGE": [] }
+    },
+    "expected": {
+      "totalPriceCents": 2245000,
+      "lineItems": [
+        { "optionId": "paint-red", "category": "PAINT", "name": "Racing Red", "priceDeltaCents": 150000 },
+        { "optionId": "wheels-sport", "category": "WHEELS", "name": "Sport Wheels", "priceDeltaCents": 450000 },
+        { "optionId": "brake-red", "category": "BRAKE_CALIPER", "name": "Red", "priceDeltaCents": 45000 },
+        { "optionId": "tint-none", "category": "WINDOW_TINT", "name": "None", "priceDeltaCents": 0 },
+        { "optionId": "spoiler-none", "category": "SPOILER", "name": "None", "priceDeltaCents": 0 },
+        { "optionId": "front-none", "category": "FRONT_ACCESSORY", "name": "None", "priceDeltaCents": 0 },
+        { "optionId": "rear-none", "category": "REAR_ACCESSORY", "name": "None", "priceDeltaCents": 0 },
+        { "optionId": "body-standard", "category": "BODY_PACKAGE", "name": "Standard", "priceDeltaCents": 0 },
+        { "optionId": "carbon-none", "category": "CARBON_COMPONENT", "name": "None", "priceDeltaCents": 0 },
+        { "optionId": "material-premium", "category": "INTERIOR_MATERIAL", "name": "Premium Leather", "priceDeltaCents": 600000 },
+        { "optionId": "lighting-white", "category": "INTERIOR_LIGHTING", "name": "White", "priceDeltaCents": 0 },
+        { "optionId": "seats-black", "category": "INTERIOR_SEATS", "name": "Black", "priceDeltaCents": 0 },
+        { "optionId": "dash-black", "category": "INTERIOR_DASHBOARD", "name": "Black", "priceDeltaCents": 0 },
+        { "optionId": "wheel-leather", "category": "INTERIOR_STEERING_WHEEL", "name": "Leather", "priceDeltaCents": 0 },
+        { "optionId": "door-black", "category": "INTERIOR_DOOR_PANELS", "name": "Black", "priceDeltaCents": 0 },
+        { "optionId": "floor-standard", "category": "INTERIOR_FLOOR", "name": "Standard", "priceDeltaCents": 0 }
+      ]
+    }
+  },
+  {
+    "name": "includes accessory and package line items (AC-2)",
+    "input": {
+      "vehicle": { "slug": "fixture-car", "basePriceCents": 1000000, "currency": "EUR" },
+      "options": [
+        { "id": "paint-red", "category": "PAINT", "name": "Racing Red", "priceDeltaCents": 150000 },
+        { "id": "wheels-sport", "category": "WHEELS", "name": "Sport Wheels", "priceDeltaCents": 450000 },
+        { "id": "brake-red", "category": "BRAKE_CALIPER", "name": "Red", "priceDeltaCents": 45000 },
+        { "id": "tint-none", "category": "WINDOW_TINT", "name": "None", "priceDeltaCents": 0 },
+        { "id": "spoiler-none", "category": "SPOILER", "name": "None", "priceDeltaCents": 0 },
+        { "id": "front-none", "category": "FRONT_ACCESSORY", "name": "None", "priceDeltaCents": 0 },
+        { "id": "rear-none", "category": "REAR_ACCESSORY", "name": "None", "priceDeltaCents": 0 },
+        { "id": "body-standard", "category": "BODY_PACKAGE", "name": "Standard", "priceDeltaCents": 0 },
+        { "id": "carbon-none", "category": "CARBON_COMPONENT", "name": "None", "priceDeltaCents": 0 },
+        { "id": "material-premium", "category": "INTERIOR_MATERIAL", "name": "Premium Leather", "priceDeltaCents": 600000 },
+        { "id": "lighting-white", "category": "INTERIOR_LIGHTING", "name": "White", "priceDeltaCents": 0 },
+        { "id": "seats-black", "category": "INTERIOR_SEATS", "name": "Black", "priceDeltaCents": 0 },
+        { "id": "dash-black", "category": "INTERIOR_DASHBOARD", "name": "Black", "priceDeltaCents": 0 },
+        { "id": "wheel-leather", "category": "INTERIOR_STEERING_WHEEL", "name": "Leather", "priceDeltaCents": 0 },
+        { "id": "door-black", "category": "INTERIOR_DOOR_PANELS", "name": "Black", "priceDeltaCents": 0 },
+        { "id": "floor-standard", "category": "INTERIOR_FLOOR", "name": "Standard", "priceDeltaCents": 0 },
+        { "id": "acc-exhaust", "category": "ACCESSORY", "name": "Sport Exhaust", "priceDeltaCents": 250000 },
+        { "id": "acc-mirrors", "category": "ACCESSORY", "name": "Carbon Mirror Caps", "priceDeltaCents": 60000 },
+        { "id": "pkg-performance", "category": "PACKAGE", "name": "Performance Package", "priceDeltaCents": 800000 }
+      ],
+      "singleSelections": {
+        "PAINT": "paint-red",
+        "WHEELS": "wheels-sport",
+        "BRAKE_CALIPER": "brake-red",
+        "WINDOW_TINT": "tint-none",
+        "SPOILER": "spoiler-none",
+        "FRONT_ACCESSORY": "front-none",
+        "REAR_ACCESSORY": "rear-none",
+        "BODY_PACKAGE": "body-standard",
+        "CARBON_COMPONENT": "carbon-none",
+        "INTERIOR_MATERIAL": "material-premium",
+        "INTERIOR_LIGHTING": "lighting-white",
+        "INTERIOR_SEATS": "seats-black",
+        "INTERIOR_DASHBOARD": "dash-black",
+        "INTERIOR_STEERING_WHEEL": "wheel-leather",
+        "INTERIOR_DOOR_PANELS": "door-black",
+        "INTERIOR_FLOOR": "floor-standard"
+      },
+      "multiSelections": { "ACCESSORY": ["acc-exhaust", "acc-mirrors"], "PACKAGE": ["pkg-performance"] }
+    },
+    "expected": {
+      "totalPriceCents": 3355000,
+      "lineItems": [
+        { "optionId": "paint-red", "category": "PAINT", "name": "Racing Red", "priceDeltaCents": 150000 },
+        { "optionId": "wheels-sport", "category": "WHEELS", "name": "Sport Wheels", "priceDeltaCents": 450000 },
+        { "optionId": "brake-red", "category": "BRAKE_CALIPER", "name": "Red", "priceDeltaCents": 45000 },
+        { "optionId": "tint-none", "category": "WINDOW_TINT", "name": "None", "priceDeltaCents": 0 },
+        { "optionId": "spoiler-none", "category": "SPOILER", "name": "None", "priceDeltaCents": 0 },
+        { "optionId": "front-none", "category": "FRONT_ACCESSORY", "name": "None", "priceDeltaCents": 0 },
+        { "optionId": "rear-none", "category": "REAR_ACCESSORY", "name": "None", "priceDeltaCents": 0 },
+        { "optionId": "body-standard", "category": "BODY_PACKAGE", "name": "Standard", "priceDeltaCents": 0 },
+        { "optionId": "carbon-none", "category": "CARBON_COMPONENT", "name": "None", "priceDeltaCents": 0 },
+        { "optionId": "material-premium", "category": "INTERIOR_MATERIAL", "name": "Premium Leather", "priceDeltaCents": 600000 },
+        { "optionId": "lighting-white", "category": "INTERIOR_LIGHTING", "name": "White", "priceDeltaCents": 0 },
+        { "optionId": "seats-black", "category": "INTERIOR_SEATS", "name": "Black", "priceDeltaCents": 0 },
+        { "optionId": "dash-black", "category": "INTERIOR_DASHBOARD", "name": "Black", "priceDeltaCents": 0 },
+        { "optionId": "wheel-leather", "category": "INTERIOR_STEERING_WHEEL", "name": "Leather", "priceDeltaCents": 0 },
+        { "optionId": "door-black", "category": "INTERIOR_DOOR_PANELS", "name": "Black", "priceDeltaCents": 0 },
+        { "optionId": "floor-standard", "category": "INTERIOR_FLOOR", "name": "Standard", "priceDeltaCents": 0 },
+        { "optionId": "acc-exhaust", "category": "ACCESSORY", "name": "Sport Exhaust", "priceDeltaCents": 250000 },
+        { "optionId": "acc-mirrors", "category": "ACCESSORY", "name": "Carbon Mirror Caps", "priceDeltaCents": 60000 },
+        { "optionId": "pkg-performance", "category": "PACKAGE", "name": "Performance Package", "priceDeltaCents": 800000 }
+      ]
+    }
+  },
+  {
+    "name": "rejects an option id that isn't in the vehicle's catalog (AC-3)",
+    "input": {
+      "vehicle": { "slug": "fixture-car", "basePriceCents": 1000000, "currency": "EUR" },
+      "options": [
+        { "id": "paint-red", "category": "PAINT", "name": "Racing Red", "priceDeltaCents": 150000 }
+      ],
+      "singleSelections": {
+        "PAINT": "paint-does-not-exist",
+        "WHEELS": "wheels-sport",
+        "BRAKE_CALIPER": "brake-red",
+        "WINDOW_TINT": "tint-none",
+        "SPOILER": "spoiler-none",
+        "FRONT_ACCESSORY": "front-none",
+        "REAR_ACCESSORY": "rear-none",
+        "BODY_PACKAGE": "body-standard",
+        "CARBON_COMPONENT": "carbon-none",
+        "INTERIOR_MATERIAL": "material-premium",
+        "INTERIOR_LIGHTING": "lighting-white",
+        "INTERIOR_SEATS": "seats-black",
+        "INTERIOR_DASHBOARD": "dash-black",
+        "INTERIOR_STEERING_WHEEL": "wheel-leather",
+        "INTERIOR_DOOR_PANELS": "door-black",
+        "INTERIOR_FLOOR": "floor-standard"
+      },
+      "multiSelections": { "ACCESSORY": [], "PACKAGE": [] }
+    },
+    "expectedErrorCode": "OPTION_VEHICLE_MISMATCH"
+  },
+  {
+    "name": "rejects a request missing a required single-select category (AC-4)",
+    "input": {
+      "vehicle": { "slug": "fixture-car", "basePriceCents": 1000000, "currency": "EUR" },
+      "options": [
+        { "id": "paint-red", "category": "PAINT", "name": "Racing Red", "priceDeltaCents": 150000 },
+        { "id": "wheels-sport", "category": "WHEELS", "name": "Sport Wheels", "priceDeltaCents": 450000 },
+        { "id": "brake-red", "category": "BRAKE_CALIPER", "name": "Red", "priceDeltaCents": 45000 },
+        { "id": "tint-none", "category": "WINDOW_TINT", "name": "None", "priceDeltaCents": 0 },
+        { "id": "spoiler-none", "category": "SPOILER", "name": "None", "priceDeltaCents": 0 },
+        { "id": "front-none", "category": "FRONT_ACCESSORY", "name": "None", "priceDeltaCents": 0 },
+        { "id": "rear-none", "category": "REAR_ACCESSORY", "name": "None", "priceDeltaCents": 0 },
+        { "id": "body-standard", "category": "BODY_PACKAGE", "name": "Standard", "priceDeltaCents": 0 },
+        { "id": "carbon-none", "category": "CARBON_COMPONENT", "name": "None", "priceDeltaCents": 0 },
+        { "id": "material-premium", "category": "INTERIOR_MATERIAL", "name": "Premium Leather", "priceDeltaCents": 600000 },
+        { "id": "lighting-white", "category": "INTERIOR_LIGHTING", "name": "White", "priceDeltaCents": 0 },
+        { "id": "seats-black", "category": "INTERIOR_SEATS", "name": "Black", "priceDeltaCents": 0 },
+        { "id": "dash-black", "category": "INTERIOR_DASHBOARD", "name": "Black", "priceDeltaCents": 0 },
+        { "id": "wheel-leather", "category": "INTERIOR_STEERING_WHEEL", "name": "Leather", "priceDeltaCents": 0 },
+        { "id": "door-black", "category": "INTERIOR_DOOR_PANELS", "name": "Black", "priceDeltaCents": 0 },
+        { "id": "floor-standard", "category": "INTERIOR_FLOOR", "name": "Standard", "priceDeltaCents": 0 }
+      ],
+      "singleSelections": {
+        "PAINT": "paint-red",
+        "WHEELS": "wheels-sport",
+        "BRAKE_CALIPER": "brake-red",
+        "WINDOW_TINT": "tint-none",
+        "SPOILER": "spoiler-none",
+        "FRONT_ACCESSORY": "front-none",
+        "REAR_ACCESSORY": "rear-none",
+        "BODY_PACKAGE": "body-standard",
+        "CARBON_COMPONENT": "carbon-none",
+        "INTERIOR_MATERIAL": "material-premium",
+        "INTERIOR_LIGHTING": "lighting-white",
+        "INTERIOR_SEATS": "seats-black",
+        "INTERIOR_DASHBOARD": "dash-black",
+        "INTERIOR_STEERING_WHEEL": "wheel-leather",
+        "INTERIOR_DOOR_PANELS": "door-black"
+      },
+      "multiSelections": { "ACCESSORY": [], "PACKAGE": [] }
+    },
+    "expectedErrorCode": "VALIDATION_ERROR"
+  },
+  {
+    "name": "rejects a duplicate option id within the same multi-select category (AC-5)",
+    "input": {
+      "vehicle": { "slug": "fixture-car", "basePriceCents": 1000000, "currency": "EUR" },
+      "options": [
+        { "id": "paint-red", "category": "PAINT", "name": "Racing Red", "priceDeltaCents": 150000 },
+        { "id": "wheels-sport", "category": "WHEELS", "name": "Sport Wheels", "priceDeltaCents": 450000 },
+        { "id": "brake-red", "category": "BRAKE_CALIPER", "name": "Red", "priceDeltaCents": 45000 },
+        { "id": "tint-none", "category": "WINDOW_TINT", "name": "None", "priceDeltaCents": 0 },
+        { "id": "spoiler-none", "category": "SPOILER", "name": "None", "priceDeltaCents": 0 },
+        { "id": "front-none", "category": "FRONT_ACCESSORY", "name": "None", "priceDeltaCents": 0 },
+        { "id": "rear-none", "category": "REAR_ACCESSORY", "name": "None", "priceDeltaCents": 0 },
+        { "id": "body-standard", "category": "BODY_PACKAGE", "name": "Standard", "priceDeltaCents": 0 },
+        { "id": "carbon-none", "category": "CARBON_COMPONENT", "name": "None", "priceDeltaCents": 0 },
+        { "id": "material-premium", "category": "INTERIOR_MATERIAL", "name": "Premium Leather", "priceDeltaCents": 600000 },
+        { "id": "lighting-white", "category": "INTERIOR_LIGHTING", "name": "White", "priceDeltaCents": 0 },
+        { "id": "seats-black", "category": "INTERIOR_SEATS", "name": "Black", "priceDeltaCents": 0 },
+        { "id": "dash-black", "category": "INTERIOR_DASHBOARD", "name": "Black", "priceDeltaCents": 0 },
+        { "id": "wheel-leather", "category": "INTERIOR_STEERING_WHEEL", "name": "Leather", "priceDeltaCents": 0 },
+        { "id": "door-black", "category": "INTERIOR_DOOR_PANELS", "name": "Black", "priceDeltaCents": 0 },
+        { "id": "floor-standard", "category": "INTERIOR_FLOOR", "name": "Standard", "priceDeltaCents": 0 },
+        { "id": "acc-exhaust", "category": "ACCESSORY", "name": "Sport Exhaust", "priceDeltaCents": 250000 }
+      ],
+      "singleSelections": {
+        "PAINT": "paint-red",
+        "WHEELS": "wheels-sport",
+        "BRAKE_CALIPER": "brake-red",
+        "WINDOW_TINT": "tint-none",
+        "SPOILER": "spoiler-none",
+        "FRONT_ACCESSORY": "front-none",
+        "REAR_ACCESSORY": "rear-none",
+        "BODY_PACKAGE": "body-standard",
+        "CARBON_COMPONENT": "carbon-none",
+        "INTERIOR_MATERIAL": "material-premium",
+        "INTERIOR_LIGHTING": "lighting-white",
+        "INTERIOR_SEATS": "seats-black",
+        "INTERIOR_DASHBOARD": "dash-black",
+        "INTERIOR_STEERING_WHEEL": "wheel-leather",
+        "INTERIOR_DOOR_PANELS": "door-black",
+        "INTERIOR_FLOOR": "floor-standard"
+      },
+      "multiSelections": { "ACCESSORY": ["acc-exhaust", "acc-exhaust"], "PACKAGE": [] }
+    },
+    "expectedErrorCode": "DUPLICATE_OPTION_SELECTION"
+  }
+]

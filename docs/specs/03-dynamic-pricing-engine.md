@@ -1,7 +1,7 @@
 # Spec: Dynamic Pricing Engine
 
 **File:** `docs/specs/03-dynamic-pricing-engine.md`
-**Status:** Approved
+**Status:** Implemented
 **Author:** Syed Hunain Raza
 **Reviewer:** hunainalisyed@gmail.com
 **Related:** SRS §12 (Dynamic Pricing); depends on `02-vehicle-catalog-data-model.md` (SINGLE_SELECT_CATEGORIES / MULTI_SELECT_CATEGORIES, 18-category enum)
@@ -141,7 +141,7 @@ This spec's only UI surface is the price display itself, consumed inside other s
 
 **Coverage:** ≥80% on new code — pricing is financial logic and should be near 100% in practice.
 
-**Not covered, deliberately:** currency conversion — the entire system is single-currency (EUR) for Phase 1; multi-currency is Phase 3 i18n (§34.6).
+**Not covered, deliberately:** currency conversion — the entire system is single-currency (EUR) for Phase 1; multi-currency is Phase 3 i18n (§34.6). The AC-7 "component test asserting no `await`/network call occurs between a selection change and the displayed total updating" is also deferred — this spec has no UI screen of its own (§5), and no consuming screen exists until Spec 06, so there is nothing to mount that test against yet. AC-7 is instead verified structurally here (`calculatePrice` is synchronous, exercised without `await` in both `pricing.test.ts` files); Spec 06 should add the deferred component-level assertion when it wires the first real selection UI to this module.
 
 ---
 
