@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a0a0c;
+  --foreground: #f5f5f7;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-space-grotesk);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-display: var(--font-display);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Shared glassmorphism surface (spec 01 §5) — dark translucent panel, blurred
+   backdrop, subtle low-opacity border. Every later spec's panels build on this. */
+.glass-panel {
+  background: rgb(255 255 255 / 0.04);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgb(255 255 255 / 0.08);
+}

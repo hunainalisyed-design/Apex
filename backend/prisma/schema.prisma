@@ -1,0 +1,11 @@
+// Prisma schema — foundation only (Spec 01).
+// Real models are introduced starting in Spec 02 (vehicle catalog data model).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}

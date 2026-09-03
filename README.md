@@ -16,9 +16,50 @@ Secure, backend-proxied AI integration with no client-exposed API keys
 Technical Stack
 
 Layer	Technologies
-Frontend:	React, Vite, Three.js, React Three Fiber, Tailwind CSS, GSAP
+Frontend:	Next.js (React), Three.js, React Three Fiber, Tailwind CSS, GSAP, Framer Motion
 Backend:	Node.js, Express
 Database:	PostgreSQL (Prisma ORM)
-AI Integration:	OpenAI / Claude API (server-side proxy)
+AI Integration:	Claude API (server-side proxy)
 
 This project was built to demonstrate full-stack engineering, real-time 3D rendering, and applied AI integration in a single, cohesive, production-oriented codebase.
+
+> Next.js replaces the Vite frontend originally listed in the SRS — needed for per-build dynamic Open Graph images (see `docs/specs/README.md`).
+
+## Getting Started
+
+**Prerequisites:** Node.js 24+, npm, [Docker Desktop](https://www.docker.com/products/docker-desktop/) (for local Postgres).
+
+```bash
+# 1. Start Postgres
+docker compose up -d
+
+# 2. Copy environment templates
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+
+# 3. Install dependencies (root install covers both workspaces)
+npm install
+
+# 4. Run both apps in dev mode
+npm run dev
+```
+
+- Frontend: [http://localhost:3000](http://localhost:3000)
+- Backend health check: [http://localhost:4000/api/health](http://localhost:4000/api/health)
+
+Other useful commands (run from the repo root, apply to both workspaces):
+
+```bash
+npm run lint
+npm run typecheck
+npm run test
+npm run build
+```
+
+The backend's DB-dependent integration test runs separately once Postgres is up:
+
+```bash
+npm run test:integration --workspace=backend
+```
+
+See `docs/CLAUDE.md` for the project's spec-first workflow and architectural conventions, and `docs/specs/` for the full feature spec index.
