@@ -1,5 +1,5 @@
-// Prisma schema — foundation only (Spec 01).
-// Real models are introduced starting in Spec 02 (vehicle catalog data model).
+// Prisma schema.
+// Spec 01: datasource/generator only. Spec 02: vehicle catalog data model.
 
 generator client {
   provider = "prisma-client-js"
@@ -8,4 +8,89 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+enum OptionCategory {
+  PAINT
+  WHEELS
+  BRAKE_CALIPER
+  WINDOW_TINT
+  SPOILER
+  FRONT_ACCESSORY
+  REAR_ACCESSORY
+  BODY_PACKAGE
+  CARBON_COMPONENT
+  INTERIOR_MATERIAL
+  INTERIOR_LIGHTING
+  INTERIOR_SEATS
+  INTERIOR_DASHBOARD
+  INTERIOR_STEERING_WHEEL
+  INTERIOR_DOOR_PANELS
+  INTERIOR_FLOOR
+  ACCESSORY
+  PACKAGE
+}
+
+model Vehicle {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  name             String
+  tagline          String
+  basePriceCents   Int
+  currency         String   @default("EUR")
+  horsepower       Int
+  topSpeedKph      Int
+  zeroToHundredSec Decimal  @db.Decimal(3, 1)
+  heroModelUrl     String
+  showroomModelUrl String
+  thumbnailUrl     String
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  options        CustomizationOption[]
+  configurations Configuration[]
+}
+
+model CustomizationOption {
+  id              String         @id @default(cuid())
+  vehicleId       String
+  vehicle         Vehicle        @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  category        OptionCategory
+  name            String
+  description     String?
+  priceDeltaCents Int            @default(0)
+  assetRef        String
+  swatchColor     String?
+  isDefault       Boolean        @default(false)
+  sortOrder       Int            @default(0)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  selections ConfigurationSelection[]
+
+  @@index([vehicleId, category])
+}
+
+model Configuration {
+  id              String   @id @default(cuid())
+  publicId        String   @unique // e.g. "APEX-7F82-K91X", generated in the save/share spec
+  vehicleId       String
+  vehicle         Vehicle  @relation(fields: [vehicleId], references: [id])
+  userId          String? // null = guest build; FK constraint added when Phase 2 auth spec introduces User
+  totalPriceCents Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  selections ConfigurationSelection[]
+}
+
+model ConfigurationSelection {
+  id              String              @id @default(cuid())
+  configurationId String
+  configuration   Configuration       @relation(fields: [configurationId], references: [id], onDelete: Cascade)
+  optionId        String
+  option          CustomizationOption @relation(fields: [optionId], references: [id])
+
+  @@unique([configurationId, optionId])
 }

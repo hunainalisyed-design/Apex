@@ -20,7 +20,7 @@ Status values: **Backlog** (not yet spec'd) → **Draft** → **Approved** → *
 | # | Spec file | SRS section(s) | Status |
 |---|---|---|---|
 | 1 | `01-project-foundation.md` | §24, §25 | Implemented |
-| 2 | `02-vehicle-catalog-data-model.md` | §6, §7, §10, §12 (entities) | Approved |
+| 2 | `02-vehicle-catalog-data-model.md` | §6, §7, §10, §12 (entities) | Implemented |
 | 3 | `03-dynamic-pricing-engine.md` | §12 | Approved |
 | 4 | `04-landing-page.md` | §3 | Approved |
 | 5 | `05-3d-showroom-core.md` | §4, §5 | Approved |
