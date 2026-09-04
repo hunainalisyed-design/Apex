@@ -67,4 +67,24 @@ describe("seed data", () => {
       }
     }
   });
+
+  it("gives every option a valid applyMode (Spec 6)", () => {
+    const validModes = new Set(["MATERIAL_SWAP", "MESH_VARIANT_SWAP", "MESH_VISIBILITY"]);
+    for (const vehicle of seedVehicles) {
+      for (const option of vehicle.options) {
+        expect(validModes.has(option.applyMode), `${vehicle.slug} / ${option.name}`).toBe(true);
+      }
+    }
+  });
+
+  it("gives every WHEELS option MESH_VARIANT_SWAP and every PAINT option MATERIAL_SWAP", () => {
+    for (const vehicle of seedVehicles) {
+      for (const option of vehicle.options.filter((o) => o.category === "WHEELS")) {
+        expect(option.applyMode, option.name).toBe("MESH_VARIANT_SWAP");
+      }
+      for (const option of vehicle.options.filter((o) => o.category === "PAINT")) {
+        expect(option.applyMode, option.name).toBe("MATERIAL_SWAP");
+      }
+    }
+  });
 });

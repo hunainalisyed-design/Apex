@@ -39,6 +39,7 @@ function makeOption(overrides: Partial<CustomizationOption> = {}): Customization
     priceDeltaCents: 0,
     assetRef: "paint-obsidian-black",
     swatchColor: "#0a0a0c",
+    applyMode: "MATERIAL_SWAP",
     isDefault: true,
     sortOrder: 0,
     createdAt: new Date(),
@@ -59,6 +60,7 @@ describe("mapOptionToDto", () => {
       priceDeltaCents: 0,
       assetRef: "paint-obsidian-black",
       swatchColor: "#0a0a0c",
+      applyMode: "MATERIAL_SWAP",
       isDefault: true,
       sortOrder: 0,
     });

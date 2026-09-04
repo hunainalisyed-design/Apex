@@ -19,6 +19,7 @@ function buildOption(category: OptionCategory): CustomizationOptionDto {
     priceDeltaCents: 0,
     assetRef: `${category}-default`,
     swatchColor: null,
+    applyMode: "MATERIAL_SWAP",
     isDefault: true,
     sortOrder: 0,
   };

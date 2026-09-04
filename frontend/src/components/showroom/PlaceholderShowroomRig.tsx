@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import type { ThreeEvent } from "@react-three/fiber";
 import { getBrakeLightEmissive, getHeadlightEmissive } from "@/lib/showroom/lighting";
 
@@ -17,6 +17,18 @@ export interface PlaceholderShowroomRigProps {
   headlightsOn: boolean;
   brakePulsing: boolean;
   onHoverMesh: (hover: HoveredMesh | null) => void;
+
+  // Exterior customization (Spec 6) — resolved by lib/showroom/exteriorAppearance.ts.
+  paintColor: string;
+  brakeCaliperColor: string;
+  wheelStyle: string;
+  windowTintOpacity: number;
+  spoilerVisible: boolean;
+  spoilerColor: string;
+  frontAccessoryVisible: boolean;
+  rearAccessoryVisible: boolean;
+  bodyPackageVisible: boolean;
+  carbonComponentVisible: boolean;
 }
 
 const WHEEL_POSITIONS: Array<{ name: string; position: [number, number, number] }> = [
@@ -28,20 +40,37 @@ const WHEEL_POSITIONS: Array<{ name: string; position: [number, number, number] 
 
 const DOOR_HINGE_ANGLE = 1.1; // radians, ~63deg open
 
-function Wheel({
-  name,
-  position,
-  onHoverMesh,
-}: {
+const WHEEL_STYLE_MATERIAL: Record<string, { color: string; metalness: number; roughness: number }> = {
+  "wheel-standard": { color: "#111114", metalness: 0.2, roughness: 0.6 },
+  "wheel-sport-20": { color: "#1a1a1d", metalness: 0.5, roughness: 0.35 },
+  "wheel-performance": { color: "#3a3a3f", metalness: 0.7, roughness: 0.25 },
+  "wheel-carbon": { color: "#15151a", metalness: 0.3, roughness: 0.15 },
+};
+
+function wheelMaterialFor(style: string) {
+  return WHEEL_STYLE_MATERIAL[style] ?? WHEEL_STYLE_MATERIAL["wheel-standard"];
+}
+
+interface HoverablePartProps {
   name: string;
   position: [number, number, number];
+  rotation?: [number, number, number];
+  visible?: boolean;
   onHoverMesh: (hover: HoveredMesh | null) => void;
-}) {
+  children: ReactNode;
+}
+
+/** A named, hover-reactive mesh — the shared wiring every hotspot-eligible part (Spec 5's
+ * registry) needs, factored out so wheels/body/calipers don't each repeat it. */
+function HoverablePart({ name, position, rotation, visible, onHoverMesh, children }: HoverablePartProps) {
   return (
     <mesh
       name={name}
       position={position}
-      rotation={[Math.PI / 2, 0, 0]}
+      rotation={rotation}
+      visible={visible}
+      castShadow
+      receiveShadow
       onPointerOver={(e: ThreeEvent<PointerEvent>) => {
         e.stopPropagation();
         onHoverMesh({ meshName: name, x: e.clientX, y: e.clientY });
@@ -55,8 +84,7 @@ function Wheel({
         onHoverMesh(null);
       }}
     >
-      <cylinderGeometry args={[0.32, 0.32, 0.22, 24]} />
-      <meshStandardMaterial color="#111114" metalness={0.2} roughness={0.6} name="wheel-material" />
+      {children}
     </mesh>
   );
 }
@@ -80,17 +108,27 @@ export function PlaceholderShowroomRig({
   headlightsOn,
   brakePulsing,
   onHoverMesh,
+  paintColor,
+  brakeCaliperColor,
+  wheelStyle,
+  windowTintOpacity,
+  spoilerVisible,
+  spoilerColor,
+  frontAccessoryVisible,
+  rearAccessoryVisible,
+  bodyPackageVisible,
+  carbonComponentVisible,
 }: PlaceholderShowroomRigProps) {
   const headlight = useMemo(() => getHeadlightEmissive(headlightsOn), [headlightsOn]);
   const brakelight = useMemo(() => getBrakeLightEmissive(brakePulsing), [brakePulsing]);
+  const wheelMaterial = useMemo(() => wheelMaterialFor(wheelStyle), [wheelStyle]);
 
   return (
     <group position={[0, -0.3, 0]}>
-      {/* body */}
-      <mesh name="body" position={[0, 0.3, 0]} castShadow receiveShadow>
+      <HoverablePart name="body" position={[0, 0.3, 0]} onHoverMesh={onHoverMesh}>
         <boxGeometry args={[2.4, 0.5, 1.1]} />
-        <meshStandardMaterial color="#d4d4d8" metalness={0.6} roughness={0.3} />
-      </mesh>
+        <meshStandardMaterial color={paintColor} metalness={0.6} roughness={0.3} />
+      </HoverablePart>
 
       {/* cabin */}
       <mesh position={[-0.15, 0.68, 0]} castShadow>
@@ -98,20 +136,87 @@ export function PlaceholderShowroomRig({
         <meshStandardMaterial color="#0a0a0c" metalness={0.4} roughness={0.2} />
       </mesh>
 
+      {/* glass — window tint (Spec 6, AC-6) */}
+      <mesh position={[-0.15, 0.7, 0]}>
+        <boxGeometry args={[1.24, 0.36, 0.99]} />
+        <meshPhysicalMaterial
+          color="#1a2530"
+          transparent
+          opacity={windowTintOpacity}
+          roughness={0.05}
+          metalness={0}
+        />
+      </mesh>
+
       {WHEEL_POSITIONS.map(({ name, position }) => (
-        <Wheel key={name} name={name} position={position} onHoverMesh={onHoverMesh} />
+        <HoverablePart key={name} name={name} position={position} rotation={[Math.PI / 2, 0, 0]} onHoverMesh={onHoverMesh}>
+          <cylinderGeometry args={[0.32, 0.32, 0.22, 24]} />
+          <meshStandardMaterial
+            color={wheelMaterial.color}
+            metalness={wheelMaterial.metalness}
+            roughness={wheelMaterial.roughness}
+          />
+        </HoverablePart>
       ))}
 
       {/* brake calipers, nested just inside each wheel */}
       {WHEEL_POSITIONS.map(({ name, position }) => (
-        <mesh key={`caliper_${name}`} name={`caliper_${name}`} position={position} rotation={[Math.PI / 2, 0, 0]}>
+        <HoverablePart
+          key={`caliper_${name}`}
+          name={`caliper_${name}`}
+          position={position}
+          rotation={[Math.PI / 2, 0, 0]}
+          onHoverMesh={onHoverMesh}
+        >
           <cylinderGeometry args={[0.2, 0.2, 0.26, 16]} />
-          <meshStandardMaterial color="#b3121b" metalness={0.3} roughness={0.4} />
-        </mesh>
+          <meshStandardMaterial color={brakeCaliperColor} metalness={0.3} roughness={0.4} />
+        </HoverablePart>
       ))}
 
       <Door side="left" openAmount={doorOpenAmount} />
       <Door side="right" openAmount={doorOpenAmount} />
+
+      {/* spoiler — struts + wing (Spec 6, AC-7) */}
+      <group visible={spoilerVisible}>
+        {[0.35, -0.35].map((z) => (
+          <mesh key={`spoiler-strut-${z}`} position={[-1.15, 0.62, z]}>
+            <boxGeometry args={[0.05, 0.22, 0.05]} />
+            <meshStandardMaterial color={spoilerColor} metalness={0.4} roughness={0.4} />
+          </mesh>
+        ))}
+        <mesh position={[-1.2, 0.74, 0]}>
+          <boxGeometry args={[0.28, 0.05, 1.0]} />
+          <meshStandardMaterial color={spoilerColor} metalness={0.4} roughness={0.3} />
+        </mesh>
+      </group>
+
+      {/* front accessory — splitter (Spec 6, AC-8) */}
+      <mesh visible={frontAccessoryVisible} position={[1.25, 0.07, 0]}>
+        <boxGeometry args={[0.12, 0.06, 1.15]} />
+        <meshStandardMaterial color="#0a0a0c" metalness={0.3} roughness={0.5} />
+      </mesh>
+
+      {/* rear accessory — diffuser (Spec 6, AC-8) */}
+      <mesh visible={rearAccessoryVisible} position={[-1.25, 0.07, 0]}>
+        <boxGeometry args={[0.12, 0.06, 1.15]} />
+        <meshStandardMaterial color="#0a0a0c" metalness={0.3} roughness={0.5} />
+      </mesh>
+
+      {/* body package — side skirts (Spec 6, AC-8) */}
+      <group visible={bodyPackageVisible}>
+        {[0.58, -0.58].map((z) => (
+          <mesh key={`skirt-${z}`} position={[0, 0.12, z]}>
+            <boxGeometry args={[2.0, 0.08, 0.08]} />
+            <meshStandardMaterial color={paintColor} metalness={0.6} roughness={0.3} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* carbon component — roof trim accent (Spec 6, AC-8) */}
+      <mesh visible={carbonComponentVisible} position={[-0.15, 0.9, 0]}>
+        <boxGeometry args={[1.15, 0.02, 0.9]} />
+        <meshStandardMaterial color="#0d0d10" metalness={0.2} roughness={0.15} />
+      </mesh>
 
       {/* headlights */}
       {[0.42, -0.42].map((z) => (

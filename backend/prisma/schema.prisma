@@ -1,5 +1,6 @@
 // Prisma schema.
 // Spec 01: datasource/generator only. Spec 02: vehicle catalog data model.
+// Spec 06: ApplyMode (owned by Spec 8's definition, migrated here per its Risk #3) + customPaintHex.
 
 generator client {
   provider = "prisma-client-js"
@@ -29,6 +30,13 @@ enum OptionCategory {
   INTERIOR_FLOOR
   ACCESSORY
   PACKAGE
+}
+
+/// How a selected option's assetRef should be applied to the 3D scene (Spec 6/8).
+enum ApplyMode {
+  MATERIAL_SWAP // the mesh is always visible; only its material/color changes
+  MESH_VARIANT_SWAP // multiple distinct mesh variants exist; the selected one is shown
+  MESH_VISIBILITY // toggles a specific mesh's visibility (optionally tinting it too)
 }
 
 model Vehicle {
@@ -62,6 +70,7 @@ model CustomizationOption {
   priceDeltaCents Int            @default(0)
   assetRef        String
   swatchColor     String?
+  applyMode       ApplyMode      @default(MATERIAL_SWAP)
   isDefault       Boolean        @default(false)
   sortOrder       Int            @default(0)
   createdAt       DateTime       @default(now())
@@ -79,6 +88,7 @@ model Configuration {
   vehicle         Vehicle  @relation(fields: [vehicleId], references: [id])
   userId          String? // null = guest build; FK constraint added when Phase 2 auth spec introduces User
   totalPriceCents Int
+  customPaintHex  String? // set only when the selected PAINT option is the reserved custom-color entry
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

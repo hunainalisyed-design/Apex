@@ -1,7 +1,7 @@
 # Spec: Exterior Customization
 
 **File:** `docs/specs/06-exterior-customization.md`
-**Status:** Approved
+**Status:** Implemented
 **Author:** Syed Hunain Raza
 **Reviewer:** hunainalisyed@gmail.com
 **Related:** SRS §7 (Car Customization System / Exterior — all nine items), §7.1 (Paint Options), §8 (Wheel Customization), §9 (Brake Calipers); depends on `02-vehicle-catalog-data-model.md` (`SINGLE_SELECT_CATEGORIES`), `03-dynamic-pricing-engine.md`, `05-3d-showroom-core.md`
@@ -88,7 +88,18 @@ This store shape mirrors Spec 3's `PriceCalculationRequest` exactly (`singleSele
 - **Reversible:** yes — drop the nullable column.
 - **Backfill required:** no — additive nullable column on a table with no production rows yet (Spec 2 has not shipped to production).
 - **Downtime:** none.
-- **Reviewed SQL:** to be pasted once generated.
+- **Reviewed SQL:** generated as `backend/prisma/migrations/20260904180730_add_apply_mode_and_custom_paint_hex/migration.sql`:
+
+```sql
+-- CreateEnum
+CREATE TYPE "ApplyMode" AS ENUM ('MATERIAL_SWAP', 'MESH_VARIANT_SWAP', 'MESH_VISIBILITY');
+
+-- AlterTable
+ALTER TABLE "Configuration" ADD COLUMN     "customPaintHex" TEXT;
+
+-- AlterTable
+ALTER TABLE "CustomizationOption" ADD COLUMN     "applyMode" "ApplyMode" NOT NULL DEFAULT 'MATERIAL_SWAP';
+```
 
 ### Retention and privacy
 
@@ -140,6 +151,8 @@ Also specify:
 
 **Not covered, deliberately:** exhaustive visual regression across every combination of nine categories' options — spot-checked manually; the state-management and 3D-update wiring is what's under test, not every combination's exact rendered pixels.
 
+**Implementation notes:** the swatch `aria-label` format is `"<Category>: <Option name>, +<price>"` (e.g. "Paint: Racing Red, +€1,500") rather than this spec's illustrative "Racing Red paint, +€0" — several categories share option names like "None" across categories, so leading with the category name disambiguates for screen-reader users navigating swatches out of visual context. The store's `SingleSelectCategory`/`MultiSelectCategory` types are imported from `frontend/src/types/pricing.ts` (Spec 3's canonical location), not the illustrative `./catalogTypes` path this spec's snippet shows — that file doesn't exist in this repo.
+
 ---
 
 ## 7. Out of scope
@@ -154,8 +167,8 @@ Also specify:
 
 | # | Risk / question | Owner | Resolution |
 |---|---|---|---|
-| 1 | Same placeholder-asset dependency as Specs 2, 4, 5 — wheel swap in particular requires the chosen GLB to expose multiple selectable wheel variants or separately loadable wheel GLBs, and spoiler/body-package/carbon-component options require optional meshes to exist (hidden by default) in that same GLB. | Product owner | Open — blocking, same resolution as prior specs. |
-| 2 | Live-drag color picker (AC-3) updating a Three.js material on every pointer-move event could cause a performance stutter on low-end devices if not throttled. | Implementer | Open — implementer should throttle/debounce material updates during drag; not a product decision, tracked here so it isn't silently dropped. |
+| 1 | Same placeholder-asset dependency as Specs 2, 4, 5 — wheel swap in particular requires the chosen GLB to expose multiple selectable wheel variants or separately loadable wheel GLBs, and spoiler/body-package/carbon-component options require optional meshes to exist (hidden by default) in that same GLB. | Product owner | Resolved for Phase 1 implementation — extended Spec 5's placeholder rig with the parts this spec needs (glass, spoiler, front/rear accessory, body-package, carbon-trim meshes), all real and functional. One genuine narrowing: `WHEELS`' `MESH_VARIANT_SWAP` is expressed as a color/finish variation applied uniformly across the four existing wheel meshes, not distinct geometry per style (Standard/Sport/Performance/Carbon look different in material, not shape) — revisit once a real GLB with actual distinct wheel models exists. Every other category's visibility/material behavior is fully real. |
+| 2 | Live-drag color picker (AC-3) updating a Three.js material on every pointer-move event could cause a performance stutter on low-end devices if not throttled. | Implementer | Resolved — `CustomColorPicker` throttles to at most one update per animation frame via `requestAnimationFrame`, always flushing the latest value (never a stale one from when the frame was scheduled), before it reaches the store/3D material. |
 | 3 | This spec's `SPOILER`/`FRONT_ACCESSORY`/`REAR_ACCESSORY`/`BODY_PACKAGE`/`CARBON_COMPONENT` categories need Spec 8's `ApplyMode` column to exist, but Spec 8 is sequenced after this spec in the build order (index #6 vs. #8). | Implementer | Resolved — the `ApplyMode` migration itself is small and self-contained; implement it as part of this spec's migration work (crediting Spec 8 as the spec of record for the enum's definition) rather than blocking this spec on Spec 8's full accessories-panel implementation. |
 
 ---

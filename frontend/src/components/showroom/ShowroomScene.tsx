@@ -10,6 +10,7 @@ import { useCameraTransition } from "./useCameraTransition";
 import { SHOWROOM_CAMERA_BOUNDS } from "@/lib/showroom/camera";
 import { getCameraPreset, type CameraPresetId } from "@/lib/showroom/cameraPresets";
 import { findHotspot } from "@/lib/showroom/hotspots";
+import { DEFAULT_EXTERIOR_APPEARANCE, type ExteriorAppearance } from "@/lib/showroom/exteriorAppearance";
 import type { OptionCategory } from "@/types/catalog";
 
 export interface HoverLabel {
@@ -22,6 +23,7 @@ interface ShowroomRigProps {
   headlightsOn: boolean;
   brakePulsing: boolean;
   reducedMotion: boolean;
+  appearance: ExteriorAppearance;
   onReady: (goToPreset: (id: CameraPresetId) => void) => void;
   onPresetChange: (id: CameraPresetId) => void;
   onHover: (hover: HoverLabel | null) => void;
@@ -31,6 +33,7 @@ function ShowroomRig({
   headlightsOn,
   brakePulsing,
   reducedMotion,
+  appearance,
   onReady,
   onPresetChange,
   onHover,
@@ -78,6 +81,7 @@ function ShowroomRig({
         headlightsOn={headlightsOn}
         brakePulsing={brakePulsing}
         onHoverMesh={handleHoverMesh}
+        {...appearance}
       />
       <OrbitControls
         ref={controlsRef}
@@ -96,12 +100,16 @@ export interface ShowroomSceneProps {
   headlightsOn: boolean;
   brakePulsing: boolean;
   reducedMotion: boolean;
+  appearance?: ExteriorAppearance;
   onReady: (goToPreset: (id: CameraPresetId) => void) => void;
   onPresetChange: (id: CameraPresetId) => void;
   onHover: (hover: HoverLabel | null) => void;
 }
 
-export function ShowroomScene(props: ShowroomSceneProps) {
+export function ShowroomScene({
+  appearance = DEFAULT_EXTERIOR_APPEARANCE,
+  ...props
+}: ShowroomSceneProps) {
   const defaultPreset = getCameraPreset("default");
 
   return (
@@ -113,7 +121,7 @@ export function ShowroomScene(props: ShowroomSceneProps) {
       dpr={[1, 2]}
       gl={{ antialias: true }}
     >
-      <ShowroomRig {...props} />
+      <ShowroomRig {...props} appearance={appearance} />
     </Canvas>
   );
 }

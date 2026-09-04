@@ -47,7 +47,7 @@ export const ALL_CATEGORIES: OptionCategory[] = [
 /** Exactly one selected option per vehicle per category; every row in these categories must include
  * an explicit default (a "None"/"Standard" option is a valid, priced default where the item is
  * optional in the real world). */
-export const SINGLE_SELECT_CATEGORIES: OptionCategory[] = [
+export const SINGLE_SELECT_CATEGORIES = [
   "PAINT",
   "WHEELS",
   "BRAKE_CALIPER",
@@ -64,10 +64,13 @@ export const SINGLE_SELECT_CATEGORIES: OptionCategory[] = [
   "INTERIOR_STEERING_WHEEL",
   "INTERIOR_DOOR_PANELS",
   "INTERIOR_FLOOR",
-];
+] as const satisfies readonly OptionCategory[];
 
 /** Zero or more selected options per vehicle per category; no default required. */
-export const MULTI_SELECT_CATEGORIES: OptionCategory[] = ["ACCESSORY", "PACKAGE"];
+export const MULTI_SELECT_CATEGORIES = ["ACCESSORY", "PACKAGE"] as const satisfies readonly OptionCategory[];
+
+/** How a selected option's assetRef should be applied to the 3D scene (Spec 6/8). */
+export type ApplyMode = "MATERIAL_SWAP" | "MESH_VARIANT_SWAP" | "MESH_VISIBILITY";
 
 export interface VehicleSummaryDto {
   slug: string;
@@ -95,6 +98,7 @@ export interface CustomizationOptionDto {
   priceDeltaCents: number;
   assetRef: string; // material name / GLB mesh variant key / hex color, interpreted by the 3D layer
   swatchColor: string | null; // hex, for the UI swatch — independent of assetRef
+  applyMode: ApplyMode;
   isDefault: boolean;
   sortOrder: number;
 }

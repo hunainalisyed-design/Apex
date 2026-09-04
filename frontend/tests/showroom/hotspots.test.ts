@@ -16,7 +16,19 @@ describe("hotspot registry (AC-7)", () => {
     expect(findHotspot("wheel_fl")).toEqual({ meshName: "wheel_fl", category: "WHEELS" });
   });
 
+  it("registers the body mesh to PAINT and every caliper mesh to BRAKE_CALIPER (Spec 6)", () => {
+    expect(findHotspot("body")).toEqual({ meshName: "body", category: "PAINT" });
+
+    const caliperHotspots = HOTSPOTS.filter((h) => h.category === "BRAKE_CALIPER");
+    expect(caliperHotspots.map((h) => h.meshName).sort()).toEqual([
+      "caliper_wheel_fl",
+      "caliper_wheel_fr",
+      "caliper_wheel_rl",
+      "caliper_wheel_rr",
+    ]);
+  });
+
   it("returns undefined for a mesh with no registered hotspot", () => {
-    expect(findHotspot("body")).toBeUndefined();
+    expect(findHotspot("cabin")).toBeUndefined();
   });
 });

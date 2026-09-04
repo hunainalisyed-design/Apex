@@ -42,6 +42,7 @@ export async function seedDatabase(prisma: PrismaClient) {
             priceDeltaCents: option.priceDeltaCents,
             assetRef: option.assetRef,
             swatchColor: option.swatchColor,
+            applyMode: option.applyMode,
             isDefault: option.isDefault,
             sortOrder: option.sortOrder,
           })),

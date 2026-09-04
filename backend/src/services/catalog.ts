@@ -3,6 +3,7 @@ import { prisma } from "../lib/prisma.js";
 import {
   ALL_CATEGORIES,
   SINGLE_SELECT_CATEGORIES,
+  type ApplyMode,
   type CustomizationOptionDto,
   type OptionCategory,
   type VehicleDetailDto,
@@ -35,6 +36,7 @@ export function mapOptionToDto(option: CustomizationOption): CustomizationOption
     priceDeltaCents: option.priceDeltaCents,
     assetRef: option.assetRef,
     swatchColor: option.swatchColor,
+    applyMode: option.applyMode as ApplyMode,
     isDefault: option.isDefault,
     sortOrder: option.sortOrder,
   };
