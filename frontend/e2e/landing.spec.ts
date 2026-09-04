@@ -18,7 +18,7 @@ test("first visit shows the hero headline promptly and Configure Your Car reache
   await expect(configureLink).toBeVisible();
   await configureLink.click();
 
-  await expect(page).toHaveURL(/\/showroom$/);
+  await expect(page).toHaveURL(/\/configure\/apex-gt$/);
   expect(consoleErrors).toEqual([]);
 });
 

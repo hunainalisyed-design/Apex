@@ -13,7 +13,7 @@ vi.mock("@/hooks/useReducedMotion", () => ({
 
 const { Hero } = await import("../../src/components/landing/Hero");
 
-const vehicle = { name: "Apex GT", tagline: "Performance sports car." };
+const vehicle = { slug: "apex-gt", name: "Apex GT", tagline: "Performance sports car." };
 
 describe("Hero", () => {
   beforeEach(() => {
@@ -43,11 +43,11 @@ describe("Hero", () => {
     expect(screen.getByText("BUILD YOUR VISION.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Configure Your Car" })).toHaveAttribute(
       "href",
-      "/showroom",
+      "/configure/apex-gt",
     );
     expect(screen.getByRole("link", { name: "Explore Models" })).toHaveAttribute(
       "href",
-      "/showroom",
+      "/models",
     );
   });
 

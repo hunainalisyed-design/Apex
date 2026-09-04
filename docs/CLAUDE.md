@@ -56,9 +56,9 @@ Later specs and implementations must follow these rather than inventing alternat
 
 ## Known open blocker across multiple specs
 
-No production 3D asset exists yet. Multiple Phase 1 specs (`02-vehicle-catalog-data-model.md` Risk #1, and the showroom core and exterior customization specs that depend on it) are blocked on choosing one free, portfolio-safe (CC0/permissive license) GLB car model with separately addressable wheel meshes, a body material slot, and door hinge/animation support. Resolve this before implementation begins on any of those specs, even though the specs themselves can be reviewed and approved without it.
+No production 3D asset exists yet. `02-vehicle-catalog-data-model.md` Risk #1 (choosing one free, portfolio-safe CC0/permissive-license GLB car model with separately addressable wheel/door/body meshes) is still open — `Vehicle.heroModelUrl`/`showroomModelUrl` still point at placeholder paths, not a real asset.
 
-`04-landing-page.md` is no longer blocked by this: its hero uses a procedural placeholder mesh (primitive Three.js geometry, not a GLB) since a single decorative hero object doesn't need per-part addressability the way the showroom/customization specs do. Swapping in the real GLB later is a one-line change there, once chosen.
+This no longer blocks *implementation*, though. `04-landing-page.md` and `05-3d-showroom-core.md` both proceeded on a procedural placeholder rig (primitive Three.js geometry, not a GLB) instead of waiting: Spec 4's hero is a simple decorative shape; Spec 5's showroom rig (`frontend/src/components/showroom/PlaceholderShowroomRig.tsx`) is a properly structured stand-in — named body/wheel/door/brake-caliper/headlight/brakelight meshes, real door-hinge animation, real emissive lighting — so the camera/orbit/hotspot/lighting infrastructure Specs 6–8 depend on is genuinely functional now. Spec 6 (exterior customization) is the next one to determine whether swapping named parts on this rig is enough, or whether it needs the real GLB decision resolved first — evaluate that at the start of Spec 6 rather than assuming either way.
 
 ## Repository layout
 

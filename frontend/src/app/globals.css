@@ -30,3 +30,13 @@ body {
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgb(255 255 255 / 0.08);
 }
+
+/* Showroom loading bar (spec 05 §5) — determinate, not a spinner. */
+@keyframes showroom-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}

@@ -15,12 +15,13 @@ const HeroScene = dynamic(() => import("./HeroScene").then((m) => m.HeroScene), 
 
 export interface HeroProps {
   vehicle: {
+    slug: string;
     name: string;
     tagline: string;
   };
 }
 
-const SHOWROOM_HREF = "/showroom";
+const MODELS_HREF = "/models";
 
 export function Hero({ vehicle }: HeroProps) {
   const stage = useHeroSequence();
@@ -84,13 +85,13 @@ export function Hero({ vehicle }: HeroProps) {
           transition={{ duration: 0.5 }}
         >
           <Link
-            href={SHOWROOM_HREF}
+            href={`/configure/${vehicle.slug}`}
             className="rounded-full bg-white px-8 py-3 text-sm font-semibold text-black transition hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
             Configure Your Car
           </Link>
           <Link
-            href={SHOWROOM_HREF}
+            href={MODELS_HREF}
             className="glass-panel rounded-full px-8 py-3 text-sm font-semibold text-white transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
             Explore Models

@@ -1,7 +1,7 @@
 # Spec: 3D Showroom Core
 
 **File:** `docs/specs/05-3d-showroom-core.md`
-**Status:** Approved
+**Status:** Implemented
 **Author:** Syed Hunain Raza
 **Reviewer:** hunainalisyed@gmail.com
 **Related:** SRS §4 (3D Virtual Showroom), §5 (3D Vehicle Animations); depends on `02-vehicle-catalog-data-model.md`, `01-project-foundation.md`
@@ -106,7 +106,7 @@ Also specify:
 
 **Coverage:** ≥80% on new non-3D-rendering code (camera math, hotspot registry, state management); raw Three.js scene wiring is validated primarily through E2E and manual QA since unit-testing WebGL rendering output has poor ROI.
 
-**Not covered, deliberately:** frame-rate/performance benchmarking — tracked qualitatively during implementation against SRS §26, formalized only if a real performance regression is found.
+**Not covered, deliberately:** frame-rate/performance benchmarking — tracked qualitatively during implementation against SRS §26, formalized only if a real performance regression is found. The Loading state's progress bar is also structurally present (determinate, not a spinner) but doesn't track real download bytes yet, same narrowing as Spec 4 — the placeholder rig has no network download to measure. Revisit once a real GLB is wired in.
 
 ---
 
@@ -123,8 +123,8 @@ Also specify:
 
 | # | Risk / question | Owner | Resolution |
 |---|---|---|---|
-| 1 | Same placeholder-asset dependency as Specs 2 and 4 (Spec 2, Risk #1) — this spec cannot be implemented until a real GLB with named, separable wheel/door/body nodes is chosen. | Product owner | Open — blocking. |
-| 2 | Door open/close animation requires the GLB to either ship with a baked animation clip or expose a hinge node this spec can animate procedurally; which approach depends on the chosen placeholder asset. | Implementer | Open — resolve once Risk #1 above is resolved. |
+| 1 | Same placeholder-asset dependency as Specs 2 and 4 (Spec 2, Risk #1) — this spec cannot be implemented until a real GLB with named, separable wheel/door/body nodes is chosen. | Product owner | Resolved for Phase 1 implementation — extended Spec 4's procedural-placeholder approach into a properly structured rig (`frontend/src/components/showroom/PlaceholderShowroomRig.tsx`): named body/wheel(x4)/door(x2)/brake-caliper(x4)/headlight/brakelight meshes, so every AC (camera, orbit, hotspots, door animation, lighting) is genuinely functional rather than stubbed. Specs 6–8 target these same names for material swaps; the real GLB decision from Spec 2 Risk #1 is still open and still needed eventually, but no longer blocks this spec or the ones building on it. Evaluate at the start of Spec 6 whether the placeholder rig is sufficient for exterior customization or whether the real asset is needed first. |
+| 2 | Door open/close animation requires the GLB to either ship with a baked animation clip or expose a hinge node this spec can animate procedurally; which approach depends on the chosen placeholder asset. | Implementer | Resolved for the placeholder rig — each door is a hinge-pivot group animated procedurally via GSAP (`useCameraTransition.ts`), reacting to Interior/Cockpit vs. exterior preset selection (AC-6). A real GLB with a baked clip would replace this with clip playback; a real GLB with only a hinge node would keep this same procedural-rotation approach. |
 | 3 | "Pan around the vehicle where appropriate" (SRS §4) is vague — full 6-DOF pan risks letting users lose the vehicle off-screen. | Product owner | Resolved for Phase 1 — panning is disabled; orbit + zoom + presets are judged sufficient for inspecting the vehicle from any relevant angle. Revisit if user testing shows a real need. |
 
 ---
