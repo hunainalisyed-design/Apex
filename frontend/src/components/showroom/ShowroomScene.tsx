@@ -10,6 +10,7 @@ import { useCameraTransition } from "./useCameraTransition";
 import { SHOWROOM_CAMERA_BOUNDS } from "@/lib/showroom/camera";
 import { getCameraPreset, type CameraPresetId } from "@/lib/showroom/cameraPresets";
 import { findHotspot } from "@/lib/showroom/hotspots";
+import { DEFAULT_ACCESSORY_APPEARANCE, type AccessoryAppearance } from "@/lib/showroom/accessoryAppearance";
 import { DEFAULT_EXTERIOR_APPEARANCE, type ExteriorAppearance } from "@/lib/showroom/exteriorAppearance";
 import { DEFAULT_INTERIOR_APPEARANCE, type InteriorAppearance } from "@/lib/showroom/interiorAppearance";
 import type { OptionCategory } from "@/types/catalog";
@@ -26,6 +27,7 @@ interface ShowroomRigProps {
   reducedMotion: boolean;
   appearance: ExteriorAppearance;
   interior: InteriorAppearance;
+  accessories: AccessoryAppearance;
   onReady: (goToPreset: (id: CameraPresetId) => void) => void;
   onPresetChange: (id: CameraPresetId) => void;
   onHover: (hover: HoverLabel | null) => void;
@@ -37,6 +39,7 @@ function ShowroomRig({
   reducedMotion,
   appearance,
   interior,
+  accessories,
   onReady,
   onPresetChange,
   onHover,
@@ -85,6 +88,7 @@ function ShowroomRig({
         brakePulsing={brakePulsing}
         onHoverMesh={handleHoverMesh}
         interior={interior}
+        accessories={accessories}
         {...appearance}
       />
       <OrbitControls
@@ -106,6 +110,7 @@ export interface ShowroomSceneProps {
   reducedMotion: boolean;
   appearance?: ExteriorAppearance;
   interior?: InteriorAppearance;
+  accessories?: AccessoryAppearance;
   onReady: (goToPreset: (id: CameraPresetId) => void) => void;
   onPresetChange: (id: CameraPresetId) => void;
   onHover: (hover: HoverLabel | null) => void;
@@ -114,6 +119,7 @@ export interface ShowroomSceneProps {
 export function ShowroomScene({
   appearance = DEFAULT_EXTERIOR_APPEARANCE,
   interior = DEFAULT_INTERIOR_APPEARANCE,
+  accessories = DEFAULT_ACCESSORY_APPEARANCE,
   ...props
 }: ShowroomSceneProps) {
   const defaultPreset = getCameraPreset("default");
@@ -127,7 +133,7 @@ export function ShowroomScene({
       dpr={[1, 2]}
       gl={{ antialias: true }}
     >
-      <ShowroomRig {...props} appearance={appearance} interior={interior} />
+      <ShowroomRig {...props} appearance={appearance} interior={interior} accessories={accessories} />
     </Canvas>
   );
 }

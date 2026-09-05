@@ -35,16 +35,24 @@ export interface SeedVehicle {
 function buildOptionCatalog(): SeedOption[] {
   let sortOrder = 0;
   const next = () => sortOrder++;
-  // applyMode is uniform per category (Spec 6): for MESH_VISIBILITY categories, which row
-  // hides vs. shows its mesh is derived at dispatch time from the assetRef's "-none"/
-  // "-standard" suffix convention already used below, not from a different applyMode value.
+  // applyMode is uniform per category for most categories (Spec 6): for MESH_VISIBILITY
+  // categories, which row hides vs. shows its mesh is derived at dispatch time from the
+  // assetRef's "-none"/"-standard" suffix convention already used below, not from a
+  // different applyMode value. ACCESSORY is the first category needing a genuine per-row
+  // override (Spec 8: Sport Exhaust is MESH_VISIBILITY while its siblings stay
+  // MATERIAL_SWAP) — a row's own applyMode wins when present, else the category default.
   const category = (
     cat: OptionCategory,
-    applyMode: ApplyMode,
-    rows: Omit<SeedOption, "category" | "sortOrder" | "applyMode">[],
+    defaultApplyMode: ApplyMode,
+    rows: (Omit<SeedOption, "category" | "sortOrder" | "applyMode"> & { applyMode?: ApplyMode })[],
   ) => {
     sortOrder = 0;
-    return rows.map((row) => ({ ...row, category: cat, applyMode, sortOrder: next() }));
+    return rows.map((row) => ({
+      ...row,
+      category: cat,
+      applyMode: row.applyMode ?? defaultApplyMode,
+      sortOrder: next(),
+    }));
   };
 
   return [
@@ -131,10 +139,10 @@ function buildOptionCatalog(): SeedOption[] {
       { name: "Premium Floor Mats", description: null, priceDeltaCents: 40000, assetRef: "interior-floor-premium-mats", swatchColor: null, isDefault: false },
     ]),
     ...category("ACCESSORY", "MATERIAL_SWAP", [
-      { name: "Carbon Mirror Caps", description: null, priceDeltaCents: 60000, assetRef: "accessory-carbon-mirror-caps", swatchColor: null, isDefault: false },
-      { name: "Sport Exhaust", description: null, priceDeltaCents: 250000, assetRef: "accessory-sport-exhaust", swatchColor: null, isDefault: false },
+      { name: "Carbon Mirror Caps", description: null, priceDeltaCents: 60000, assetRef: "accessory-carbon-mirror-caps", swatchColor: "#0d0d10", isDefault: false },
+      { name: "Sport Exhaust", description: null, priceDeltaCents: 250000, assetRef: "accessory-sport-exhaust", swatchColor: null, applyMode: "MESH_VISIBILITY", isDefault: false },
       { name: "Premium Lighting Package", description: null, priceDeltaCents: 150000, assetRef: "accessory-premium-lighting", swatchColor: null, isDefault: false },
-      { name: "Carbon Roof", description: null, priceDeltaCents: 400000, assetRef: "accessory-carbon-roof", swatchColor: null, isDefault: false },
+      { name: "Carbon Roof", description: null, priceDeltaCents: 400000, assetRef: "accessory-carbon-roof", swatchColor: "#0d0d10", isDefault: false },
     ]),
     ...category("PACKAGE", "MATERIAL_SWAP", [
       { name: "Performance Package", description: null, priceDeltaCents: 800000, assetRef: "package-performance", swatchColor: null, isDefault: false },

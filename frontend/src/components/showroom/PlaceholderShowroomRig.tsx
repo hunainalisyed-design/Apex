@@ -3,6 +3,7 @@
 import { useMemo, type ReactNode } from "react";
 import type { ThreeEvent } from "@react-three/fiber";
 import { getBrakeLightEmissive, getHeadlightEmissive } from "@/lib/showroom/lighting";
+import type { AccessoryAppearance } from "@/lib/showroom/accessoryAppearance";
 import type { InteriorAppearance } from "@/lib/showroom/interiorAppearance";
 import type { ThreeMaterialParams } from "@/lib/showroom/interiorMaterial";
 
@@ -37,6 +38,9 @@ export interface PlaceholderShowroomRigProps {
   // + lighting color) — the individual-props convention above stays reasonable at this size,
   // this one wouldn't.
   interior: InteriorAppearance;
+
+  // Accessories/packages (Spec 8) — resolved by lib/showroom/accessoryAppearance.ts.
+  accessories: AccessoryAppearance;
 }
 
 const WHEEL_POSITIONS: Array<{ name: string; position: [number, number, number] }> = [
@@ -146,6 +150,7 @@ export function PlaceholderShowroomRig({
   bodyPackageVisible,
   carbonComponentVisible,
   interior,
+  accessories,
 }: PlaceholderShowroomRigProps) {
   const headlight = useMemo(() => getHeadlightEmissive(headlightsOn), [headlightsOn]);
   const brakelight = useMemo(() => getBrakeLightEmissive(brakePulsing), [brakePulsing]);
@@ -286,6 +291,38 @@ export function PlaceholderShowroomRig({
         <boxGeometry args={[1.15, 0.02, 0.9]} />
         <meshStandardMaterial color="#0d0d10" metalness={0.2} roughness={0.15} />
       </mesh>
+
+      {/* roof panel — always present, caps the glass greenhouse; paint-colored by default,
+          carbon-finished when the ACCESSORY "Carbon Roof" is active (Spec 8, AC-3) —
+          intentionally a separate mesh from the CARBON_COMPONENT trim accent above, per
+          Spec 2 Risk #4's "intentionally independent" resolution */}
+      <mesh name="roof" position={[-0.15, 0.93, 0]}>
+        <boxGeometry args={[1.22, 0.02, 0.97]} />
+        <meshStandardMaterial color={accessories.roofColor} metalness={0.6} roughness={0.3} />
+      </mesh>
+
+      {/* mirror caps — always present, same paint-color-by-default/carbon-when-active
+          pattern as the roof (Spec 8, AC-3) */}
+      {[0.56, -0.56].map((z) => (
+        <mesh key={`mirror-${z}`} name={`mirror_${z > 0 ? "left" : "right"}`} position={[0.25, 0.62, z]}>
+          <boxGeometry args={[0.04, 0.05, 0.12]} />
+          <meshStandardMaterial color={accessories.mirrorCapsColor} metalness={0.5} roughness={0.3} />
+        </mesh>
+      ))}
+
+      {/* exhaust tips — hidden until Sport Exhaust is active (Spec 8, AC-2) */}
+      {[0.15, -0.15].map((z) => (
+        <mesh
+          key={`exhaust-${z}`}
+          name={`exhaust_tip_${z > 0 ? "left" : "right"}`}
+          visible={accessories.exhaustTipVisible}
+          position={[-1.22, 0.1, z]}
+          rotation={[0, 0, Math.PI / 2]}
+        >
+          <cylinderGeometry args={[0.045, 0.045, 0.12, 16]} />
+          <meshStandardMaterial color="#8a8d91" metalness={0.9} roughness={0.2} />
+        </mesh>
+      ))}
 
       {/* headlights */}
       {[0.42, -0.42].map((z) => (

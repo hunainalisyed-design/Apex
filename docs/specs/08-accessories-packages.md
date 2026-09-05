@@ -1,7 +1,7 @@
 # Spec: Accessories & Packages
 
 **File:** `docs/specs/08-accessories-packages.md`
-**Status:** Approved
+**Status:** Implemented
 **Author:** Syed Hunain Raza
 **Reviewer:** hunainalisyed@gmail.com
 **Related:** SRS §11 (Accessories); depends on `02-vehicle-catalog-data-model.md`, `03-dynamic-pricing-engine.md`, `05-3d-showroom-core.md`, `06-exterior-customization.md` (canonical configuration store; also ships the `ApplyMode` migration this spec defines, see §4), `07-interior-customization.md`
@@ -137,7 +137,7 @@ Also specify:
 | # | Risk / question | Owner | Resolution |
 |---|---|---|---|
 | 1 | Should packages be allowed to bundle/require other options (e.g. Performance Package forcing Sport wheels), matching how real configurators often work? | Product owner | Resolved for Phase 1 — no, treated as flat independent line items per SRS §12's own pricing example. Open for reconsideration in a later phase if desired. |
-| 2 | Same placeholder-asset dependency as prior specs, compounded here: `MESH_VISIBILITY` accessories specifically require the chosen GLB to already contain the optional part (e.g. an exhaust tip mesh) even while hidden, which is a stronger asset requirement than the material-swap-only categories. | Product owner | Open — blocking for `MESH_VISIBILITY` accessories specifically; `MATERIAL_SWAP` accessories can ship against the same placeholder asset already required by Spec 2 Risk #1 without additional geometry. |
+| 2 | Same placeholder-asset dependency as prior specs, compounded here: `MESH_VISIBILITY` accessories specifically require the chosen GLB to already contain the optional part (e.g. an exhaust tip mesh) even while hidden, which is a stronger asset requirement than the material-swap-only categories. | Product owner | Resolved by extending the procedural placeholder rig rather than waiting on a real GLB (consistent with Specs 4–7). Of the six seeded `ACCESSORY`/`PACKAGE` rows, three got real mesh mappings in `PlaceholderShowroomRig.tsx`: Carbon Roof and Carbon Mirror Caps (`MATERIAL_SWAP`, defaulting to the currently selected paint color and switching to carbon when active, per AC-3), and Sport Exhaust (`MESH_VISIBILITY`, hidden by default, per AC-2). The remaining three — Premium Lighting Package, Performance Package, and Special Interior Package — have no single obvious mesh to represent them and deliberately route through AC-6's warn-only path instead: `frontend/src/lib/showroom/accessoryAppearance.ts` prices them and includes them in the summary data normally, but logs one dev-only `console.warn` per active/unmapped option rather than fabricating a visual. This mapping is intentionally small and explicit (`ACCESSORY_MESH_MAP`) so it's obvious which accessories are still visually unrepresented once a real GLB exists. |
 | 3 | SRS §7's `CARBON_COMPONENT` (Spec 6, single-select coarse carbon trim tier) overlaps in subject matter with this spec's individual "Carbon Mirror Caps"/"Carbon Roof" `ACCESSORY` toggles from SRS §11 — a user could reach a similar visual result two different ways. | Product owner | Resolved — see Spec 2 Risk #4. The two are intentionally independent and not bundled/mutually exclusive in Phase 1; this is an accepted overlap in the SRS's own taxonomy rather than a defect in this schema. |
 
 ---
@@ -148,3 +148,12 @@ Also specify:
 - **Migration order:** ships after Spec 2's initial migration and Spec 6's `ApplyMode`/`customPaintHex` migrations — this spec adds no migration of its own, only seed rows.
 - **Rollback:** remove the accessories/packages panel and its seed rows; showroom continues working with exterior and interior customization only (Spec 6's `ApplyMode` column remains, since its own categories depend on it).
 - **Observability:** the AC-6 missing-asset console warning should be promoted to real structured logging once Phase 3 monitoring (§34.2) exists, so gaps in asset coverage are visible without opening dev tools.
+
+---
+
+## 10. Implementation notes
+
+- The `applyMode` dispatch itself (`frontend/src/lib/showroom/applyModeDispatch.ts`) already existed from Spec 6; this spec is its first consumer where `applyMode` genuinely varies *within* one category (Sport Exhaust is `MESH_VISIBILITY` while its `ACCESSORY` siblings stay `MATERIAL_SWAP`). No new dispatch logic was needed — the §6 test plan's second row (`applyModeDispatch.test.ts`) was already covered by Spec 6; this spec's dispatch-specific coverage instead lives in `frontend/tests/showroom/accessoryAppearance.test.ts`, which exercises the dispatch through the accessory-specific resolver (mapped visuals, unmapped AC-6 warn path, multiple-simultaneous AC-5).
+- Panel component: `MultiCategoryOptionRow.tsx` (new, alongside Spec 6/7's `CategoryOptionRow.tsx`) is the one new shared piece — it reuses the existing `CategoryGroup`/`OptionSwatch` components unchanged.
+- `categoryLabels.ts` was widened from `Record<SingleSelectCategory, string>` to `Record<OptionCategory, string>` so both single- and multi-select panels share one label source.
+- Verification: 75/75 frontend unit tests pass (including new coverage in `configurationStore.test.ts`, `accessoryAppearance.test.ts`, `AccessoriesPanel.test.tsx`), 10/10 backend integration tests pass unaffected, and all 16 Playwright e2e tests pass including the 4 new `accessories-packages.spec.ts` cases (AC-2 through AC-6). Manual browser verification confirmed price sums correctly across simultaneous toggles, independent toggle state, and a zero-console-error unmapped-accessory path.

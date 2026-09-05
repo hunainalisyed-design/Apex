@@ -2,11 +2,13 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AccessoriesPanel } from "@/components/configurator/AccessoriesPanel/AccessoriesPanel";
 import { ExteriorPanel } from "@/components/configurator/ExteriorPanel/ExteriorPanel";
 import { InteriorPanel } from "@/components/configurator/InteriorPanel/InteriorPanel";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { formatPriceCents } from "@/lib/format/currency";
 import { calculatePrice } from "@/lib/pricing";
+import { resolveAccessoryAppearance } from "@/lib/showroom/accessoryAppearance";
 import type { CameraPresetId } from "@/lib/showroom/cameraPresets";
 import { resolveExteriorAppearance } from "@/lib/showroom/exteriorAppearance";
 import { resolveInteriorAppearance } from "@/lib/showroom/interiorAppearance";
@@ -27,7 +29,13 @@ const ShowroomScene = dynamic(() => import("./ShowroomScene").then((m) => m.Show
 
 const BRAKE_PULSE_MS = 900;
 
-type ConfiguratorTab = "exterior" | "interior";
+type ConfiguratorTab = "exterior" | "interior" | "accessories";
+
+const TAB_LABELS: Record<ConfiguratorTab, string> = {
+  exterior: "Exterior",
+  interior: "Interior",
+  accessories: "Accessories",
+};
 
 function isSingleSelectCategory(category: OptionCategory): category is SingleSelectCategory {
   return (SINGLE_SELECT_CATEGORIES as readonly OptionCategory[]).includes(category);
@@ -96,6 +104,11 @@ export function ConfigureShowroom({ vehicle }: ConfigureShowroomProps) {
     [vehicle, singleSelections],
   );
 
+  const accessories = useMemo(
+    () => resolveAccessoryAppearance(vehicle, multiSelections, appearance.paintColor),
+    [vehicle, multiSelections, appearance.paintColor],
+  );
+
   const totalPriceCents = useMemo(() => {
     const allOptions = Object.values(vehicle.options).flat();
     try {
@@ -138,6 +151,7 @@ export function ConfigureShowroom({ vehicle }: ConfigureShowroomProps) {
               reducedMotion={reducedMotion}
               appearance={appearance}
               interior={interior}
+              accessories={accessories}
               onReady={handleReady}
               onPresetChange={setCurrentPreset}
               onHover={setHover}
@@ -177,7 +191,7 @@ export function ConfigureShowroom({ vehicle }: ConfigureShowroomProps) {
 
       <div className="flex w-full max-w-sm flex-col gap-3">
         <div className="glass-panel flex gap-1 rounded-full p-1" role="tablist" aria-label="Customization panel">
-          {(["exterior", "interior"] as const).map((tab) => (
+          {(["exterior", "interior", "accessories"] as const).map((tab) => (
             <button
               key={tab}
               type="button"
@@ -188,16 +202,14 @@ export function ConfigureShowroom({ vehicle }: ConfigureShowroomProps) {
                 activeTab === tab ? "bg-white text-black" : "text-white/70 hover:bg-white/10 hover:text-white"
               }`}
             >
-              {tab === "exterior" ? "Exterior" : "Interior"}
+              {TAB_LABELS[tab]}
             </button>
           ))}
         </div>
 
-        {activeTab === "exterior" ? (
-          <ExteriorPanel vehicle={vehicle} />
-        ) : (
-          <InteriorPanel vehicle={vehicle} />
-        )}
+        {activeTab === "exterior" && <ExteriorPanel vehicle={vehicle} />}
+        {activeTab === "interior" && <InteriorPanel vehicle={vehicle} />}
+        {activeTab === "accessories" && <AccessoriesPanel vehicle={vehicle} />}
       </div>
     </main>
   );
