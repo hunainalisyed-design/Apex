@@ -3,6 +3,8 @@
 import { useMemo, type ReactNode } from "react";
 import type { ThreeEvent } from "@react-three/fiber";
 import { getBrakeLightEmissive, getHeadlightEmissive } from "@/lib/showroom/lighting";
+import type { InteriorAppearance } from "@/lib/showroom/interiorAppearance";
+import type { ThreeMaterialParams } from "@/lib/showroom/interiorMaterial";
 
 export interface HoveredMesh {
   meshName: string;
@@ -29,6 +31,12 @@ export interface PlaceholderShowroomRigProps {
   rearAccessoryVisible: boolean;
   bodyPackageVisible: boolean;
   carbonComponentVisible: boolean;
+
+  // Interior customization (Spec 7) — resolved by lib/showroom/interiorAppearance.ts.
+  // Passed as one bundle rather than ~16 flat props (5 surfaces x color/roughness/metalness
+  // + lighting color) — the individual-props convention above stays reasonable at this size,
+  // this one wouldn't.
+  interior: InteriorAppearance;
 }
 
 const WHEEL_POSITIONS: Array<{ name: string; position: [number, number, number] }> = [
@@ -89,7 +97,21 @@ function HoverablePart({ name, position, rotation, visible, onHoverMesh, childre
   );
 }
 
-function Door({ side, openAmount }: { side: "left" | "right"; openAmount: number }) {
+function SurfaceMaterial({ material }: { material: ThreeMaterialParams }) {
+  return (
+    <meshStandardMaterial color={material.color} roughness={material.roughness} metalness={material.metalness} />
+  );
+}
+
+function Door({
+  side,
+  openAmount,
+  doorPanelMaterial,
+}: {
+  side: "left" | "right";
+  openAmount: number;
+  doorPanelMaterial: ThreeMaterialParams;
+}) {
   const sign = side === "left" ? 1 : -1;
   const hingeZ = 0.55 * sign;
 
@@ -98,6 +120,11 @@ function Door({ side, openAmount }: { side: "left" | "right"; openAmount: number
       <mesh name={`door_${side}`} position={[-0.55, 0, 0.02 * sign]}>
         <boxGeometry args={[1.1, 0.42, 0.06]} />
         <meshStandardMaterial color="#d4d4d8" metalness={0.6} roughness={0.3} />
+      </mesh>
+      {/* interior door-panel trim (Spec 7) — the cabin-facing side, moves with the door */}
+      <mesh name={`door_panel_trim_${side}`} position={[-0.5, 0, -0.015 * sign]}>
+        <boxGeometry args={[0.9, 0.28, 0.02]} />
+        <SurfaceMaterial material={doorPanelMaterial} />
       </mesh>
     </group>
   );
@@ -118,6 +145,7 @@ export function PlaceholderShowroomRig({
   rearAccessoryVisible,
   bodyPackageVisible,
   carbonComponentVisible,
+  interior,
 }: PlaceholderShowroomRigProps) {
   const headlight = useMemo(() => getHeadlightEmissive(headlightsOn), [headlightsOn]);
   const brakelight = useMemo(() => getBrakeLightEmissive(brakePulsing), [brakePulsing]);
@@ -130,15 +158,16 @@ export function PlaceholderShowroomRig({
         <meshStandardMaterial color={paintColor} metalness={0.6} roughness={0.3} />
       </HoverablePart>
 
-      {/* cabin */}
-      <mesh position={[-0.15, 0.68, 0]} castShadow>
-        <boxGeometry args={[1.2, 0.4, 0.95]} />
+      {/* lower cabin structure, below the beltline (opaque — matches a real car's
+          door/rocker panels; the glass greenhouse above it is where the interior shows) */}
+      <mesh position={[-0.15, 0.56, 0]} castShadow>
+        <boxGeometry args={[1.2, 0.16, 0.95]} />
         <meshStandardMaterial color="#0a0a0c" metalness={0.4} roughness={0.2} />
       </mesh>
 
-      {/* glass — window tint (Spec 6, AC-6) */}
-      <mesh position={[-0.15, 0.7, 0]}>
-        <boxGeometry args={[1.24, 0.36, 0.99]} />
+      {/* glass greenhouse, above the beltline — window tint (Spec 6, AC-6) */}
+      <mesh position={[-0.15, 0.78, 0]}>
+        <boxGeometry args={[1.24, 0.28, 0.99]} />
         <meshPhysicalMaterial
           color="#1a2530"
           transparent
@@ -146,6 +175,46 @@ export function PlaceholderShowroomRig({
           roughness={0.05}
           metalness={0}
         />
+      </mesh>
+
+      {/* interior surfaces (Spec 7) — positioned so their upper portions read through the
+          glass above; grade+color are pre-combined into each material by
+          lib/showroom/interiorAppearance.ts */}
+      <mesh name="floor" position={[-0.15, 0.485, 0]}>
+        <boxGeometry args={[1.1, 0.03, 0.85]} />
+        <SurfaceMaterial material={interior.floor} />
+      </mesh>
+
+      <mesh name="dashboard" position={[0.32, 0.7, 0]}>
+        <boxGeometry args={[0.12, 0.22, 0.85]} />
+        <SurfaceMaterial material={interior.dashboard} />
+      </mesh>
+
+      <mesh
+        name="steering_wheel"
+        position={[0.22, 0.75, 0.15]}
+        rotation={[0, Math.PI / 2, 0]}
+      >
+        <torusGeometry args={[0.12, 0.02, 12, 24]} />
+        <SurfaceMaterial material={interior.steeringWheel} />
+      </mesh>
+
+      <group name="seat">
+        <mesh position={[-0.4, 0.56, 0]}>
+          <boxGeometry args={[0.35, 0.14, 0.75]} />
+          <SurfaceMaterial material={interior.seat} />
+        </mesh>
+        <mesh position={[-0.56, 0.72, 0]} rotation={[0.15, 0, 0]}>
+          <boxGeometry args={[0.32, 0.36, 0.7]} />
+          <SurfaceMaterial material={interior.seat} />
+        </mesh>
+      </group>
+
+      {/* interior lighting (Spec 7, AC-4) — real ambient light + emissive trim strip */}
+      <pointLight position={[-0.15, 0.84, 0]} color={interior.lightingColor} intensity={0.5} distance={1.4} />
+      <mesh position={[-0.15, 0.86, 0]}>
+        <boxGeometry args={[0.9, 0.02, 0.05]} />
+        <meshStandardMaterial color="#111111" emissive={interior.lightingColor} emissiveIntensity={1.5} />
       </mesh>
 
       {WHEEL_POSITIONS.map(({ name, position }) => (
@@ -173,8 +242,8 @@ export function PlaceholderShowroomRig({
         </HoverablePart>
       ))}
 
-      <Door side="left" openAmount={doorOpenAmount} />
-      <Door side="right" openAmount={doorOpenAmount} />
+      <Door side="left" openAmount={doorOpenAmount} doorPanelMaterial={interior.doorPanel} />
+      <Door side="right" openAmount={doorOpenAmount} doorPanelMaterial={interior.doorPanel} />
 
       {/* spoiler — struts + wing (Spec 6, AC-7) */}
       <group visible={spoilerVisible}>

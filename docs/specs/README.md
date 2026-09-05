@@ -25,7 +25,7 @@ Status values: **Backlog** (not yet spec'd) → **Draft** → **Approved** → *
 | 4 | `04-landing-page.md` | §3 | Implemented |
 | 5 | `05-3d-showroom-core.md` | §4, §5 | Implemented |
 | 6 | `06-exterior-customization.md` | §7, §8, §9 | Implemented |
-| 7 | `07-interior-customization.md` | §10 | Approved |
+| 7 | `07-interior-customization.md` | §10 | Implemented |
 | 8 | `08-accessories-packages.md` | §11 | Approved |
 | 9 | `09-build-summary.md` | §17 | Approved |
 | 10 | `10-save-share-configuration.md` | §18 | Approved |

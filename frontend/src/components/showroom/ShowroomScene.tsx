@@ -11,6 +11,7 @@ import { SHOWROOM_CAMERA_BOUNDS } from "@/lib/showroom/camera";
 import { getCameraPreset, type CameraPresetId } from "@/lib/showroom/cameraPresets";
 import { findHotspot } from "@/lib/showroom/hotspots";
 import { DEFAULT_EXTERIOR_APPEARANCE, type ExteriorAppearance } from "@/lib/showroom/exteriorAppearance";
+import { DEFAULT_INTERIOR_APPEARANCE, type InteriorAppearance } from "@/lib/showroom/interiorAppearance";
 import type { OptionCategory } from "@/types/catalog";
 
 export interface HoverLabel {
@@ -24,6 +25,7 @@ interface ShowroomRigProps {
   brakePulsing: boolean;
   reducedMotion: boolean;
   appearance: ExteriorAppearance;
+  interior: InteriorAppearance;
   onReady: (goToPreset: (id: CameraPresetId) => void) => void;
   onPresetChange: (id: CameraPresetId) => void;
   onHover: (hover: HoverLabel | null) => void;
@@ -34,6 +36,7 @@ function ShowroomRig({
   brakePulsing,
   reducedMotion,
   appearance,
+  interior,
   onReady,
   onPresetChange,
   onHover,
@@ -81,6 +84,7 @@ function ShowroomRig({
         headlightsOn={headlightsOn}
         brakePulsing={brakePulsing}
         onHoverMesh={handleHoverMesh}
+        interior={interior}
         {...appearance}
       />
       <OrbitControls
@@ -101,6 +105,7 @@ export interface ShowroomSceneProps {
   brakePulsing: boolean;
   reducedMotion: boolean;
   appearance?: ExteriorAppearance;
+  interior?: InteriorAppearance;
   onReady: (goToPreset: (id: CameraPresetId) => void) => void;
   onPresetChange: (id: CameraPresetId) => void;
   onHover: (hover: HoverLabel | null) => void;
@@ -108,6 +113,7 @@ export interface ShowroomSceneProps {
 
 export function ShowroomScene({
   appearance = DEFAULT_EXTERIOR_APPEARANCE,
+  interior = DEFAULT_INTERIOR_APPEARANCE,
   ...props
 }: ShowroomSceneProps) {
   const defaultPreset = getCameraPreset("default");
@@ -121,7 +127,7 @@ export function ShowroomScene({
       dpr={[1, 2]}
       gl={{ antialias: true }}
     >
-      <ShowroomRig {...props} appearance={appearance} />
+      <ShowroomRig {...props} appearance={appearance} interior={interior} />
     </Canvas>
   );
 }

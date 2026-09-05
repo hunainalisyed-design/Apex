@@ -1,4 +1,5 @@
 import { resolveAppearance } from "./applyModeDispatch";
+import { findSelectedOption } from "./selectedOption";
 import type { CustomizationOptionDto, VehicleDetailDto } from "@/types/catalog";
 import type { SingleSelectCategory } from "@/types/pricing";
 
@@ -27,15 +28,6 @@ export const DEFAULT_EXTERIOR_APPEARANCE: ExteriorAppearance = {
   bodyPackageVisible: false,
   carbonComponentVisible: false,
 };
-
-function findSelectedOption(
-  vehicle: VehicleDetailDto,
-  category: SingleSelectCategory,
-  optionId: string | undefined,
-): CustomizationOptionDto | undefined {
-  const options = vehicle.options[category] ?? [];
-  return options.find((o) => o.id === optionId) ?? options.find((o) => o.isDefault);
-}
 
 function tintOpacityFor(option: CustomizationOptionDto | undefined): number {
   if (!option) return DEFAULT_EXTERIOR_APPEARANCE.windowTintOpacity;

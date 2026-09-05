@@ -3,11 +3,13 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ExteriorPanel } from "@/components/configurator/ExteriorPanel/ExteriorPanel";
+import { InteriorPanel } from "@/components/configurator/InteriorPanel/InteriorPanel";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { formatPriceCents } from "@/lib/format/currency";
 import { calculatePrice } from "@/lib/pricing";
 import type { CameraPresetId } from "@/lib/showroom/cameraPresets";
 import { resolveExteriorAppearance } from "@/lib/showroom/exteriorAppearance";
+import { resolveInteriorAppearance } from "@/lib/showroom/interiorAppearance";
 import { useConfigurationStore } from "@/state/configurationStore";
 import { SINGLE_SELECT_CATEGORIES, type OptionCategory, type VehicleDetailDto } from "@/types/catalog";
 import type { SingleSelectCategory } from "@/types/pricing";
@@ -25,6 +27,8 @@ const ShowroomScene = dynamic(() => import("./ShowroomScene").then((m) => m.Show
 
 const BRAKE_PULSE_MS = 900;
 
+type ConfiguratorTab = "exterior" | "interior";
+
 function isSingleSelectCategory(category: OptionCategory): category is SingleSelectCategory {
   return (SINGLE_SELECT_CATEGORIES as readonly OptionCategory[]).includes(category);
 }
@@ -35,6 +39,7 @@ export interface ConfigureShowroomProps {
 
 export function ConfigureShowroom({ vehicle }: ConfigureShowroomProps) {
   const reducedMotion = useReducedMotion();
+  const [activeTab, setActiveTab] = useState<ConfiguratorTab>("exterior");
   const [currentPreset, setCurrentPreset] = useState<CameraPresetId>("default");
   const [hover, setHover] = useState<HoverLabel | null>(null);
   const [headlightsOn, setHeadlightsOn] = useState(false);
@@ -63,6 +68,19 @@ export function ConfigureShowroom({ vehicle }: ConfigureShowroomProps) {
     goToPresetRef.current?.(id);
   }, []);
 
+  // Opening the Interior tab auto-transitions the camera to the Interior preset unless
+  // it's already showing an interior view (Spec 7 AC-5). Switching tabs never touches the
+  // configuration store, so selections persist across tab/camera changes for free (AC-6).
+  const handleSelectTab = useCallback(
+    (tab: ConfiguratorTab) => {
+      setActiveTab(tab);
+      if (tab === "interior" && currentPreset !== "interior" && currentPreset !== "cockpit") {
+        goToPresetRef.current?.("interior");
+      }
+    },
+    [currentPreset],
+  );
+
   const handlePulseBrakeLights = useCallback(() => {
     setBrakePulsing(true);
     setTimeout(() => setBrakePulsing(false), BRAKE_PULSE_MS);
@@ -71,6 +89,11 @@ export function ConfigureShowroom({ vehicle }: ConfigureShowroomProps) {
   const appearance = useMemo(
     () => resolveExteriorAppearance(vehicle, singleSelections, customPaintHex),
     [vehicle, singleSelections, customPaintHex],
+  );
+
+  const interior = useMemo(
+    () => resolveInteriorAppearance(vehicle, singleSelections),
+    [vehicle, singleSelections],
   );
 
   const totalPriceCents = useMemo(() => {
@@ -114,6 +137,7 @@ export function ConfigureShowroom({ vehicle }: ConfigureShowroomProps) {
               brakePulsing={brakePulsing}
               reducedMotion={reducedMotion}
               appearance={appearance}
+              interior={interior}
               onReady={handleReady}
               onPresetChange={setCurrentPreset}
               onHover={setHover}
@@ -151,8 +175,29 @@ export function ConfigureShowroom({ vehicle }: ConfigureShowroomProps) {
         )}
       </div>
 
-      <div className="w-full max-w-sm">
-        <ExteriorPanel vehicle={vehicle} />
+      <div className="flex w-full max-w-sm flex-col gap-3">
+        <div className="glass-panel flex gap-1 rounded-full p-1" role="tablist" aria-label="Customization panel">
+          {(["exterior", "interior"] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab}
+              onClick={() => handleSelectTab(tab)}
+              className={`flex-1 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
+                activeTab === tab ? "bg-white text-black" : "text-white/70 hover:bg-white/10 hover:text-white"
+              }`}
+            >
+              {tab === "exterior" ? "Exterior" : "Interior"}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === "exterior" ? (
+          <ExteriorPanel vehicle={vehicle} />
+        ) : (
+          <InteriorPanel vehicle={vehicle} />
+        )}
       </div>
     </main>
   );

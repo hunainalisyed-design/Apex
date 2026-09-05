@@ -1,7 +1,7 @@
 # Spec: Interior Customization
 
 **File:** `docs/specs/07-interior-customization.md`
-**Status:** Approved
+**Status:** Implemented
 **Author:** Syed Hunain Raza
 **Reviewer:** hunainalisyed@gmail.com
 **Related:** SRS §10 (Interior Configurator — all seven items); depends on `02-vehicle-catalog-data-model.md` (7 interior categories), `03-dynamic-pricing-engine.md`, `05-3d-showroom-core.md`, `06-exterior-customization.md` (canonical configuration store)
@@ -121,6 +121,8 @@ Also specify:
 
 **Not covered, deliberately:** visual regression across every grade × color combination — spot-checked manually, consistent with Spec 6's approach.
 
+**Implementation notes:** `composeInteriorMaterial` takes a resolved hex color directly (`colorHex: string`) rather than this spec's illustrative `colorAssetRef: string` — consistent with how Spec 6's `resolveAppearance` already reads `swatchColor` for `MATERIAL_SWAP` categories, reusing that convention rather than introducing a new one. The `CATEGORY_LABELS` map (swatch/group labels, matching this spec's own aria-label examples like "Seats: Burgundy") was extracted from Spec 6's `ExteriorPanel` into a shared `frontend/src/components/configurator/categoryLabels.ts`, along with `CategoryGroup`/`OptionSwatch`/`CategoryOptionRow`, since `InteriorPanel` needed the identical rendering pattern.
+
 ---
 
 ## 7. Out of scope
@@ -135,8 +137,8 @@ Also specify:
 
 | # | Risk / question | Owner | Resolution |
 |---|---|---|---|
-| 1 | Same placeholder-asset dependency as prior specs — the chosen GLB must expose five separately addressable interior surface meshes (seats, dashboard, steering wheel, door panels, floor), each able to take an independently parameterized material (grade + color), rather than one shared material for the whole interior. This is a stronger asset requirement than the single coordinated-theme design this spec originally used before Spec 2's catalog review (superseded). | Product owner | Open — blocking, same resolution as Spec 2 Risk #1, now with the added constraint that the five surfaces must be separable in the GLB, not just visually grouped. |
-| 2 | Combining a grade (texture) and a color (tint) into one material per surface (`composeInteriorMaterial`) is more complex than a flat material swap — worth confirming the chosen 3D asset pipeline (e.g. Three.js `MeshStandardMaterial` with a base color multiplied over a grade's texture map) actually supports this cleanly before implementation. | Implementer | Open — a technical spike during implementation, not a product decision; flagged so it isn't discovered late. |
+| 1 | Same placeholder-asset dependency as prior specs — the chosen GLB must expose five separately addressable interior surface meshes (seats, dashboard, steering wheel, door panels, floor), each able to take an independently parameterized material (grade + color), rather than one shared material for the whole interior. This is a stronger asset requirement than the single coordinated-theme design this spec originally used before Spec 2's catalog review (superseded). | Product owner | Resolved for Phase 1 implementation — this was the biggest placeholder-rig extension yet (Specs 4/5/6 established the pattern). The rig's "cabin" was split into an opaque lower structure (below the beltline) and the existing glass greenhouse above it, then five real named interior meshes (seat, dashboard, steering wheel, two door-panel trims, floor) were added inside, positioned so their upper portions read through the glass — and the Interior/Cockpit camera presets (Spec 5) were re-aimed to actually frame them, replacing Spec 5's door-only framing (there was nothing inside to look at at that point). All five surfaces are genuinely separately addressable and independently parameterized. The real GLB decision from Spec 2 Risk #1 is still open; evaluate at the start of Spec 8 whether the rig keeps stretching. |
+| 2 | Combining a grade (texture) and a color (tint) into one material per surface (`composeInteriorMaterial`) is more complex than a flat material swap — worth confirming the chosen 3D asset pipeline (e.g. Three.js `MeshStandardMaterial` with a base color multiplied over a grade's texture map) actually supports this cleanly before implementation. | Implementer | Resolved — no production texture/grain assets exist (same constraint as Risk #1), so grade is expressed through material properties (`roughness`/`metalness`) rather than a texture map, combined with the surface's own color as the material's base `color`. `composeInteriorMaterial(gradeAssetRef, colorHex)` is a pure function, so grade/color independence (AC-2/AC-3) holds structurally — verified both by unit test and visually (recoloring the seats leaves the dashboard's own color untouched). Revisit with real texture maps once a real GLB exists. |
 
 ---
 

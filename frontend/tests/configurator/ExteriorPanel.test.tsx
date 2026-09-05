@@ -93,7 +93,8 @@ describe("ExteriorPanel", () => {
   it("does not render interior or multi-select categories", () => {
     render(<ExteriorPanel vehicle={vehicle} />);
 
-    expect(screen.queryByText("Interior Material")).not.toBeInTheDocument();
+    expect(screen.queryByText("Overall Finish")).not.toBeInTheDocument();
+    expect(screen.queryByText("Seats")).not.toBeInTheDocument();
   });
 
   it("marks the currently selected option for each category (AC-1)", () => {
