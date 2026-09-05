@@ -6,6 +6,7 @@ import { getBrakeLightEmissive, getHeadlightEmissive } from "@/lib/showroom/ligh
 import type { AccessoryAppearance } from "@/lib/showroom/accessoryAppearance";
 import type { InteriorAppearance } from "@/lib/showroom/interiorAppearance";
 import type { ThreeMaterialParams } from "@/lib/showroom/interiorMaterial";
+import { useCarModelGeometry, type CarModelNodeName } from "./CarModel";
 
 export interface HoveredMesh {
   meshName: string;
@@ -41,16 +42,44 @@ export interface PlaceholderShowroomRigProps {
 
   // Accessories/packages (Spec 8) — resolved by lib/showroom/accessoryAppearance.ts.
   accessories: AccessoryAppearance;
+
+  // Real body/wheel/spoiler geometry (Kenney "Car Kit" CC0 asset, see
+  // frontend/public/models/shared/CREDITS.md) — a per-vehicle GLB URL.
+  modelUrl: string;
 }
 
-const WHEEL_POSITIONS: Array<{ name: string; position: [number, number, number] }> = [
-  { name: "wheel_fl", position: [0.85, 0, 0.6] },
-  { name: "wheel_fr", position: [0.85, 0, -0.6] },
-  { name: "wheel_rl", position: [-0.85, 0, 0.6] },
-  { name: "wheel_rr", position: [-0.85, 0, -0.6] },
+const DOOR_HINGE_ANGLE = 1.1; // radians, ~63deg open
+
+// The Kenney sedan-sports.glb's length axis is the file's own Z, but this rig's camera
+// presets/hotspots/door-left-right conventions all assume length runs along X — this
+// rotation reconciles the two. Verified against the Front/Left/Right camera presets;
+// flip the sign if a preset shows the wrong end/side of the car.
+const MODEL_ROTATION: [number, number, number] = [0, Math.PI / 2, 0];
+
+// Raw node translations read directly from the source glTF (frontend/public/models/shared/
+// sedan-sports.glb) — left in the asset's own (unrotated) local space since they live
+// inside the MODEL_ROTATION group below, which reorients the whole subtree consistently.
+const BODY_LOCAL_POSITION: [number, number, number] = [0, 0.15, -0.025];
+// spoiler is a child of body in the source file, so its position here is body's own
+// translation plus spoiler's local translation, composed in the source's local space.
+const SPOILER_LOCAL_POSITION: [number, number, number] = [0, 0.6, -1.0687];
+
+const REAL_WHEELS: Array<{ name: string; node: CarModelNodeName; position: [number, number, number] }> = [
+  { name: "wheel_fl", node: "wheel-front-left", position: [0.3, 0.3, 0.66] },
+  { name: "wheel_fr", node: "wheel-front-right", position: [-0.3, 0.3, 0.66] },
+  { name: "wheel_rl", node: "wheel-back-left", position: [0.3, 0.3, -0.66] },
+  { name: "wheel_rr", node: "wheel-back-right", position: [-0.3, 0.3, -0.66] },
 ];
 
-const DOOR_HINGE_ANGLE = 1.1; // radians, ~63deg open
+// Same 4 wheels' positions, pre-rotated by MODEL_ROTATION into the rig's outer (unrotated)
+// coordinate frame — used by the procedural brake calipers, which sit outside the
+// MODEL_ROTATION group (they're not part of the real asset).
+const CALIPER_POSITIONS: Array<{ name: string; position: [number, number, number] }> = [
+  { name: "wheel_fl", position: [0.66, 0.3, -0.3] },
+  { name: "wheel_fr", position: [0.66, 0.3, 0.3] },
+  { name: "wheel_rl", position: [-0.66, 0.3, -0.3] },
+  { name: "wheel_rr", position: [-0.66, 0.3, 0.3] },
+];
 
 const WHEEL_STYLE_MATERIAL: Record<string, { color: string; metalness: number; roughness: number }> = {
   "wheel-standard": { color: "#111114", metalness: 0.2, roughness: 0.6 },
@@ -117,12 +146,12 @@ function Door({
   doorPanelMaterial: ThreeMaterialParams;
 }) {
   const sign = side === "left" ? 1 : -1;
-  const hingeZ = 0.55 * sign;
+  const hingeZ = 0.58 * sign;
 
   return (
-    <group position={[0.1, 0.35, hingeZ]} rotation={[0, sign * DOOR_HINGE_ANGLE * openAmount, 0]}>
-      <mesh name={`door_${side}`} position={[-0.55, 0, 0.02 * sign]}>
-        <boxGeometry args={[1.1, 0.42, 0.06]} />
+    <group position={[0.55, 0.55, hingeZ]} rotation={[0, sign * DOOR_HINGE_ANGLE * openAmount, 0]}>
+      <mesh name={`door_${side}`} position={[-0.55, 0, 0]}>
+        <boxGeometry args={[1.0, 0.42, 0.04]} />
         <meshStandardMaterial color="#d4d4d8" metalness={0.6} roughness={0.3} />
       </mesh>
       {/* interior door-panel trim (Spec 7) — the cabin-facing side, moves with the door */}
@@ -151,28 +180,58 @@ export function PlaceholderShowroomRig({
   carbonComponentVisible,
   interior,
   accessories,
+  modelUrl,
 }: PlaceholderShowroomRigProps) {
   const headlight = useMemo(() => getHeadlightEmissive(headlightsOn), [headlightsOn]);
   const brakelight = useMemo(() => getBrakeLightEmissive(brakePulsing), [brakePulsing]);
   const wheelMaterial = useMemo(() => wheelMaterialFor(wheelStyle), [wheelStyle]);
 
+  const bodyGeometry = useCarModelGeometry(modelUrl, "body");
+  const spoilerGeometry = useCarModelGeometry(modelUrl, "spoiler");
+  const wheelGeometryByNode: Record<CarModelNodeName, ReturnType<typeof useCarModelGeometry>> = {
+    body: bodyGeometry,
+    spoiler: spoilerGeometry,
+    "wheel-front-left": useCarModelGeometry(modelUrl, "wheel-front-left"),
+    "wheel-front-right": useCarModelGeometry(modelUrl, "wheel-front-right"),
+    "wheel-back-left": useCarModelGeometry(modelUrl, "wheel-back-left"),
+    "wheel-back-right": useCarModelGeometry(modelUrl, "wheel-back-right"),
+  };
+
   return (
     <group position={[0, -0.3, 0]}>
-      <HoverablePart name="body" position={[0, 0.3, 0]} onHoverMesh={onHoverMesh}>
-        <boxGeometry args={[2.4, 0.5, 1.1]} />
-        <meshStandardMaterial color={paintColor} metalness={0.6} roughness={0.3} />
-      </HoverablePart>
+      {/* Real body/wheel/spoiler geometry (Kenney "Car Kit," CC0 — see
+          frontend/public/models/shared/CREDITS.md). Rotated once as a group since the
+          source asset's length axis doesn't match this rig's X-forward convention. */}
+      <group rotation={MODEL_ROTATION}>
+        <HoverablePart name="body" position={BODY_LOCAL_POSITION} onHoverMesh={onHoverMesh}>
+          <primitive object={bodyGeometry} attach="geometry" />
+          <meshStandardMaterial color={paintColor} metalness={0.6} roughness={0.3} />
+        </HoverablePart>
 
-      {/* lower cabin structure, below the beltline (opaque — matches a real car's
-          door/rocker panels; the glass greenhouse above it is where the interior shows) */}
-      <mesh position={[-0.15, 0.56, 0]} castShadow>
-        <boxGeometry args={[1.2, 0.16, 0.95]} />
-        <meshStandardMaterial color="#0a0a0c" metalness={0.4} roughness={0.2} />
-      </mesh>
+        {REAL_WHEELS.map(({ name, node, position }) => (
+          <HoverablePart key={name} name={name} position={position} onHoverMesh={onHoverMesh}>
+            <primitive object={wheelGeometryByNode[node]} attach="geometry" />
+            <meshStandardMaterial
+              color={wheelMaterial.color}
+              metalness={wheelMaterial.metalness}
+              roughness={wheelMaterial.roughness}
+            />
+          </HoverablePart>
+        ))}
 
-      {/* glass greenhouse, above the beltline — window tint (Spec 6, AC-6) */}
-      <mesh position={[-0.15, 0.78, 0]}>
-        <boxGeometry args={[1.24, 0.28, 0.99]} />
+        <group visible={spoilerVisible}>
+          <mesh position={SPOILER_LOCAL_POSITION} castShadow>
+            <primitive object={spoilerGeometry} attach="geometry" />
+            <meshStandardMaterial color={spoilerColor} metalness={0.4} roughness={0.3} />
+          </mesh>
+        </group>
+      </group>
+
+      {/* glass greenhouse, sitting in the upper portion of the real body — window tint
+          (Spec 6, AC-6). Repositioned from its old placeholder-body-relative offsets;
+          exact fit is tuned visually, not computed from the asset's bounding box alone. */}
+      <mesh position={[-0.05, 0.85, 0]}>
+        <boxGeometry args={[1.05, 0.22, 0.6]} />
         <meshPhysicalMaterial
           color="#1a2530"
           transparent
@@ -185,19 +244,19 @@ export function PlaceholderShowroomRig({
       {/* interior surfaces (Spec 7) — positioned so their upper portions read through the
           glass above; grade+color are pre-combined into each material by
           lib/showroom/interiorAppearance.ts */}
-      <mesh name="floor" position={[-0.15, 0.485, 0]}>
-        <boxGeometry args={[1.1, 0.03, 0.85]} />
+      <mesh name="floor" position={[-0.05, 0.25, 0]}>
+        <boxGeometry args={[1.05, 0.03, 0.5]} />
         <SurfaceMaterial material={interior.floor} />
       </mesh>
 
-      <mesh name="dashboard" position={[0.32, 0.7, 0]}>
-        <boxGeometry args={[0.12, 0.22, 0.85]} />
+      <mesh name="dashboard" position={[0.45, 0.85, 0]}>
+        <boxGeometry args={[0.12, 0.22, 0.5]} />
         <SurfaceMaterial material={interior.dashboard} />
       </mesh>
 
       <mesh
         name="steering_wheel"
-        position={[0.22, 0.75, 0.15]}
+        position={[0.35, 0.9, 0.15]}
         rotation={[0, Math.PI / 2, 0]}
       >
         <torusGeometry args={[0.12, 0.02, 12, 24]} />
@@ -205,36 +264,25 @@ export function PlaceholderShowroomRig({
       </mesh>
 
       <group name="seat">
-        <mesh position={[-0.4, 0.56, 0]}>
-          <boxGeometry args={[0.35, 0.14, 0.75]} />
+        <mesh position={[-0.3, 0.75, 0]}>
+          <boxGeometry args={[0.35, 0.14, 0.4]} />
           <SurfaceMaterial material={interior.seat} />
         </mesh>
-        <mesh position={[-0.56, 0.72, 0]} rotation={[0.15, 0, 0]}>
-          <boxGeometry args={[0.32, 0.36, 0.7]} />
+        <mesh position={[-0.46, 0.92, 0]} rotation={[0.15, 0, 0]}>
+          <boxGeometry args={[0.32, 0.36, 0.38]} />
           <SurfaceMaterial material={interior.seat} />
         </mesh>
       </group>
 
       {/* interior lighting (Spec 7, AC-4) — real ambient light + emissive trim strip */}
-      <pointLight position={[-0.15, 0.84, 0]} color={interior.lightingColor} intensity={0.5} distance={1.4} />
-      <mesh position={[-0.15, 0.86, 0]}>
+      <pointLight position={[-0.05, 1.0, 0]} color={interior.lightingColor} intensity={0.5} distance={1.4} />
+      <mesh position={[-0.05, 1.02, 0]}>
         <boxGeometry args={[0.9, 0.02, 0.05]} />
         <meshStandardMaterial color="#111111" emissive={interior.lightingColor} emissiveIntensity={1.5} />
       </mesh>
 
-      {WHEEL_POSITIONS.map(({ name, position }) => (
-        <HoverablePart key={name} name={name} position={position} rotation={[Math.PI / 2, 0, 0]} onHoverMesh={onHoverMesh}>
-          <cylinderGeometry args={[0.32, 0.32, 0.22, 24]} />
-          <meshStandardMaterial
-            color={wheelMaterial.color}
-            metalness={wheelMaterial.metalness}
-            roughness={wheelMaterial.roughness}
-          />
-        </HoverablePart>
-      ))}
-
-      {/* brake calipers, nested just inside each wheel */}
-      {WHEEL_POSITIONS.map(({ name, position }) => (
+      {/* brake calipers, nested just inside each real wheel */}
+      {CALIPER_POSITIONS.map(({ name, position }) => (
         <HoverablePart
           key={`caliper_${name}`}
           name={`caliper_${name}`}
@@ -250,45 +298,31 @@ export function PlaceholderShowroomRig({
       <Door side="left" openAmount={doorOpenAmount} doorPanelMaterial={interior.doorPanel} />
       <Door side="right" openAmount={doorOpenAmount} doorPanelMaterial={interior.doorPanel} />
 
-      {/* spoiler — struts + wing (Spec 6, AC-7) */}
-      <group visible={spoilerVisible}>
-        {[0.35, -0.35].map((z) => (
-          <mesh key={`spoiler-strut-${z}`} position={[-1.15, 0.62, z]}>
-            <boxGeometry args={[0.05, 0.22, 0.05]} />
-            <meshStandardMaterial color={spoilerColor} metalness={0.4} roughness={0.4} />
-          </mesh>
-        ))}
-        <mesh position={[-1.2, 0.74, 0]}>
-          <boxGeometry args={[0.28, 0.05, 1.0]} />
-          <meshStandardMaterial color={spoilerColor} metalness={0.4} roughness={0.3} />
-        </mesh>
-      </group>
-
       {/* front accessory — splitter (Spec 6, AC-8) */}
-      <mesh visible={frontAccessoryVisible} position={[1.25, 0.07, 0]}>
+      <mesh visible={frontAccessoryVisible} position={[1.28, 0.16, 0]}>
         <boxGeometry args={[0.12, 0.06, 1.15]} />
         <meshStandardMaterial color="#0a0a0c" metalness={0.3} roughness={0.5} />
       </mesh>
 
       {/* rear accessory — diffuser (Spec 6, AC-8) */}
-      <mesh visible={rearAccessoryVisible} position={[-1.25, 0.07, 0]}>
+      <mesh visible={rearAccessoryVisible} position={[-1.28, 0.16, 0]}>
         <boxGeometry args={[0.12, 0.06, 1.15]} />
         <meshStandardMaterial color="#0a0a0c" metalness={0.3} roughness={0.5} />
       </mesh>
 
       {/* body package — side skirts (Spec 6, AC-8) */}
       <group visible={bodyPackageVisible}>
-        {[0.58, -0.58].map((z) => (
-          <mesh key={`skirt-${z}`} position={[0, 0.12, z]}>
-            <boxGeometry args={[2.0, 0.08, 0.08]} />
+        {[0.65, -0.65].map((z) => (
+          <mesh key={`skirt-${z}`} position={[0, 0.2, z]}>
+            <boxGeometry args={[2.1, 0.08, 0.08]} />
             <meshStandardMaterial color={paintColor} metalness={0.6} roughness={0.3} />
           </mesh>
         ))}
       </group>
 
       {/* carbon component — roof trim accent (Spec 6, AC-8) */}
-      <mesh visible={carbonComponentVisible} position={[-0.15, 0.9, 0]}>
-        <boxGeometry args={[1.15, 0.02, 0.9]} />
+      <mesh visible={carbonComponentVisible} position={[-0.05, 1.05, 0]}>
+        <boxGeometry args={[1.15, 0.02, 0.55]} />
         <meshStandardMaterial color="#0d0d10" metalness={0.2} roughness={0.15} />
       </mesh>
 
@@ -296,15 +330,15 @@ export function PlaceholderShowroomRig({
           carbon-finished when the ACCESSORY "Carbon Roof" is active (Spec 8, AC-3) —
           intentionally a separate mesh from the CARBON_COMPONENT trim accent above, per
           Spec 2 Risk #4's "intentionally independent" resolution */}
-      <mesh name="roof" position={[-0.15, 0.93, 0]}>
-        <boxGeometry args={[1.22, 0.02, 0.97]} />
+      <mesh name="roof" position={[-0.05, 1.08, 0]}>
+        <boxGeometry args={[1.22, 0.02, 0.6]} />
         <meshStandardMaterial color={accessories.roofColor} metalness={0.6} roughness={0.3} />
       </mesh>
 
       {/* mirror caps — always present, same paint-color-by-default/carbon-when-active
           pattern as the roof (Spec 8, AC-3) */}
-      {[0.56, -0.56].map((z) => (
-        <mesh key={`mirror-${z}`} name={`mirror_${z > 0 ? "left" : "right"}`} position={[0.25, 0.62, z]}>
+      {[0.66, -0.66].map((z) => (
+        <mesh key={`mirror-${z}`} name={`mirror_${z > 0 ? "left" : "right"}`} position={[0.35, 0.78, z]}>
           <boxGeometry args={[0.04, 0.05, 0.12]} />
           <meshStandardMaterial color={accessories.mirrorCapsColor} metalness={0.5} roughness={0.3} />
         </mesh>
@@ -316,7 +350,7 @@ export function PlaceholderShowroomRig({
           key={`exhaust-${z}`}
           name={`exhaust_tip_${z > 0 ? "left" : "right"}`}
           visible={accessories.exhaustTipVisible}
-          position={[-1.22, 0.1, z]}
+          position={[-1.3, 0.18, z]}
           rotation={[0, 0, Math.PI / 2]}
         >
           <cylinderGeometry args={[0.045, 0.045, 0.12, 16]} />
@@ -326,7 +360,7 @@ export function PlaceholderShowroomRig({
 
       {/* headlights */}
       {[0.42, -0.42].map((z) => (
-        <mesh key={`headlight_${z}`} name={`headlight_${z}`} position={[1.18, 0.35, z]}>
+        <mesh key={`headlight_${z}`} name={`headlight_${z}`} position={[1.25, 0.45, z]}>
           <boxGeometry args={[0.05, 0.12, 0.28]} />
           <meshStandardMaterial
             color="#ffffff"
@@ -338,7 +372,7 @@ export function PlaceholderShowroomRig({
 
       {/* brake lights */}
       {[0.42, -0.42].map((z) => (
-        <mesh key={`brakelight_${z}`} name={`brakelight_${z}`} position={[-1.18, 0.35, z]}>
+        <mesh key={`brakelight_${z}`} name={`brakelight_${z}`} position={[-1.25, 0.45, z]}>
           <boxGeometry args={[0.05, 0.12, 0.28]} />
           <meshStandardMaterial
             color="#3a0a0c"

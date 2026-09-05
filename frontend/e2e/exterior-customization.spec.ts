@@ -47,22 +47,26 @@ test("the hotspot label reflects the newly selected wheel, not the previous one 
   expect(box).not.toBeNull();
 
   if (box) {
-    const candidates = [0.35, 0.4, 0.45, 0.55, 0.6, 0.65].map((fx) => ({
-      x: box.x + box.width * fx,
-      y: box.y + box.height * 0.68,
-    }));
+    const candidates = [0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65].flatMap((fx) =>
+      [0.6, 0.63, 0.66, 0.7].map((fy) => ({
+        x: box.x + box.width * fx,
+        y: box.y + box.height * fy,
+      })),
+    );
 
-    let sawLabel = false;
+    let sawWheelLabel = false;
     for (const point of candidates) {
       await page.mouse.move(point.x, point.y);
       const label = page.getByRole("status");
       if (await label.isVisible().catch(() => false)) {
-        await expect(label).toContainText("Sport Wheels");
-        sawLabel = true;
-        break;
+        const text = await label.textContent();
+        if (text?.includes("Sport Wheels")) {
+          sawWheelLabel = true;
+          break;
+        }
       }
     }
-    expect(sawLabel).toBe(true);
+    expect(sawWheelLabel).toBe(true);
   }
 });
 

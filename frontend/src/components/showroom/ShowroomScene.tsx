@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { OrbitControls, useGLTF } from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { Camera } from "three";
 import { PlaceholderShowroomRig, type HoveredMesh } from "./PlaceholderShowroomRig";
@@ -28,6 +28,7 @@ interface ShowroomRigProps {
   appearance: ExteriorAppearance;
   interior: InteriorAppearance;
   accessories: AccessoryAppearance;
+  modelUrl: string;
   onReady: (goToPreset: (id: CameraPresetId) => void) => void;
   onPresetChange: (id: CameraPresetId) => void;
   onHover: (hover: HoverLabel | null) => void;
@@ -40,6 +41,7 @@ function ShowroomRig({
   appearance,
   interior,
   accessories,
+  modelUrl,
   onReady,
   onPresetChange,
   onHover,
@@ -82,15 +84,21 @@ function ShowroomRig({
       <ambientLight intensity={0.55} />
       <directionalLight position={[4, 6, 5]} intensity={1.3} />
       <directionalLight position={[-4, 2, -5]} intensity={0.35} color="#3d6fe0" />
-      <PlaceholderShowroomRig
-        doorOpenAmount={doorOpenAmount}
-        headlightsOn={headlightsOn}
-        brakePulsing={brakePulsing}
-        onHoverMesh={handleHoverMesh}
-        interior={interior}
-        accessories={accessories}
-        {...appearance}
-      />
+      {/* useGLTF suspends while the real body/wheel/spoiler asset loads (Suspense
+          boundary added specifically for this, see useCarModelGeometry in CarModel.tsx) —
+          scoped to just the rig so lights/controls above render immediately. */}
+      <Suspense fallback={null}>
+        <PlaceholderShowroomRig
+          doorOpenAmount={doorOpenAmount}
+          headlightsOn={headlightsOn}
+          brakePulsing={brakePulsing}
+          onHoverMesh={handleHoverMesh}
+          interior={interior}
+          accessories={accessories}
+          modelUrl={modelUrl}
+          {...appearance}
+        />
+      </Suspense>
       <OrbitControls
         ref={controlsRef}
         enablePan={false}
@@ -111,6 +119,7 @@ export interface ShowroomSceneProps {
   appearance?: ExteriorAppearance;
   interior?: InteriorAppearance;
   accessories?: AccessoryAppearance;
+  modelUrl: string;
   onReady: (goToPreset: (id: CameraPresetId) => void) => void;
   onPresetChange: (id: CameraPresetId) => void;
   onHover: (hover: HoverLabel | null) => void;
@@ -120,9 +129,11 @@ export function ShowroomScene({
   appearance = DEFAULT_EXTERIOR_APPEARANCE,
   interior = DEFAULT_INTERIOR_APPEARANCE,
   accessories = DEFAULT_ACCESSORY_APPEARANCE,
+  modelUrl,
   ...props
 }: ShowroomSceneProps) {
   const defaultPreset = getCameraPreset("default");
+  useGLTF.preload(modelUrl);
 
   return (
     <Canvas
@@ -133,7 +144,7 @@ export function ShowroomScene({
       dpr={[1, 2]}
       gl={{ antialias: true }}
     >
-      <ShowroomRig {...props} appearance={appearance} interior={interior} accessories={accessories} />
+      <ShowroomRig {...props} appearance={appearance} interior={interior} accessories={accessories} modelUrl={modelUrl} />
     </Canvas>
   );
 }

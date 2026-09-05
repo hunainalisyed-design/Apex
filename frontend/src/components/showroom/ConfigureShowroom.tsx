@@ -152,6 +152,7 @@ export function ConfigureShowroom({ vehicle }: ConfigureShowroomProps) {
               appearance={appearance}
               interior={interior}
               accessories={accessories}
+              modelUrl={vehicle.showroomModelUrl}
               onReady={handleReady}
               onPresetChange={setCurrentPreset}
               onHover={setHover}
