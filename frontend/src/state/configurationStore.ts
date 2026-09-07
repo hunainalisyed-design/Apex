@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { MULTI_SELECT_CATEGORIES, SINGLE_SELECT_CATEGORIES } from "@/types/catalog";
 import type { VehicleDetailDto } from "@/types/catalog";
+import type { SavedConfigurationDto } from "@/types/configuration";
 import type { MultiSelectCategory, SingleSelectCategory } from "@/types/pricing";
 
 export function emptySingleSelections(): Record<SingleSelectCategory, string> {
@@ -51,6 +52,10 @@ export interface ConfigurationState {
   /** Hydrates every category from the vehicle's isDefault options — called on showroom
    * mount and on every reload (AC-10), never leaving a category empty/undefined. */
   hydrateDefaults: (vehicle: VehicleDetailDto) => void;
+  /** Hydrates from a previously saved configuration (Spec 10, AC-4) instead of vehicle
+   * defaults. Still computes and stores the vehicle's own defaults internally so reset()
+   * continues reverting to vehicle defaults, never back to this loaded build (AC-8). */
+  hydrateFromSaved: (vehicle: VehicleDetailDto, saved: SavedConfigurationDto) => void;
   reset: () => void;
 }
 
@@ -99,6 +104,16 @@ export const useConfigurationStore = create<ConfigurationState>((set) => {
         singleSelections: defaults.singleSelections,
         multiSelections: defaults.multiSelections,
         customPaintHex: null,
+      });
+    },
+
+    hydrateFromSaved: (vehicle, saved) => {
+      defaults = buildDefaultsFromVehicle(vehicle);
+      set({
+        vehicleSlug: vehicle.slug,
+        singleSelections: saved.singleSelections,
+        multiSelections: saved.multiSelections,
+        customPaintHex: saved.customPaintHex,
       });
     },
 

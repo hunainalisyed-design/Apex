@@ -1,7 +1,7 @@
 # Spec: Save / Load / Share Configuration (Guest Mode)
 
 **File:** `docs/specs/10-save-share-configuration.md`
-**Status:** Approved
+**Status:** Implemented
 **Author:** Syed Hunain Raza
 **Reviewer:** hunainalisyed@gmail.com
 **Related:** SRS §18 (Save Configuration), §36.5 (Guest Mode); depends on `02-vehicle-catalog-data-model.md` (`Configuration`/`ConfigurationSelection`), `03-dynamic-pricing-engine.md`, `06-exterior-customization.md` (configuration store), `09-build-summary.md` (`deriveBuildSummary`)
@@ -174,7 +174,7 @@ Also specify:
 
 | # | Risk / question | Owner | Resolution |
 |---|---|---|---|
-| 1 | `POST /api/configurations` requires no auth and no rate limiting, so it could be spammed to fill the database with junk rows. | Product owner | Open — recommend a lightweight IP-based rate limit (e.g. N saves per minute) be added at implementation time even though full abuse-monitoring infrastructure is Phase 3 (§34.2); flagged here so it isn't silently skipped. |
+| 1 | `POST /api/configurations` requires no auth and no rate limiting, so it could be spammed to fill the database with junk rows. | Product owner | Resolved — a small hand-rolled in-memory fixed-window limiter (`backend/src/middleware/rateLimit.ts`, 10 requests/minute/IP, `429 RATE_LIMITED`), applied only to the POST route. Not `express-rate-limit`: this would have been the first new runtime dependency added since project scaffolding, against a 9-spec streak of zero new dependencies for equivalent needs (no `zod` despite manual validation everywhere, no `nanoid` for this very spec's own ID generation). Single-process only, matching this project's actual deployment shape — revisit with a shared store if that ever changes. |
 | 2 | The `publicId` prefix is derived from vehicle name ("APEX" for both Apex GT and Apex RS) rather than being globally unique-looking per model — matches the SRS's own example exactly, but means the prefix alone doesn't disambiguate trim. | Product owner | Resolved — accepted, matches SRS §18's example ID verbatim; the full `publicId` (prefix + two random segments) is what's actually unique, and the prefix's job is brand flavor, not disambiguation. |
 
 ---
@@ -185,3 +185,14 @@ Also specify:
 - **Migration order:** ships after all prior Phase 1 migrations; adds one nullable column.
 - **Rollback:** revert the migration and remove the save/share endpoints and panel; the configurator remains fully usable in-session without persistence.
 - **Observability:** log save failures and `publicId` collision-retry counts; promote to structured monitoring in Phase 3 (§34.2).
+
+---
+
+## 10. Implementation notes
+
+- **`GET /api/configurations/:publicId`'s `breakdown` is recomputed live**, not read verbatim from the stored `totalPriceCents` snapshot. The schema has nowhere to persist `PriceLineItemDto[]` (no denormalized name/price columns on `ConfigurationSelection`), so reconstructing the full DTO shape is only possible by re-running `calculatePrice` against the joined options every time — the stored `totalPriceCents` column exists for other future uses (e.g. a My Garage list), not this endpoint's response.
+- **TOCTOU on `publicId` collisions**: `generatePublicId`'s `isTaken` pre-check isn't atomic with the actual insert. `backend/src/services/configurations.ts`'s `createWithFreshPublicId` adds a defense-in-depth retry (up to 3 attempts) on a Prisma `P2002` unique-constraint violation targeting `publicId` specifically, regenerating and retrying rather than surfacing a raw 500 (no global error handler exists in `app.ts`).
+- **`generatePublicId`** (`backend/src/services/publicId.ts`) takes an injected `isTaken` callback rather than calling Prisma directly, keeping it a pure, DB-agnostic function — the only way to make the spec's own required unit test (`configurations.test.ts`, no DB) possible, matching this codebase's existing pure-function-unit-test / real-DB-integration-test split.
+- **Toast and clipboard code are both genuinely new to this codebase** (confirmed zero prior usage anywhere). The toast is a minimal local mechanism scoped to `SaveSharePanel` (not a global provider) — Spec 12's shared shell doesn't exist yet as code despite being referenced by name in this spec's UI-states row; the established precedent (Spec 5's own `ShowroomLoadingScreen`/`ShowroomErrorBoundary`) is to build small and local now rather than block on unbuilt infrastructure.
+- **The "Reset" control added here is distinct from `CameraPresetBar`'s existing "Reset" button**, which only resets the camera view. `SaveSharePanel`'s Reset carries `aria-label="Reset configuration"` to keep the two unambiguous to assistive tech and to e2e locators.
+- Verification: 30 backend unit tests pass (4 new), 20 backend integration tests pass (10 new), 100 frontend unit tests pass (7 new), lint/typecheck are clean across both workspaces, and all 23 Playwright e2e tests pass including 5 new `save-share.spec.ts` cases (full save→copy→share→fresh-context-load round trip, a forced save failure, configuration Reset, the vehicle-mismatch redirect, and the "build not found" state). Manual browser verification confirmed the toast, clipboard payloads, and cross-session load all work with zero console errors.

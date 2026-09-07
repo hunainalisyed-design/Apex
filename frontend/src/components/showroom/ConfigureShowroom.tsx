@@ -6,6 +6,7 @@ import { AccessoriesPanel } from "@/components/configurator/AccessoriesPanel/Acc
 import { BuildSummary } from "@/components/configurator/BuildSummary/BuildSummary";
 import { ExteriorPanel } from "@/components/configurator/ExteriorPanel/ExteriorPanel";
 import { InteriorPanel } from "@/components/configurator/InteriorPanel/InteriorPanel";
+import { SaveSharePanel } from "@/components/configurator/SaveSharePanel/SaveSharePanel";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { formatPriceCents } from "@/lib/format/currency";
 import { calculatePrice } from "@/lib/pricing";
@@ -15,6 +16,7 @@ import { resolveExteriorAppearance } from "@/lib/showroom/exteriorAppearance";
 import { resolveInteriorAppearance } from "@/lib/showroom/interiorAppearance";
 import { useConfigurationStore } from "@/state/configurationStore";
 import { SINGLE_SELECT_CATEGORIES, type OptionCategory, type VehicleDetailDto } from "@/types/catalog";
+import type { SavedConfigurationDto } from "@/types/configuration";
 import type { SingleSelectCategory } from "@/types/pricing";
 import { CameraPresetBar } from "./CameraPresetBar";
 import { HotspotLabel } from "./HotspotLabel";
@@ -44,9 +46,12 @@ function isSingleSelectCategory(category: OptionCategory): category is SingleSel
 
 export interface ConfigureShowroomProps {
   vehicle: VehicleDetailDto;
+  /** A previously saved build to hydrate from instead of vehicle defaults (Spec 10, AC-4),
+   * resolved server-side by the ?build= query param. */
+  savedConfiguration?: SavedConfigurationDto | null;
 }
 
-export function ConfigureShowroom({ vehicle }: ConfigureShowroomProps) {
+export function ConfigureShowroom({ vehicle, savedConfiguration = null }: ConfigureShowroomProps) {
   const reducedMotion = useReducedMotion();
   const [activeTab, setActiveTab] = useState<ConfiguratorTab>("exterior");
   const [currentPreset, setCurrentPreset] = useState<CameraPresetId>("default");
@@ -61,12 +66,18 @@ export function ConfigureShowroom({ vehicle }: ConfigureShowroomProps) {
   const multiSelections = useConfigurationStore((s) => s.multiSelections);
   const customPaintHex = useConfigurationStore((s) => s.customPaintHex);
   const hydrateDefaults = useConfigurationStore((s) => s.hydrateDefaults);
+  const hydrateFromSaved = useConfigurationStore((s) => s.hydrateFromSaved);
 
-  // Re-hydrates on every mount and whenever the vehicle changes (AC-10) — a full page
-  // load already re-fetches the vehicle server-side, so this alone covers refresh too.
+  // Re-hydrates on every mount, whenever the vehicle changes, or whenever a different
+  // saved build is loaded (AC-10 from Spec 6; Spec 10 AC-4 for the saved-build path) — a
+  // full page load already re-fetches both server-side, so this alone covers refresh too.
   useEffect(() => {
-    hydrateDefaults(vehicle);
-  }, [vehicle, hydrateDefaults]);
+    if (savedConfiguration) {
+      hydrateFromSaved(vehicle, savedConfiguration);
+    } else {
+      hydrateDefaults(vehicle);
+    }
+  }, [vehicle, savedConfiguration, hydrateDefaults, hydrateFromSaved]);
 
   const handleReady = useCallback((goToPreset: (id: CameraPresetId) => void) => {
     goToPresetRef.current = goToPreset;
@@ -192,6 +203,7 @@ export function ConfigureShowroom({ vehicle }: ConfigureShowroomProps) {
 
       <div className="flex w-full max-w-sm flex-col gap-3">
         <BuildSummary vehicle={vehicle} />
+        <SaveSharePanel vehicle={vehicle} />
 
         <div className="glass-panel flex gap-1 rounded-full p-1" role="tablist" aria-label="Customization panel">
           {(["exterior", "interior", "accessories"] as const).map((tab) => (

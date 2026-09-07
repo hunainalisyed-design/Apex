@@ -1,6 +1,7 @@
 // Prisma schema.
 // Spec 01: datasource/generator only. Spec 02: vehicle catalog data model.
 // Spec 06: ApplyMode (owned by Spec 8's definition, migrated here per its Risk #3) + customPaintHex.
+// Spec 10: Configuration.expiresAt (guest-build retention, see that spec's §4).
 
 generator client {
   provider = "prisma-client-js"
@@ -89,6 +90,7 @@ model Configuration {
   userId          String? // null = guest build; FK constraint added when Phase 2 auth spec introduces User
   totalPriceCents Int
   customPaintHex  String? // set only when the selected PAINT option is the reserved custom-color entry
+  expiresAt       DateTime? // null = never expires (reserved for future account-owned builds); guest builds get now+90d, refreshed on every load
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
