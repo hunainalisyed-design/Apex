@@ -1,7 +1,7 @@
 # Spec: Build Summary Panel
 
 **File:** `docs/specs/09-build-summary.md`
-**Status:** Approved
+**Status:** Implemented
 **Author:** Syed Hunain Raza
 **Reviewer:** hunainalisyed@gmail.com
 **Related:** SRS §17 (Build Summary); depends on `02-vehicle-catalog-data-model.md`, `03-dynamic-pricing-engine.md`, `06-exterior-customization.md` (configuration store), `07-interior-customization.md`, `08-accessories-packages.md`
@@ -146,3 +146,13 @@ Also specify:
 - **Migration order:** N/A — no schema.
 - **Rollback:** remove the summary panel component; configuration and pricing continue working without a consolidated view.
 - **Observability:** none beyond what Spec 5/12 already provide.
+
+---
+
+## 10. Implementation notes
+
+- **UI-states row's "mobile... bottom sheet" wording was not built literally.** There is no bottom-sheet component anywhere in this codebase, and building one would be scope this spec doesn't need. Instead, `BuildSummary` reuses the existing `CategoryGroup` (`<details>/<summary>`, open by default) — the same component every other category panel already uses. This satisfies both halves of the UI-states row at once: a visible-by-default persistent panel on desktop, and a native, keyboard-operable collapsible section on mobile, with zero new interaction code. A deliberate scope choice, not an oversight.
+- **AC-2's custom-color fallback**: `customPaintHex` is `null` right after selecting "Custom Color" until the color picker is actually dragged (`configurationStore.ts` clears it on every PAINT change; `CustomColorPicker` only fires on `onInput`, not on mount). `deriveBuildSummary` falls back to `DEFAULT_EXTERIOR_APPEARANCE.paintColor` (the same fallback the 3D scene itself uses) rather than showing no swatch during that window.
+- **`CUSTOM_COLOR_ASSET_REF`** was extracted from a local constant in `ExteriorPanel.tsx` into `frontend/src/lib/showroom/paintCustomColor.ts`, now shared by both `ExteriorPanel.tsx` and `buildSummary.ts` — no behavior change, just removes a second copy of the sentinel string.
+- **`deriveBuildSummary` reuses `calculatePrice`'s own validation** rather than re-validating selections itself — it calls `calculatePrice` first (for the `breakdown` return value) and lets any `PricingError` it throws propagate uncaught, exactly like `calculatePrice`'s own contract. The `BuildSummary` panel component guards this with a try/catch returning `null`, the same pattern `ConfigureShowroom.tsx` already used for its own total-price calculation before this spec existed.
+- Verification: 111 frontend unit tests pass (18 new: 11 in `buildSummary.test.ts`, 7 in `BuildSummary.test.tsx`), 10 backend integration tests pass unaffected, and all 18 Playwright e2e tests pass including the 2 new `build-summary.spec.ts` cases. One pre-existing unit test (`ConfigurePage.test.tsx`) needed a locator scoped to `data-testid="total-price"` instead of a bare currency-text search, since the new summary panel now also renders the same "€85,000" text at default selections.

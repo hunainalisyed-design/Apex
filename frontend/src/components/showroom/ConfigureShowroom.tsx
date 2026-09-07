@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AccessoriesPanel } from "@/components/configurator/AccessoriesPanel/AccessoriesPanel";
+import { BuildSummary } from "@/components/configurator/BuildSummary/BuildSummary";
 import { ExteriorPanel } from "@/components/configurator/ExteriorPanel/ExteriorPanel";
 import { InteriorPanel } from "@/components/configurator/InteriorPanel/InteriorPanel";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -190,6 +191,8 @@ export function ConfigureShowroom({ vehicle }: ConfigureShowroomProps) {
       </div>
 
       <div className="flex w-full max-w-sm flex-col gap-3">
+        <BuildSummary vehicle={vehicle} />
+
         <div className="glass-panel flex gap-1 rounded-full p-1" role="tablist" aria-label="Customization panel">
           {(["exterior", "interior", "accessories"] as const).map((tab) => (
             <button

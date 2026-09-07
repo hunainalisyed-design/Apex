@@ -56,7 +56,9 @@ describe("ConfigureShowroom", () => {
     render(<ConfigureShowroom vehicle={vehicle} />);
 
     expect(screen.getByRole("heading", { name: "Apex GT" })).toBeInTheDocument();
-    expect(screen.getByText(/€85,000/)).toBeInTheDocument();
+    // Scoped to the spec-sheet's own total (data-testid) rather than a bare text search —
+    // the build summary panel (Spec 9) also renders "€85,000" at default selections.
+    expect(screen.getByTestId("total-price")).toHaveTextContent("€85,000");
   });
 
   it("hides camera/lighting controls but keeps the spec sheet visible when the scene errors", async () => {

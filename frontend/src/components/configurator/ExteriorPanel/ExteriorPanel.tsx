@@ -3,6 +3,7 @@
 import { CategoryGroup } from "../CategoryGroup";
 import { CategoryOptionRow } from "../CategoryOptionRow";
 import { CATEGORY_LABELS } from "../categoryLabels";
+import { CUSTOM_COLOR_ASSET_REF } from "@/lib/showroom/paintCustomColor";
 import { useConfigurationStore } from "@/state/configurationStore";
 import type { VehicleDetailDto } from "@/types/catalog";
 import type { SingleSelectCategory } from "@/types/pricing";
@@ -28,7 +29,6 @@ const GROUPS: { title: string; categories: SingleSelectCategory[] }[] = [
   },
 ];
 
-const CUSTOM_COLOR_ASSET_REF = "paint-custom";
 const DEFAULT_CUSTOM_HEX = "#d4d4d8";
 
 /** All nine SRS §7 exterior categories, grouped for the sidebar (Spec 6). */
