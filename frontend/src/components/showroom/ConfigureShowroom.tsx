@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AccessoriesPanel } from "@/components/configurator/AccessoriesPanel/AccessoriesPanel";
 import { BuildSummary } from "@/components/configurator/BuildSummary/BuildSummary";
+import { CaptureBuild } from "@/components/configurator/CaptureBuild/CaptureBuild";
 import { ExteriorPanel } from "@/components/configurator/ExteriorPanel/ExteriorPanel";
 import { InteriorPanel } from "@/components/configurator/InteriorPanel/InteriorPanel";
 import { SaveSharePanel } from "@/components/configurator/SaveSharePanel/SaveSharePanel";
@@ -23,7 +24,7 @@ import { HotspotLabel } from "./HotspotLabel";
 import { LightingControls } from "./LightingControls";
 import { ShowroomErrorBoundary } from "./ShowroomErrorBoundary";
 import { ShowroomLoadingScreen } from "./ShowroomLoadingScreen";
-import type { HoverLabel } from "./ShowroomScene";
+import type { HoverLabel, ShowroomControls } from "./ShowroomScene";
 
 const ShowroomScene = dynamic(() => import("./ShowroomScene").then((m) => m.ShowroomScene), {
   ssr: false,
@@ -60,7 +61,7 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null }: Config
   const [brakePulsing, setBrakePulsing] = useState(false);
   const [sceneError, setSceneError] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
-  const goToPresetRef = useRef<((id: CameraPresetId) => void) | null>(null);
+  const showroomControlsRef = useRef<ShowroomControls | null>(null);
 
   const singleSelections = useConfigurationStore((s) => s.singleSelections);
   const multiSelections = useConfigurationStore((s) => s.multiSelections);
@@ -79,13 +80,13 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null }: Config
     }
   }, [vehicle, savedConfiguration, hydrateDefaults, hydrateFromSaved]);
 
-  const handleReady = useCallback((goToPreset: (id: CameraPresetId) => void) => {
-    goToPresetRef.current = goToPreset;
+  const handleReady = useCallback((controls: ShowroomControls) => {
+    showroomControlsRef.current = controls;
     setSceneReady(true);
   }, []);
 
   const handleSelectPreset = useCallback((id: CameraPresetId) => {
-    goToPresetRef.current?.(id);
+    showroomControlsRef.current?.goToPreset(id);
   }, []);
 
   // Opening the Interior tab auto-transitions the camera to the Interior preset unless
@@ -95,7 +96,7 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null }: Config
     (tab: ConfiguratorTab) => {
       setActiveTab(tab);
       if (tab === "interior" && currentPreset !== "interior" && currentPreset !== "cockpit") {
-        goToPresetRef.current?.("interior");
+        showroomControlsRef.current?.goToPreset("interior");
       }
     },
     [currentPreset],
@@ -204,6 +205,12 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null }: Config
       <div className="flex w-full max-w-sm flex-col gap-3">
         <BuildSummary vehicle={vehicle} />
         <SaveSharePanel vehicle={vehicle} />
+        <CaptureBuild
+          vehicle={vehicle}
+          showroomControlsRef={showroomControlsRef}
+          currentPreset={currentPreset}
+          sceneReady={sceneReady}
+        />
 
         <div className="glass-panel flex gap-1 rounded-full p-1" role="tablist" aria-label="Customization panel">
           {(["exterior", "interior", "accessories"] as const).map((tab) => (

@@ -1,8 +1,11 @@
 import { create } from "zustand";
+import { ApiRequestError, saveConfiguration } from "@/lib/api/configurations";
 import { MULTI_SELECT_CATEGORIES, SINGLE_SELECT_CATEGORIES } from "@/types/catalog";
 import type { VehicleDetailDto } from "@/types/catalog";
 import type { SavedConfigurationDto } from "@/types/configuration";
 import type { MultiSelectCategory, SingleSelectCategory } from "@/types/pricing";
+
+export type SaveStatus = "idle" | "saving" | "success" | "error";
 
 export function emptySingleSelections(): Record<SingleSelectCategory, string> {
   return Object.fromEntries(
@@ -46,6 +49,15 @@ export interface ConfigurationState {
   /** Zero or more CustomizationOption ids per multi-select category. */
   multiSelections: Record<MultiSelectCategory, string[]>;
 
+  /** Save state (Spec 10), lifted here rather than kept local to SaveSharePanel (Spec 11):
+   * both SaveSharePanel and CaptureBuild need to read/write the SAME "what was last saved"
+   * record to avoid two independently-triggered saves producing two different publicIds
+   * for what the user perceives as one save, and to know whether a redundant save can be
+   * skipped (AC-1/AC-2 of Spec 11). */
+  saveStatus: SaveStatus;
+  savedConfiguration: SavedConfigurationDto | null;
+  saveError: string | null;
+
   setSingleSelection: (category: SingleSelectCategory, optionId: string) => void;
   setCustomPaintHex: (hex: string) => void;
   toggleMultiSelection: (category: MultiSelectCategory, optionId: string) => void;
@@ -57,6 +69,13 @@ export interface ConfigurationState {
    * continues reverting to vehicle defaults, never back to this loaded build (AC-8). */
   hydrateFromSaved: (vehicle: VehicleDetailDto, saved: SavedConfigurationDto) => void;
   reset: () => void;
+  /** Saves the current selections, updating saveStatus/savedConfiguration/saveError.
+   * Re-throws on failure so a caller (e.g. Spec 11's capture flow) can also await it
+   * directly without duplicating error handling. */
+  save: () => Promise<SavedConfigurationDto>;
+  /** True when the current selections differ from savedConfiguration (or nothing has been
+   * saved yet) — the basis for Spec 11 AC-1/AC-2's "skip a redundant save." */
+  isDirtySinceLastSave: () => boolean;
 }
 
 /**
@@ -65,7 +84,7 @@ export interface ConfigurationState {
  * change, which is enough to keep it correctly scoped per showroom session without a
  * fancier per-vehicle-keyed store instance.
  */
-export const useConfigurationStore = create<ConfigurationState>((set) => {
+export const useConfigurationStore = create<ConfigurationState>((set, get) => {
   let defaults: Defaults = {
     vehicleSlug: "",
     singleSelections: emptySingleSelections(),
@@ -77,6 +96,9 @@ export const useConfigurationStore = create<ConfigurationState>((set) => {
     singleSelections: emptySingleSelections(),
     customPaintHex: null,
     multiSelections: emptyMultiSelections(),
+    saveStatus: "idle",
+    savedConfiguration: null,
+    saveError: null,
 
     setSingleSelection: (category, optionId) =>
       set((state) => ({
@@ -104,6 +126,11 @@ export const useConfigurationStore = create<ConfigurationState>((set) => {
         singleSelections: defaults.singleSelections,
         multiSelections: defaults.multiSelections,
         customPaintHex: null,
+        // A freshly-loaded/defaulted vehicle has no save context of its own — any prior
+        // savedConfiguration would belong to a different vehicle/session.
+        saveStatus: "idle",
+        savedConfiguration: null,
+        saveError: null,
       });
     },
 
@@ -114,6 +141,12 @@ export const useConfigurationStore = create<ConfigurationState>((set) => {
         singleSelections: saved.singleSelections,
         multiSelections: saved.multiSelections,
         customPaintHex: saved.customPaintHex,
+        // Loading a shared build means the current selections already match a real saved
+        // row — record that immediately so isDirtySinceLastSave() is correct before the
+        // user changes anything (Spec 11 AC-2).
+        saveStatus: "success",
+        savedConfiguration: saved,
+        saveError: null,
       });
     },
 
@@ -123,6 +156,41 @@ export const useConfigurationStore = create<ConfigurationState>((set) => {
         singleSelections: defaults.singleSelections,
         multiSelections: defaults.multiSelections,
         customPaintHex: null,
+        // savedConfiguration/saveStatus are deliberately left untouched — Reset never
+        // deletes or forgets an already-saved row (Spec 10 AC-8), and if the user resets
+        // back to exactly what was last saved, isDirtySinceLastSave() should correctly
+        // recognize that via comparison rather than needing to be told.
       }),
+
+    save: async () => {
+      const state = get();
+      set({ saveStatus: "saving", saveError: null });
+      try {
+        const saved = await saveConfiguration({
+          vehicleSlug: state.vehicleSlug,
+          singleSelections: state.singleSelections,
+          multiSelections: state.multiSelections,
+          customPaintHex: state.customPaintHex,
+        });
+        set({ saveStatus: "success", savedConfiguration: saved, saveError: null });
+        return saved;
+      } catch (err) {
+        const message =
+          err instanceof ApiRequestError ? err.message : "Something went wrong while saving your configuration.";
+        set({ saveStatus: "error", saveError: message });
+        throw err;
+      }
+    },
+
+    isDirtySinceLastSave: () => {
+      const state = get();
+      const saved = state.savedConfiguration;
+      if (!saved) return true;
+      return (
+        JSON.stringify(state.singleSelections) !== JSON.stringify(saved.singleSelections) ||
+        JSON.stringify(state.multiSelections) !== JSON.stringify(saved.multiSelections) ||
+        state.customPaintHex !== saved.customPaintHex
+      );
+    },
   };
 });

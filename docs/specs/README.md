@@ -29,7 +29,7 @@ Status values: **Backlog** (not yet spec'd) → **Draft** → **Approved** → *
 | 8 | `08-accessories-packages.md` | §11 | Implemented |
 | 9 | `09-build-summary.md` | §17 | Implemented |
 | 10 | `10-save-share-configuration.md` | §18 | Implemented |
-| 11 | `11-screenshot-capture.md` | §19 | Approved |
+| 11 | `11-screenshot-capture.md` | §19 | Implemented |
 | 12 | `12-loading-error-a11y-shell.md` | §26, §27, §28, §29 | Approved |
 | 13 | `13-navigation-scroll-shell.md` | §22, §23 | Approved |
 

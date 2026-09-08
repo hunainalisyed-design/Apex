@@ -6,7 +6,7 @@ import { OrbitControls } from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { Camera } from "three";
 import { PlaceholderShowroomRig, type HoveredMesh } from "./PlaceholderShowroomRig";
-import { useCameraTransition } from "./useCameraTransition";
+import { useCameraTransition, type CameraTransitionControls } from "./useCameraTransition";
 import { SHOWROOM_CAMERA_BOUNDS } from "@/lib/showroom/camera";
 import { getCameraPreset, type CameraPresetId } from "@/lib/showroom/cameraPresets";
 import { findHotspot } from "@/lib/showroom/hotspots";
@@ -21,6 +21,21 @@ export interface HoverLabel {
   y: number;
 }
 
+/** Control handles exposed once the scene is ready (Spec 5's original goToPreset, plus
+ * Spec 11's capture-flow additions) — bundled into one onReady payload since these are all
+ * "here are your handles" rather than an ongoing state stream (which onPresetChange/onHover
+ * correctly stay as separate props for). */
+export interface ShowroomControls {
+  goToPreset: (id: CameraPresetId) => void;
+  goToPresetAsync: (id: CameraPresetId) => Promise<void>;
+  goToRaw: CameraTransitionControls["goToRaw"];
+  getCurrentCameraState: CameraTransitionControls["getCurrentCameraState"];
+  /** Captures the current frame as a PNG data URL — requires preserveDrawingBuffer on the
+   * renderer (set below), otherwise the WebGL buffer may already be cleared by the time
+   * this is called outside the render loop. */
+  captureFrame: () => string;
+}
+
 interface ShowroomRigProps {
   headlightsOn: boolean;
   brakePulsing: boolean;
@@ -28,7 +43,7 @@ interface ShowroomRigProps {
   appearance: ExteriorAppearance;
   interior: InteriorAppearance;
   accessories: AccessoryAppearance;
-  onReady: (goToPreset: (id: CameraPresetId) => void) => void;
+  onReady: (controls: ShowroomControls) => void;
   onPresetChange: (id: CameraPresetId) => void;
   onHover: (hover: HoverLabel | null) => void;
 }
@@ -44,7 +59,7 @@ function ShowroomRig({
   onPresetChange,
   onHover,
 }: ShowroomRigProps) {
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
   const cameraRef = useRef<Camera | null>(null);
   const controlsRef = useRef<OrbitControlsImpl>(null);
 
@@ -52,15 +67,18 @@ function ShowroomRig({
     cameraRef.current = camera;
   }, [camera]);
 
-  const { currentPreset, doorOpenAmount, goToPreset } = useCameraTransition(
-    cameraRef,
-    controlsRef,
-    reducedMotion,
-  );
+  const { currentPreset, doorOpenAmount, goToPreset, goToPresetAsync, goToRaw, getCurrentCameraState } =
+    useCameraTransition(cameraRef, controlsRef, reducedMotion);
 
   useEffect(() => {
-    onReady(goToPreset);
-  }, [goToPreset, onReady]);
+    onReady({
+      goToPreset,
+      goToPresetAsync,
+      goToRaw,
+      getCurrentCameraState,
+      captureFrame: () => gl.domElement.toDataURL("image/png"),
+    });
+  }, [goToPreset, goToPresetAsync, goToRaw, getCurrentCameraState, gl, onReady]);
 
   useEffect(() => {
     onPresetChange(currentPreset);
@@ -111,7 +129,7 @@ export interface ShowroomSceneProps {
   appearance?: ExteriorAppearance;
   interior?: InteriorAppearance;
   accessories?: AccessoryAppearance;
-  onReady: (goToPreset: (id: CameraPresetId) => void) => void;
+  onReady: (controls: ShowroomControls) => void;
   onPresetChange: (id: CameraPresetId) => void;
   onHover: (hover: HoverLabel | null) => void;
 }
@@ -131,7 +149,7 @@ export function ShowroomScene({
         fov: 40,
       }}
       dpr={[1, 2]}
-      gl={{ antialias: true }}
+      gl={{ antialias: true, preserveDrawingBuffer: true }}
     >
       <ShowroomRig {...props} appearance={appearance} interior={interior} accessories={accessories} />
     </Canvas>

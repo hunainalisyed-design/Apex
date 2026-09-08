@@ -1,21 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ApiRequestError, saveConfiguration } from "@/lib/api/configurations";
 import { formatPriceCents } from "@/lib/format/currency";
+import { buildShareUrl } from "@/lib/showroom/shareUrl";
 import { useConfigurationStore } from "@/state/configurationStore";
 import type { VehicleDetailDto } from "@/types/catalog";
-import type { SavedConfigurationDto } from "@/types/configuration";
 
 export interface SaveSharePanelProps {
   vehicle: VehicleDetailDto;
 }
-
-type SaveState =
-  | { status: "idle" }
-  | { status: "saving" }
-  | { status: "success"; saved: SavedConfigurationDto }
-  | { status: "error"; message: string };
 
 const TOAST_DURATION_MS = 2500;
 
@@ -24,14 +17,20 @@ const TOAST_DURATION_MS = 2500;
  * a minimal local mechanism (not a global provider): Spec 12 will eventually own a shared
  * one, but it doesn't exist yet, and this project's established practice (Spec 5's own
  * ShowroomLoadingScreen/ShowroomErrorBoundary) is to build a small local version rather
- * than block on infrastructure that hasn't landed. */
+ * than block on infrastructure that hasn't landed.
+ *
+ * Save status lives in the shared configurationStore (Spec 11), not local state — both
+ * this panel and CaptureBuild need to read/write the same "what was last saved" record so
+ * they can never produce two different publicIds for what the user perceives as one save,
+ * and so a failed save-if-dirty from the capture flow surfaces its error right here rather
+ * than in a capture-specific banner. */
 export function SaveSharePanel({ vehicle }: SaveSharePanelProps) {
-  const singleSelections = useConfigurationStore((s) => s.singleSelections);
-  const multiSelections = useConfigurationStore((s) => s.multiSelections);
-  const customPaintHex = useConfigurationStore((s) => s.customPaintHex);
+  const saveStatus = useConfigurationStore((s) => s.saveStatus);
+  const savedConfiguration = useConfigurationStore((s) => s.savedConfiguration);
+  const saveError = useConfigurationStore((s) => s.saveError);
+  const save = useConfigurationStore((s) => s.save);
   const reset = useConfigurationStore((s) => s.reset);
 
-  const [state, setState] = useState<SaveState>({ status: "idle" });
   const [toast, setToast] = useState<string | null>(null);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -48,24 +47,16 @@ export function SaveSharePanel({ vehicle }: SaveSharePanelProps) {
   }
 
   async function handleSave() {
-    setState({ status: "saving" });
+    // Sends the full current selection state; the server recalculates the price
+    // authoritatively before persisting (AC-1) — this component trusts and displays
+    // only what comes back, never the pre-save local estimate (AC-9). Failure is already
+    // reflected in the store's saveStatus/saveError by the store's own save() action; the
+    // catch here only exists so an unhandled-rejection warning doesn't leak — in-progress
+    // selections are never touched on failure (AC-10).
     try {
-      // Sends the full current selection state; the server recalculates the price
-      // authoritatively before persisting (AC-1) — this component trusts and displays
-      // only what comes back, never the pre-save local estimate (AC-9).
-      const saved = await saveConfiguration({
-        vehicleSlug: vehicle.slug,
-        singleSelections,
-        multiSelections,
-        customPaintHex,
-      });
-      setState({ status: "success", saved });
-    } catch (err) {
-      // In-progress selections are never touched here — a failed save leaves the store
-      // exactly as it was (AC-10).
-      const message =
-        err instanceof ApiRequestError ? err.message : "Something went wrong while saving your configuration.";
-      setState({ status: "error", message });
+      await save();
+    } catch {
+      // handled via store state
     }
   }
 
@@ -79,9 +70,8 @@ export function SaveSharePanel({ vehicle }: SaveSharePanelProps) {
   }
 
   async function handleShare(publicId: string) {
-    const url = `${window.location.origin}/configure/${vehicle.slug}?build=${publicId}`;
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(buildShareUrl(vehicle.slug, publicId));
       showToast("Share link copied");
     } catch {
       showToast("Couldn't copy — try again");
@@ -90,7 +80,6 @@ export function SaveSharePanel({ vehicle }: SaveSharePanelProps) {
 
   function handleReset() {
     reset();
-    setState({ status: "idle" });
   }
 
   return (
@@ -99,10 +88,10 @@ export function SaveSharePanel({ vehicle }: SaveSharePanelProps) {
         <button
           type="button"
           onClick={handleSave}
-          disabled={state.status === "saving"}
+          disabled={saveStatus === "saving"}
           className="flex-1 rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wide text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
         >
-          {state.status === "saving" ? "Saving…" : "Save"}
+          {saveStatus === "saving" ? "Saving…" : "Save"}
         </button>
 
         {/* A distinct control from CameraPresetBar's own "Reset" button (which only
@@ -118,9 +107,9 @@ export function SaveSharePanel({ vehicle }: SaveSharePanelProps) {
         </button>
       </div>
 
-      {state.status === "error" && (
+      {saveStatus === "error" && (
         <div className="flex items-center justify-between gap-2 text-xs text-red-300">
-          <span>{state.message}</span>
+          <span>{saveError}</span>
           <button
             type="button"
             onClick={handleSave}
@@ -131,31 +120,31 @@ export function SaveSharePanel({ vehicle }: SaveSharePanelProps) {
         </div>
       )}
 
-      {state.status === "success" && (
+      {saveStatus === "success" && savedConfiguration && (
         <div className="flex flex-col gap-2 text-xs">
           <div className="flex items-center justify-between">
             <span className="text-white/50">Saved</span>
             <span className="font-semibold text-white">
-              {formatPriceCents(state.saved.breakdown.totalPriceCents, vehicle.currency)}
+              {formatPriceCents(savedConfiguration.breakdown.totalPriceCents, vehicle.currency)}
             </span>
           </div>
           <p
             className="select-all rounded-lg bg-white/5 px-3 py-2 font-mono text-sm text-white"
             data-testid="saved-public-id"
           >
-            {state.saved.publicId}
+            {savedConfiguration.publicId}
           </p>
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => handleCopyId(state.saved.publicId)}
+              onClick={() => handleCopyId(savedConfiguration.publicId)}
               className="flex-1 rounded-full border border-white/20 px-3 py-1.5 font-semibold uppercase tracking-wide text-white/80 transition hover:border-white/50 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
               Copy Configuration ID
             </button>
             <button
               type="button"
-              onClick={() => handleShare(state.saved.publicId)}
+              onClick={() => handleShare(savedConfiguration.publicId)}
               className="flex-1 rounded-full border border-white/20 px-3 py-1.5 font-semibold uppercase tracking-wide text-white/80 transition hover:border-white/50 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
               Share

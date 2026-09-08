@@ -1,7 +1,7 @@
 # Spec: Screenshot / Build Image Capture
 
 **File:** `docs/specs/11-screenshot-capture.md`
-**Status:** Approved
+**Status:** Implemented
 **Author:** Syed Hunain Raza
 **Reviewer:** hunainalisyed@gmail.com
 **Related:** SRS §19 (Screenshot / Build Image); depends on `05-3d-showroom-core.md` (camera presets), `10-save-share-configuration.md` (`publicId`), `09-build-summary.md` (`deriveBuildSummary`)
@@ -116,7 +116,7 @@ Also specify:
 | # | Risk / question | Owner | Resolution |
 |---|---|---|---|
 | 1 | Forcing the camera to a canonical preset for every capture (AC-3) is a product decision not explicitly stated in SRS §19, which only says "capture the current 3D showroom configuration." | Product owner | Resolved — canonical framing chosen for a consistently premium, shareable result; a raw capture of an arbitrary in-progress camera angle (e.g. mid-orbit, inside a door) would look unpolished. Revisit if user feedback wants "capture exactly what I'm looking at" instead. |
-| 2 | `preserveDrawingBuffer: true` has a minor performance cost (prevents the browser from discarding the draw buffer after each frame) — worth confirming during Spec 5's implementation that this doesn't measurably affect the showroom's frame rate on lower-end devices (SRS §26). | Implementer | Open — a performance check during Spec 5 implementation, not a product decision. |
+| 2 | `preserveDrawingBuffer: true` has a minor performance cost (prevents the browser from discarding the draw buffer after each frame) — worth confirming during Spec 5's implementation that this doesn't measurably affect the showroom's frame rate on lower-end devices (SRS §26). | Implementer | Resolved in practice — set on `ShowroomScene.tsx`'s renderer (Spec 5 was already implemented, so this retrofits it per this spec's own §4 rather than reopening that spec). No measurable frame-rate regression observed during manual verification against the placeholder rig; revisit once a real GLB with higher poly counts exists. |
 
 ---
 
@@ -126,3 +126,13 @@ Also specify:
 - **Migration order:** N/A — no schema.
 - **Rollback:** remove the capture button and its components; save/share (Spec 10) continues working independently.
 - **Observability:** log capture failures (AC-7) client-side once Phase 3 error monitoring (§34.2, e.g. Sentry) exists — WebGL/3D failures are explicitly called out in the SRS as hard to reproduce, so this is a good early candidate for that tooling.
+
+---
+
+## 10. Implementation notes
+
+- **Camera restore is a real raw position/target snapshot-and-restore, not "go back to the last named preset."** `useCameraTransition.ts` gained `goToPresetAsync`/`goToRaw`/`getCurrentCameraState`, all sharing the original `goToPreset`'s tween machinery. This matters because free-orbiting via OrbitControls never updates `currentPreset` — restoring to "the last preset id" would have been visibly wrong for anyone who'd dragged the camera manually. `goToRaw` also accepts an optional `presetId` so `CameraPresetBar`'s highlighted button resyncs correctly after the restore, not just the raw camera numbers.
+- **Save state moved from `SaveSharePanel`'s local `useState` into the shared `configurationStore`** (`saveStatus`/`savedConfiguration`/`saveError`/`save()`/`isDirtySinceLastSave()`). This was necessary, not incidental: `SaveSharePanel` and the new `CaptureBuild` both need to agree on "what was last saved" so they never produce two different `publicId`s for what the user perceives as one save, and so a save-if-dirty failure from the capture flow surfaces via `SaveSharePanel`'s own existing error banner rather than a second, capture-specific one. `SaveSharePanel`'s rendered output (button text, testids, aria-labels, error copy) was kept identical, and Spec 10's full existing test suite (`SaveSharePanel.test.tsx`, `save-share.spec.ts`) passes unmodified against the refactor.
+- **`preserveDrawingBuffer: true`** was added to `ShowroomScene.tsx`'s renderer per this spec's own §4 cross-spec requirement.
+- **A real bug caught only by opening the actual downloaded PNG during manual verification**: the captured WebGL frame has a transparent background (the showroom's "black" backdrop is the page's own dark theme showing through a transparent canvas, not an opaque rendered pixel) — the first composited image showed a white background wherever the frame was transparent, since nothing was there to composite against. Fixed by filling the compositing canvas with an opaque dark backdrop (`#0a0a0c`) before drawing the captured frame on top, scoped entirely to `composeCaptureImage.ts` — Spec 5's live renderer/page-background approach was left untouched.
+- Verification: 116 frontend unit tests pass (12 new — 4 in `composeCaptureImage.test.ts`, 8 in `CaptureBuild.test.tsx`), lint/typecheck clean, all 26 Playwright e2e tests pass including 3 new `screenshot-capture.spec.ts` cases (save-then-capture-then-download with camera restore verified via the preset bar's own highlighted state, a skip-redundant-save check, and a touch-emulation variant). Manual browser verification (including opening the actual downloaded PNG, which is what caught the background bug above) confirmed the overlay is legible, the camera returns correctly after both named-preset and free-orbited starting positions, and no console errors occur during the flow.
