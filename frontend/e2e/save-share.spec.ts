@@ -32,12 +32,15 @@ test("saving, copying, and opening a shared link in a fresh browser context recr
   expect(publicId).toMatch(/^[A-Z]{4}-[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{4}-[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{4}$/);
 
   await page.getByRole("button", { name: "Copy Configuration ID" }).click();
-  await expect(page.getByRole("status")).toHaveText(/copied/i);
+  await expect(page.getByText("Configuration ID copied")).toBeVisible();
   const copiedId = await page.evaluate(() => navigator.clipboard.readText());
   expect(copiedId).toBe(publicId);
 
+  // Toasts stack rather than replace one another (Spec 12, AC-8) — the ID-copied toast may
+  // still be visible when the share-link one appears, so this scopes to the new one
+  // specifically rather than assuming a single status region.
   await page.getByRole("button", { name: "Share" }).click();
-  await expect(page.getByRole("status")).toHaveText(/copied/i);
+  await expect(page.getByText("Share link copied")).toBeVisible();
   const copiedUrl = await page.evaluate(() => navigator.clipboard.readText());
   expect(copiedUrl).toContain(`/configure/apex-gt?build=${publicId}`);
 

@@ -34,6 +34,7 @@ export async function seedDatabase(prisma: PrismaClient) {
         heroModelUrl: vehicle.heroModelUrl,
         showroomModelUrl: vehicle.showroomModelUrl,
         thumbnailUrl: vehicle.thumbnailUrl,
+        fallbackImageUrl: vehicle.fallbackImageUrl,
         options: {
           create: vehicle.options.map((option) => ({
             category: option.category,

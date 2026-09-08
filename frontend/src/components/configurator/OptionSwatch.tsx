@@ -25,7 +25,7 @@ export function OptionSwatch({ option, categoryLabel, selected, currency, onSele
       aria-pressed={selected}
       aria-label={ariaLabel}
       title={ariaLabel}
-      className={`flex h-12 w-12 items-center justify-center rounded-full border-2 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
+      className={`focus-ring flex h-12 w-12 items-center justify-center rounded-full border-2 transition ${
         selected ? "border-white" : "border-white/20 hover:border-white/50"
       }`}
     >

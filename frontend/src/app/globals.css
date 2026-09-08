@@ -40,3 +40,48 @@ body {
     transform: scaleX(1);
   }
 }
+
+/* Shared focus ring (spec 12 §5, AC-7) — one canonical utility replacing the same 4-class
+   `focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
+   focus-visible:outline-white` chain that was repeated verbatim at 20 call sites across 11
+   files. Individual feature specs apply this class rather than defining their own. */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid white;
+    outline-offset: 2px;
+  }
+}
+
+/* Visually hidden until focused — the skip link's resting state (spec 12 §5, AC-6). */
+@utility sr-only-until-focus {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+
+  &:focus {
+    position: fixed;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+  }
+}
+
+/* Global reduced-motion catch-all (spec 12 §5, AC-5) — collapses CSS-driven animations
+   (e.g. the loading screen's progress bar) for prefers-reduced-motion. JS-driven
+   animations (GSAP camera transitions, Framer Motion) are handled per-call-site via
+   lib/motion/withReducedMotion.ts instead, since this media query can't reach them. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

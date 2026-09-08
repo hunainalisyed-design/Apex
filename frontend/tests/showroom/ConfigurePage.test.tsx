@@ -9,6 +9,15 @@ vi.mock("../../src/components/showroom/ShowroomScene", () => ({
 
 const { ConfigureShowroom } = await import("../../src/components/showroom/ConfigureShowroom");
 const { default: VehicleNotFound } = await import("../../src/app/configure/[slug]/not-found");
+const { ToastProvider } = await import("../../src/components/shell/ToastProvider");
+
+function renderConfigureShowroom() {
+  return render(
+    <ToastProvider>
+      <ConfigureShowroom vehicle={vehicle} />
+    </ToastProvider>,
+  );
+}
 
 function buildOption(category: OptionCategory): CustomizationOptionDto {
   return {
@@ -35,6 +44,7 @@ const vehicle: VehicleDetailDto = {
   topSpeedKph: 280,
   zeroToHundredSec: 4.2,
   thumbnailUrl: "/models/apex-gt/thumbnail.jpg",
+  fallbackImageUrl: "/models/apex-gt/fallback.jpg",
   heroModelUrl: "/models/apex-gt/hero.glb",
   showroomModelUrl: "/models/apex-gt/showroom.glb",
   options: Object.fromEntries(
@@ -45,7 +55,7 @@ const vehicle: VehicleDetailDto = {
 describe("ConfigureShowroom", () => {
   it("shows the loading placeholder before the 3D scene resolves, then swaps it in", async () => {
     showroomSceneMock.mockImplementation(() => <div data-testid="showroom-scene-mock" />);
-    render(<ConfigureShowroom vehicle={vehicle} />);
+    renderConfigureShowroom();
 
     expect(screen.getByText(/Initializing Showroom/i)).toBeInTheDocument();
     await waitFor(() => expect(screen.getByTestId("showroom-scene-mock")).toBeInTheDocument());
@@ -53,7 +63,7 @@ describe("ConfigureShowroom", () => {
 
   it("shows the vehicle name/spec sheet immediately, independent of the 3D scene", () => {
     showroomSceneMock.mockImplementation(() => <div data-testid="showroom-scene-mock" />);
-    render(<ConfigureShowroom vehicle={vehicle} />);
+    renderConfigureShowroom();
 
     expect(screen.getByRole("heading", { name: "Apex GT" })).toBeInTheDocument();
     // Scoped to the spec-sheet's own total (data-testid) rather than a bare text search —
@@ -66,11 +76,13 @@ describe("ConfigureShowroom", () => {
       throw new Error("WebGL unavailable");
     });
 
-    render(<ConfigureShowroom vehicle={vehicle} />);
+    renderConfigureShowroom();
 
     await waitFor(() => expect(screen.getByText(/3D preview unavailable/i)).toBeInTheDocument());
     expect(screen.queryByRole("group", { name: "Camera presets" })).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Apex GT" })).toBeInTheDocument();
+    // Both the page's own spec-sheet heading (h1) and the fallback's own vehicle-name
+    // heading (h2, Spec 12 AC-1) render "Apex GT" — assert the page-level one specifically.
+    expect(screen.getByRole("heading", { name: "Apex GT", level: 1 })).toBeInTheDocument();
   });
 });
 

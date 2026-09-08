@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { ApiRequestError, saveConfiguration } from "@/lib/api/configurations";
+import { getErrorMessage } from "@/lib/errors/getErrorMessage";
 import { MULTI_SELECT_CATEGORIES, SINGLE_SELECT_CATEGORIES } from "@/types/catalog";
 import type { VehicleDetailDto } from "@/types/catalog";
 import type { SavedConfigurationDto } from "@/types/configuration";
@@ -175,8 +176,7 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => {
         set({ saveStatus: "success", savedConfiguration: saved, saveError: null });
         return saved;
       } catch (err) {
-        const message =
-          err instanceof ApiRequestError ? err.message : "Something went wrong while saving your configuration.";
+        const message = getErrorMessage(err instanceof ApiRequestError ? err.code : undefined);
         set({ saveStatus: "error", saveError: message });
         throw err;
       }

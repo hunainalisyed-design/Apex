@@ -44,6 +44,7 @@ function makeVehicle(slug: string): VehicleDetailDto {
     topSpeedKph: 250,
     zeroToHundredSec: 4.5,
     thumbnailUrl: "/thumb.jpg",
+    fallbackImageUrl: "/fallback.jpg",
     heroModelUrl: "/hero.glb",
     showroomModelUrl: "/showroom.glb",
     options,

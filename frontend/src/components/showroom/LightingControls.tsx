@@ -22,7 +22,7 @@ export function LightingControls({
         type="button"
         onClick={onToggleHeadlights}
         aria-pressed={headlightsOn}
-        className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
+        className={`focus-ring rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide transition ${
           headlightsOn ? "bg-white text-black" : "text-white/70 hover:bg-white/10 hover:text-white"
         }`}
       >
@@ -31,7 +31,7 @@ export function LightingControls({
       <button
         type="button"
         onClick={onPulseBrakeLights}
-        className="rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white/70 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        className="focus-ring rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white/70 transition hover:bg-white/10 hover:text-white"
       >
         Brake Pulse
       </button>

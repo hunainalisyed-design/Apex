@@ -5,6 +5,7 @@ import gsap from "gsap";
 import type { Camera } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { getCameraPreset, type CameraPresetId, type Vec3Tuple } from "@/lib/showroom/cameraPresets";
+import { withReducedMotion } from "@/lib/motion/withReducedMotion";
 
 const TRANSITION_DURATION = 0.9; // seconds — AC-5's "fixed duration"
 const DOOR_DURATION = 0.7;
@@ -78,7 +79,7 @@ export function useCameraTransition(
         tz: controls.target.z,
       };
 
-      const duration = reducedMotion ? 0 : TRANSITION_DURATION;
+      const duration = withReducedMotion(reducedMotion, TRANSITION_DURATION, 0);
 
       const cameraArrived = new Promise<void>((resolve) => {
         tweenRef.current = gsap.to(from, {
@@ -102,7 +103,7 @@ export function useCameraTransition(
       const doorState = { amount: doorAmountRef.current };
       doorTweenRef.current = gsap.to(doorState, {
         amount: isInterior ? 1 : 0,
-        duration: reducedMotion ? 0 : DOOR_DURATION,
+        duration: withReducedMotion(reducedMotion, DOOR_DURATION, 0),
         ease: "power2.inOut",
         onUpdate: () => setDoorOpenAmount(doorState.amount),
       });

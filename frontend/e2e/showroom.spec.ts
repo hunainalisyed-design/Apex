@@ -5,7 +5,9 @@ test("selecting a model from /models arrives at the matching /configure/{slug} (
 }) => {
   await page.goto("/models");
 
-  const firstCard = page.getByRole("link").first();
+  // Scoped to #main-content: the page's very first link is now the skip link (Spec 12,
+  // AC-6), which always precedes the page content and isn't a vehicle card.
+  const firstCard = page.locator("#main-content").getByRole("link").first();
   const href = await firstCard.getAttribute("href");
   expect(href).toMatch(/^\/configure\//);
 

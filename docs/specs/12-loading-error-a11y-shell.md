@@ -1,7 +1,7 @@
 # Spec: Loading, Error & Accessibility Shell
 
 **File:** `docs/specs/12-loading-error-a11y-shell.md`
-**Status:** Approved
+**Status:** Implemented
 **Author:** Syed Hunain Raza
 **Reviewer:** hunainalisyed@gmail.com
 **Related:** SRS §26 (Performance Requirements), §27 (Responsive Design), §28 (Error Handling), §29 (Accessibility); depends on `01-project-foundation.md` (`useReducedMotion`), `02-vehicle-catalog-data-model.md`
@@ -74,11 +74,13 @@ This spec *is* the UI-states infrastructure other specs consume, so its own "sta
 
 | Component | Behaviour |
 |---|---|
-| `<ShowroomLoadingScreen>` | full-screen, dark, "INITIALIZING SHOWROOM..." with determinate progress (AC-2) |
+| `<LoadingScreen>` | full-screen, dark, "Initializing Showroom…" (default) or a custom `label` prop, with a decorative determinate-styled progress bar (AC-2). Renamed from the originally-specified `<ShowroomLoadingScreen>` since it's shared by both the landing hero and the showroom, not showroom-specific. |
 | `<Static3DFallback>` | still image + name + spec sheet text, styled consistently with the rest of the showroom chrome (AC-1) |
+| `<Canvas3DErrorBoundary>` | wraps only a `<Canvas>` subtree; renders `<Static3DFallback>` on failure — the rest of the page stays usable (AC-1) |
 | `<AppErrorBoundary>` | generic recovery screen, reload action, no technical detail exposed (AC-3) |
 | `<ToastProvider>` / `useToast()` | stacked, dismissible, `aria-live`-appropriate notifications (AC-8) |
-| `<ShowroomLayout>` | responsive left/right ↔ top/bottom composition primitive (AC-9) |
+| `<ShowroomLayout>` | responsive left/right ↔ top/bottom composition primitive; also owns the route's `<main id="main-content" tabIndex={-1}>` landmark so the skip link (AC-6) has one single-source-of-truth target (AC-9) |
+| `<SkipLink>` | visually-hidden-until-focused "Skip to main content" link, first element in `<body>` (AC-6) |
 
 Also specify:
 - **Validation:** none — this spec has no forms.
@@ -95,24 +97,25 @@ Also specify:
 
 | Level | What it covers | Where |
 |---|---|---|
-| **Unit** | `getErrorMessage` mapping table, including the unmapped-code fallback | `frontend/tests/lib/errors.test.ts` |
-| **Unit** | `withReducedMotion` dispatches `instant` vs. `animate` correctly based on `useReducedMotion()` | `frontend/tests/lib/motion.test.ts` |
-| **Component** | `<ShowroomLoadingScreen>`, `<Static3DFallback>`, `<AppErrorBoundary>`, `<ToastProvider>` each render and behave correctly in isolation | `frontend/tests/shell/*.test.tsx` |
-| **E2E** | keyboard-only pass: Tab reveals skip link, activating it moves focus to main content, every configurator control remains reachable and shows a focus ring | `frontend/e2e/accessibility.spec.ts` |
-| **E2E** | simulate WebGL unavailability (mock context creation failure) → assert `<Static3DFallback>` renders on both landing and showroom | `frontend/e2e/webgl-fallback.spec.ts` |
+| **Unit** | `getErrorMessage` mapping table, including the unmapped/missing-code fallback | `frontend/tests/lib/errors.test.ts` |
+| **Unit** | `withReducedMotion` dispatches `instant` vs. `animate` correctly | `frontend/tests/lib/motion.test.ts` |
+| **Component** | `<LoadingScreen>`, `<Static3DFallback>`, `<AppErrorBoundary>`, `<ToastProvider>`/`useToast()` each render and behave correctly in isolation | `frontend/tests/shell/*.test.tsx` |
+| **E2E** | keyboard-only pass: Tab reveals skip link, activating it moves focus to `#main-content`, key configurator controls remain reachable and show a visible focus ring | `frontend/e2e/accessibility.spec.ts` |
+| **E2E** | genuinely disable WebGL in a real browser context (not a mocked component throw) → assert `<Static3DFallback>` renders with vehicle-specific content on both landing and showroom | `frontend/e2e/webgl-fallback.spec.ts` |
+| **Regression** | every existing frontend unit test and e2e spec still passes after this spec's call-site migrations | full `npm test` / `npx playwright test` runs (frontend + backend) |
 
 **Traceability**
 
 | AC | Test |
 |---|---|
-| AC-1 | `webgl-fallback.spec.ts` |
-| AC-2 | `ShowroomLoadingScreen.test.tsx` |
+| AC-1 | `webgl-fallback.spec.ts`, `Static3DFallback.test.tsx`, `Hero.test.tsx`, `ConfigurePage.test.tsx` |
+| AC-2 | `LoadingScreen.test.tsx` |
 | AC-3 | `AppErrorBoundary.test.tsx` |
-| AC-4 | `errors.test.ts` |
+| AC-4 | `errors.test.ts`, `SaveSharePanel.test.tsx` ("mapped human-readable error" case) |
 | AC-5 | `motion.test.ts` |
 | AC-6, AC-7 | `accessibility.spec.ts` |
-| AC-8 | `ToastProvider.test.tsx` |
-| AC-9 | `ShowroomLayout.test.tsx` (breakpoint behavior) |
+| AC-8 | `ToastProvider.test.tsx`, `save-share.spec.ts` |
+| AC-9 | exercised indirectly via `ConfigurePage.test.tsx` (`ConfigureShowroom` is `<ShowroomLayout>`'s only consumer); no separate `ShowroomLayout.test.tsx` was added since the component has no logic of its own beyond the extracted markup |
 
 **Coverage:** ≥80% on new code.
 
@@ -125,6 +128,20 @@ Also specify:
 - Any feature-specific loading/empty/error content (e.g. Spec 10's "This build could not be found" copy) — those specs own their own message text; this spec owns the mechanism (`getErrorMessage`, toast, error boundary) they're built on.
 - Automated accessibility auditing tooling/CI integration — Phase 3 (§34.2).
 - Server-side error logging/monitoring — Phase 3 (§34.2); this spec only ensures errors are handled gracefully client-side.
+
+---
+
+## 7a. Implementation notes
+
+- **AC-2's "real download progress" is not implemented.** This branch's showroom uses the fully procedural placeholder rig (`PlaceholderShowroomRig.tsx`, see `docs/CLAUDE.md`'s "Known open blocker") — there is no real GLB download to track progress against. `<LoadingScreen>` keeps the original decorative fixed-duration progress-bar animation rather than fabricating a fake progress signal. Revisit once a real GLB asset pipeline exists (Spec 2 Risk #1).
+- **`fallbackImageUrl` has no real static file behind it**, consistent with every other asset URL in this catalog (`frontend/public/` doesn't exist on this branch). `<Static3DFallback>` renders a plain `<img>` (not `next/image`, which would need a resolvable real file) that tolerates a broken image; the vehicle name and spec sheet text next to it are the actual substance of AC-1, not the image itself.
+- **`<Canvas3DErrorBoundary>` vs `<AppErrorBoundary>` is a deliberate two-boundary design, not a merge.** The former only wraps a `<Canvas>` subtree and lets the rest of the page keep working; the latter is a genuinely new, top-level boundary around the whole app (wired into `layout.tsx`) that catches an error anywhere else in the tree.
+- **A real WebGL-unavailability failure does not throw synchronously through React**, and a standard `getDerivedStateFromError`/`componentDidCatch` boundary structurally cannot catch it. This was discovered by testing `<Canvas3DErrorBoundary>` against a genuinely WebGL-disabled browser context in `webgl-fallback.spec.ts` (rather than only a mocked component throw, which is what the unit tests use) — `@react-three/fiber`'s `<Canvas>` surfaces `THREE.WebGLRenderer: Error creating WebGL context.` as an **unhandled promise rejection**, which error boundaries never see. `<Canvas3DErrorBoundary>` now also feature-detects WebGL support directly (`document.createElement("canvas").getContext(...)`) in `componentDidMount`, client-side only so server-render/hydration never mismatches, and falls back immediately if unavailable — independent of, and in addition to, its reactive catch for genuine React render errors inside the 3D subtree. This does not cover a context loss occurring mid-session after a successful initial mount; that is a separate, harder problem this spec does not attempt.
+- **`aria-hidden` on the hero's decorative 3D area must not be static.** `Hero.tsx`'s 3D-scene wrapper was originally always `aria-hidden="true"` (correct when a decorative 3D scene is rendering), but once `<Canvas3DErrorBoundary>` can substitute in `<Static3DFallback>` — real, substantive content (vehicle name + spec sheet) — a static `aria-hidden="true"` would hide that content from assistive tech entirely, silently reproducing the same failure AC-1 exists to prevent, just via ARIA instead of a visually broken canvas. Found via the same real-browser WebGL-disabled e2e test (the accessibility tree query for the fallback's heading returned nothing despite the text being visibly on screen). Fixed by tracking `sceneError` state in `Hero.tsx` via `<Canvas3DErrorBoundary>`'s existing `onError` callback and setting `aria-hidden={!sceneError}` — mirrors `ConfigureShowroom.tsx`, which never had this bug since its scene wrapper was never `aria-hidden` to begin with.
+- **Skip-link targets need `tabIndex={-1}`, not just a matching `id`.** A plain `<main id="main-content">` is not focusable, so activating `<SkipLink>` would scroll to it without ever moving keyboard focus there — defeating half the point of a skip link. Every `#main-content` landmark (`<ShowroomLayout>`, `Hero.tsx`, `<AppErrorBoundary>`'s own fallback, `not-found.tsx`, `BuildNotFoundPanel.tsx`, `models/page.tsx`) sets `tabIndex={-1}`. Confirmed via `accessibility.spec.ts` asserting `#main-content` is actually focused (not just scrolled to) after activating the skip link.
+- **Toasts now stack instead of replacing one another** (a real capability the old per-feature local toasts in Specs 10/11 never had — each only held a single `useState<string | null>`). `save-share.spec.ts` was updated to scope its assertions to a specific toast's text rather than assuming a single `role="status"` region, since two toasts (e.g. "Configuration ID copied" then "Share link copied") can be visible simultaneously.
+- **`configurationStore.ts`'s `save()` failure path now shows a mapped, human-readable message via `getErrorMessage(err.code)`** instead of the raw backend `err.message` string — a genuine behavior improvement per AC-4, not just a rename. Existing tests that asserted on a specific raw message text were updated to assert on the mapped text instead.
+- **jsdom has no WebGL support**, so `<Canvas3DErrorBoundary>`'s feature-detection would make every existing unit test render `<Static3DFallback>` instead of each test's mocked 3D-scene component. `vitest.setup.ts` stubs `HTMLCanvasElement.prototype.getContext` to return a truthy value for `"webgl"`/`"webgl2"`/`"experimental-webgl"`, mirroring the existing `window.matchMedia` stub already there for the same category of jsdom gap. Tests that need to exercise the real unavailable path do so via a real browser in `webgl-fallback.spec.ts` instead.
 
 ---
 

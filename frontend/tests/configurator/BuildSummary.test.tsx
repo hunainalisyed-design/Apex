@@ -44,6 +44,7 @@ function makeVehicle(): VehicleDetailDto {
     topSpeedKph: 280,
     zeroToHundredSec: 4.2,
     thumbnailUrl: "/thumb.jpg",
+    fallbackImageUrl: "/fallback.jpg",
     heroModelUrl: "/hero.glb",
     showroomModelUrl: "/showroom.glb",
     options,

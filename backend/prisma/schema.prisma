@@ -2,6 +2,7 @@
 // Spec 01: datasource/generator only. Spec 02: vehicle catalog data model.
 // Spec 06: ApplyMode (owned by Spec 8's definition, migrated here per its Risk #3) + customPaintHex.
 // Spec 10: Configuration.expiresAt (guest-build retention, see that spec's §4).
+// Spec 12: Vehicle.fallbackImageUrl (WebGL-unavailable static fallback, see that spec's §4).
 
 generator client {
   provider = "prisma-client-js"
@@ -53,6 +54,7 @@ model Vehicle {
   heroModelUrl     String
   showroomModelUrl String
   thumbnailUrl     String
+  fallbackImageUrl String
   isActive         Boolean  @default(true)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

@@ -21,6 +21,15 @@ describe("Vehicle catalog endpoints (integration)", () => {
     expect(gt).toMatchObject({ name: "Apex GT", basePriceCents: 8_500_000 });
   });
 
+  it("GET /api/vehicles includes fallbackImageUrl for the WebGL-unavailable fallback (Spec 12, AC-1)", async () => {
+    const res = await request(createApp()).get("/api/vehicles");
+
+    for (const vehicle of res.body.data) {
+      expect(typeof vehicle.fallbackImageUrl).toBe("string");
+      expect(vehicle.fallbackImageUrl.length).toBeGreaterThan(0);
+    }
+  });
+
   it("GET /api/vehicles/:slug returns the full option catalog grouped by category (AC-2)", async () => {
     const res = await request(createApp()).get("/api/vehicles/apex-gt");
 

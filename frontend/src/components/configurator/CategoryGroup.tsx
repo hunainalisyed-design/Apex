@@ -13,7 +13,7 @@ export interface CategoryGroupProps {
 export function CategoryGroup({ title, children, defaultOpen = true }: CategoryGroupProps) {
   return (
     <details className="glass-panel rounded-2xl px-4 py-3" open={defaultOpen}>
-      <summary className="cursor-pointer select-none text-xs font-semibold uppercase tracking-wide text-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+      <summary className="focus-ring cursor-pointer select-none text-xs font-semibold uppercase tracking-wide text-white/70">
         {title}
       </summary>
       <div className="mt-3 flex flex-col gap-4">{children}</div>

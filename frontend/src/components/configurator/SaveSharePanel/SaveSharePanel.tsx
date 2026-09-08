@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useToast } from "@/components/shell/ToastProvider";
 import { formatPriceCents } from "@/lib/format/currency";
 import { buildShareUrl } from "@/lib/showroom/shareUrl";
 import { useConfigurationStore } from "@/state/configurationStore";
@@ -10,14 +10,10 @@ export interface SaveSharePanelProps {
   vehicle: VehicleDetailDto;
 }
 
-const TOAST_DURATION_MS = 2500;
-
 /** Save/Copy ID/Share/Reset controls (Spec 10) — lives directly below BuildSummary, per
- * the spec's own UI-states wording ("live in or beside the build summary panel"). Toast is
- * a minimal local mechanism (not a global provider): Spec 12 will eventually own a shared
- * one, but it doesn't exist yet, and this project's established practice (Spec 5's own
- * ShowroomLoadingScreen/ShowroomErrorBoundary) is to build a small local version rather
- * than block on infrastructure that hasn't landed.
+ * the spec's own UI-states wording ("live in or beside the build summary panel"). Toast
+ * confirmations/errors go through the shared ToastProvider (Spec 12) rather than a local
+ * mechanism of this component's own.
  *
  * Save status lives in the shared configurationStore (Spec 11), not local state — both
  * this panel and CaptureBuild need to read/write the same "what was last saved" record so
@@ -30,21 +26,7 @@ export function SaveSharePanel({ vehicle }: SaveSharePanelProps) {
   const saveError = useConfigurationStore((s) => s.saveError);
   const save = useConfigurationStore((s) => s.save);
   const reset = useConfigurationStore((s) => s.reset);
-
-  const [toast, setToast] = useState<string | null>(null);
-  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    };
-  }, []);
-
-  function showToast(message: string) {
-    setToast(message);
-    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    toastTimeoutRef.current = setTimeout(() => setToast(null), TOAST_DURATION_MS);
-  }
+  const { show: showToast } = useToast();
 
   async function handleSave() {
     // Sends the full current selection state; the server recalculates the price
@@ -65,7 +47,7 @@ export function SaveSharePanel({ vehicle }: SaveSharePanelProps) {
       await navigator.clipboard.writeText(publicId);
       showToast("Configuration ID copied");
     } catch {
-      showToast("Couldn't copy — try again");
+      showToast("Couldn't copy — try again", "assertive");
     }
   }
 
@@ -74,7 +56,7 @@ export function SaveSharePanel({ vehicle }: SaveSharePanelProps) {
       await navigator.clipboard.writeText(buildShareUrl(vehicle.slug, publicId));
       showToast("Share link copied");
     } catch {
-      showToast("Couldn't copy — try again");
+      showToast("Couldn't copy — try again", "assertive");
     }
   }
 
@@ -89,7 +71,7 @@ export function SaveSharePanel({ vehicle }: SaveSharePanelProps) {
           type="button"
           onClick={handleSave}
           disabled={saveStatus === "saving"}
-          className="flex-1 rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wide text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          className="flex-1 rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wide text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50 focus-ring"
         >
           {saveStatus === "saving" ? "Saving…" : "Save"}
         </button>
@@ -101,7 +83,7 @@ export function SaveSharePanel({ vehicle }: SaveSharePanelProps) {
           type="button"
           onClick={handleReset}
           aria-label="Reset configuration"
-          className="rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white/70 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          className="rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white/70 transition hover:bg-white/10 hover:text-white focus-ring"
         >
           Reset
         </button>
@@ -138,25 +120,19 @@ export function SaveSharePanel({ vehicle }: SaveSharePanelProps) {
             <button
               type="button"
               onClick={() => handleCopyId(savedConfiguration.publicId)}
-              className="flex-1 rounded-full border border-white/20 px-3 py-1.5 font-semibold uppercase tracking-wide text-white/80 transition hover:border-white/50 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              className="flex-1 rounded-full border border-white/20 px-3 py-1.5 font-semibold uppercase tracking-wide text-white/80 transition hover:border-white/50 hover:text-white focus-ring"
             >
               Copy Configuration ID
             </button>
             <button
               type="button"
               onClick={() => handleShare(savedConfiguration.publicId)}
-              className="flex-1 rounded-full border border-white/20 px-3 py-1.5 font-semibold uppercase tracking-wide text-white/80 transition hover:border-white/50 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              className="flex-1 rounded-full border border-white/20 px-3 py-1.5 font-semibold uppercase tracking-wide text-white/80 transition hover:border-white/50 hover:text-white focus-ring"
             >
               Share
             </button>
           </div>
         </div>
-      )}
-
-      {toast && (
-        <p role="status" aria-live="polite" className="text-xs text-white/60">
-          {toast}
-        </p>
       )}
     </div>
   );

@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useRef } from "react";
 import type { ShowroomControls } from "@/components/showroom/ShowroomScene";
 import { useCaptureBuild } from "@/components/showroom/useCaptureBuild";
+import { useToast } from "@/components/shell/ToastProvider";
 import type { CameraPresetId } from "@/lib/showroom/cameraPresets";
 import { buildShareUrl } from "@/lib/showroom/shareUrl";
 import type { VehicleDetailDto } from "@/types/catalog";
@@ -29,6 +30,7 @@ export function CaptureBuild({ vehicle, showroomControlsRef, currentPreset, scen
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
+  const { show: showToast } = useToast();
 
   const isOpen = status === "success" && compositedImage !== null;
 
@@ -92,9 +94,9 @@ export function CaptureBuild({ vehicle, showroomControlsRef, currentPreset, scen
     if (!publicId) return;
     try {
       await navigator.clipboard.writeText(buildShareUrl(vehicle.slug, publicId));
+      showToast("Share link copied");
     } catch {
-      // Best-effort — SaveSharePanel already owns the equivalent toast-confirmed action;
-      // keeping this modal's surface minimal rather than duplicating a second toast here.
+      showToast("Couldn't copy — try again", "assertive");
     }
   }
 
@@ -106,7 +108,7 @@ export function CaptureBuild({ vehicle, showroomControlsRef, currentPreset, scen
         type="button"
         onClick={capture}
         disabled={!sceneReady || isBusy}
-        className="glass-panel flex items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white/80 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        className="glass-panel flex items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white/80 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 focus-ring"
       >
         {isBusy ? "Capturing your build…" : "Capture Build"}
       </button>
@@ -136,14 +138,14 @@ export function CaptureBuild({ vehicle, showroomControlsRef, currentPreset, scen
               <button
                 type="button"
                 onClick={handleSaveImage}
-                className="flex-1 rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wide text-black transition hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                className="flex-1 rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wide text-black transition hover:bg-white/90 focus-ring"
               >
                 Save Image
               </button>
               <button
                 type="button"
                 onClick={handleCopyShareLink}
-                className="flex-1 rounded-full border border-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white/80 transition hover:border-white/50 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                className="flex-1 rounded-full border border-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white/80 transition hover:border-white/50 hover:text-white focus-ring"
               >
                 Copy Share Link
               </button>
@@ -151,7 +153,7 @@ export function CaptureBuild({ vehicle, showroomControlsRef, currentPreset, scen
             <button
               type="button"
               onClick={dismiss}
-              className="self-center text-xs text-white/50 underline-offset-2 hover:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              className="self-center text-xs text-white/50 underline-offset-2 hover:text-white hover:underline focus-ring"
             >
               Close
             </button>

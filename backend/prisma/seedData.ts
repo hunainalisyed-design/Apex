@@ -24,6 +24,7 @@ export interface SeedVehicle {
   heroModelUrl: string;
   showroomModelUrl: string;
   thumbnailUrl: string;
+  fallbackImageUrl: string;
   options: SeedOption[];
 }
 
@@ -164,6 +165,7 @@ export const seedVehicles: SeedVehicle[] = [
     heroModelUrl: "/models/apex-gt/hero.glb",
     showroomModelUrl: "/models/apex-gt/showroom.glb",
     thumbnailUrl: "/models/apex-gt/thumbnail.jpg",
+    fallbackImageUrl: "/models/apex-gt/fallback.jpg",
     options: buildOptionCatalog(),
   },
   {
@@ -178,6 +180,7 @@ export const seedVehicles: SeedVehicle[] = [
     heroModelUrl: "/models/apex-rs/hero.glb",
     showroomModelUrl: "/models/apex-rs/showroom.glb",
     thumbnailUrl: "/models/apex-rs/thumbnail.jpg",
+    fallbackImageUrl: "/models/apex-rs/fallback.jpg",
     options: buildOptionCatalog(),
   },
 ];

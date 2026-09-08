@@ -19,16 +19,17 @@ import { useConfigurationStore } from "@/state/configurationStore";
 import { SINGLE_SELECT_CATEGORIES, type OptionCategory, type VehicleDetailDto } from "@/types/catalog";
 import type { SavedConfigurationDto } from "@/types/configuration";
 import type { SingleSelectCategory } from "@/types/pricing";
+import { Canvas3DErrorBoundary } from "@/components/shell/Canvas3DErrorBoundary";
+import { LoadingScreen } from "@/components/shell/LoadingScreen";
+import { ShowroomLayout } from "@/components/shell/ShowroomLayout";
 import { CameraPresetBar } from "./CameraPresetBar";
 import { HotspotLabel } from "./HotspotLabel";
 import { LightingControls } from "./LightingControls";
-import { ShowroomErrorBoundary } from "./ShowroomErrorBoundary";
-import { ShowroomLoadingScreen } from "./ShowroomLoadingScreen";
 import type { HoverLabel, ShowroomControls } from "./ShowroomScene";
 
 const ShowroomScene = dynamic(() => import("./ShowroomScene").then((m) => m.ShowroomScene), {
   ssr: false,
-  loading: () => <ShowroomLoadingScreen />,
+  loading: () => <LoadingScreen />,
 });
 
 const BRAKE_PULSE_MS = 900;
@@ -150,89 +151,92 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null }: Config
         : option.isDefault,
     )?.name;
 
+  const mainProps = { id: "main-content", "data-scene-ready": sceneReady };
+
   return (
-    <main
-      className="flex min-h-full flex-1 flex-col gap-8 px-6 py-16 lg:flex-row lg:items-start lg:justify-center"
-      data-scene-ready={sceneReady}
-    >
-      <div className="flex w-full max-w-3xl flex-col gap-4 lg:sticky lg:top-16">
-        <div className="relative aspect-video w-full">
-          <ShowroomErrorBoundary onError={() => setSceneError(true)}>
-            <ShowroomScene
-              headlightsOn={headlightsOn}
-              brakePulsing={brakePulsing}
-              reducedMotion={reducedMotion}
-              appearance={appearance}
-              interior={interior}
-              accessories={accessories}
-              onReady={handleReady}
-              onPresetChange={setCurrentPreset}
-              onHover={setHover}
-            />
-          </ShowroomErrorBoundary>
-          {hover && hoverLabelText && <HotspotLabel label={hoverLabelText} x={hover.x} y={hover.y} />}
-        </div>
-
-        <div className="glass-panel flex flex-col gap-2 rounded-2xl px-6 py-6">
-          <p className="text-xs uppercase tracking-[0.3em] text-white/50">{vehicle.tagline}</p>
-          <h1
-            className="text-3xl font-bold tracking-tight"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            {vehicle.name}
-          </h1>
-          <p className="text-lg text-white/80" data-testid="total-price">
-            {formatPriceCents(totalPriceCents, vehicle.currency)}
-          </p>
-        </div>
-
-        {!sceneError && (
-          <div className="flex flex-col gap-3">
-            <CameraPresetBar
-              currentPreset={currentPreset}
-              onSelect={handleSelectPreset}
-              disabled={!sceneReady}
-            />
-            <LightingControls
-              headlightsOn={headlightsOn}
-              onToggleHeadlights={() => setHeadlightsOn((on) => !on)}
-              onPulseBrakeLights={handlePulseBrakeLights}
-            />
+    <ShowroomLayout
+      mainProps={mainProps}
+      scene={
+        <>
+          <div className="relative aspect-video w-full">
+            <Canvas3DErrorBoundary vehicle={vehicle} onError={() => setSceneError(true)}>
+              <ShowroomScene
+                headlightsOn={headlightsOn}
+                brakePulsing={brakePulsing}
+                reducedMotion={reducedMotion}
+                appearance={appearance}
+                interior={interior}
+                accessories={accessories}
+                onReady={handleReady}
+                onPresetChange={setCurrentPreset}
+                onHover={setHover}
+              />
+            </Canvas3DErrorBoundary>
+            {hover && hoverLabelText && <HotspotLabel label={hoverLabelText} x={hover.x} y={hover.y} />}
           </div>
-        )}
-      </div>
 
-      <div className="flex w-full max-w-sm flex-col gap-3">
-        <BuildSummary vehicle={vehicle} />
-        <SaveSharePanel vehicle={vehicle} />
-        <CaptureBuild
-          vehicle={vehicle}
-          showroomControlsRef={showroomControlsRef}
-          currentPreset={currentPreset}
-          sceneReady={sceneReady}
-        />
-
-        <div className="glass-panel flex gap-1 rounded-full p-1" role="tablist" aria-label="Customization panel">
-          {(["exterior", "interior", "accessories"] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === tab}
-              onClick={() => handleSelectTab(tab)}
-              className={`flex-1 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
-                activeTab === tab ? "bg-white text-black" : "text-white/70 hover:bg-white/10 hover:text-white"
-              }`}
+          <div className="glass-panel flex flex-col gap-2 rounded-2xl px-6 py-6">
+            <p className="text-xs uppercase tracking-[0.3em] text-white/50">{vehicle.tagline}</p>
+            <h1
+              className="text-3xl font-bold tracking-tight"
+              style={{ fontFamily: "var(--font-display)" }}
             >
-              {TAB_LABELS[tab]}
-            </button>
-          ))}
-        </div>
+              {vehicle.name}
+            </h1>
+            <p className="text-lg text-white/80" data-testid="total-price">
+              {formatPriceCents(totalPriceCents, vehicle.currency)}
+            </p>
+          </div>
 
-        {activeTab === "exterior" && <ExteriorPanel vehicle={vehicle} />}
-        {activeTab === "interior" && <InteriorPanel vehicle={vehicle} />}
-        {activeTab === "accessories" && <AccessoriesPanel vehicle={vehicle} />}
-      </div>
-    </main>
+          {!sceneError && (
+            <div className="flex flex-col gap-3">
+              <CameraPresetBar
+                currentPreset={currentPreset}
+                onSelect={handleSelectPreset}
+                disabled={!sceneReady}
+              />
+              <LightingControls
+                headlightsOn={headlightsOn}
+                onToggleHeadlights={() => setHeadlightsOn((on) => !on)}
+                onPulseBrakeLights={handlePulseBrakeLights}
+              />
+            </div>
+          )}
+        </>
+      }
+      panel={
+        <>
+          <BuildSummary vehicle={vehicle} />
+          <SaveSharePanel vehicle={vehicle} />
+          <CaptureBuild
+            vehicle={vehicle}
+            showroomControlsRef={showroomControlsRef}
+            currentPreset={currentPreset}
+            sceneReady={sceneReady}
+          />
+
+          <div className="glass-panel flex gap-1 rounded-full p-1" role="tablist" aria-label="Customization panel">
+            {(["exterior", "interior", "accessories"] as const).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab}
+                onClick={() => handleSelectTab(tab)}
+                className={`focus-ring flex-1 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide transition ${
+                  activeTab === tab ? "bg-white text-black" : "text-white/70 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                {TAB_LABELS[tab]}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === "exterior" && <ExteriorPanel vehicle={vehicle} />}
+          {activeTab === "interior" && <InteriorPanel vehicle={vehicle} />}
+          {activeTab === "accessories" && <AccessoriesPanel vehicle={vehicle} />}
+        </>
+      }
+    />
   );
 }

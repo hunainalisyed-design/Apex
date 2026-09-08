@@ -13,7 +13,18 @@ vi.mock("@/hooks/useReducedMotion", () => ({
 
 const { Hero } = await import("../../src/components/landing/Hero");
 
-const vehicle = { slug: "apex-gt", name: "Apex GT", tagline: "Performance sports car." };
+const vehicle = {
+  slug: "apex-gt",
+  name: "Apex GT",
+  tagline: "Performance sports car.",
+  basePriceCents: 8500000,
+  currency: "EUR",
+  horsepower: 650,
+  topSpeedKph: 330,
+  zeroToHundredSec: 2.9,
+  thumbnailUrl: "/models/apex-gt/thumbnail.jpg",
+  fallbackImageUrl: "/models/apex-gt/fallback.jpg",
+};
 
 describe("Hero", () => {
   beforeEach(() => {
@@ -26,12 +37,11 @@ describe("Hero", () => {
     vi.clearAllMocks();
   });
 
-  it("shows the placeholder glow (not a spinner) before the 3D scene loads, then swaps it in", async () => {
+  it("shows the shared loading screen (not a spinner) before the 3D scene loads, then swaps it in", async () => {
     render(<Hero vehicle={vehicle} />);
 
     // The dynamic import hasn't resolved on the first synchronous render pass.
-    expect(screen.getByText(/3D preview unavailable/i)).toBeInTheDocument();
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.getByText("Loading…")).toBeInTheDocument();
     expect(screen.queryByTestId("hero-scene-mock")).not.toBeInTheDocument();
 
     await waitFor(() => expect(screen.getByTestId("hero-scene-mock")).toBeInTheDocument());

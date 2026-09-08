@@ -82,6 +82,7 @@ export interface VehicleSummaryDto {
   topSpeedKph: number;
   zeroToHundredSec: number;
   thumbnailUrl: string;
+  fallbackImageUrl: string; // shown by <Static3DFallback> when WebGL is unavailable (Spec 12)
 }
 
 export interface VehicleDetailDto extends VehicleSummaryDto {

@@ -15,3 +15,19 @@ if (typeof window !== "undefined" && !window.matchMedia) {
     dispatchEvent: () => false,
   });
 }
+
+// jsdom doesn't implement WebGL contexts either — HTMLCanvasElement.getContext("webgl")
+// always returns null there, same as a real browser with WebGL genuinely unavailable.
+// Canvas3DErrorBoundary (Spec 12) feature-detects WebGL support on mount and would treat
+// every test environment as "WebGL unavailable" without this, hiding the mocked 3D scene
+// components tests render in its place. Stubbed to look "available" here; tests that need
+// to exercise the real unavailable path do so via a real browser in e2e instead (see
+// e2e/webgl-fallback.spec.ts), where genuinely disabling WebGL is what's under test.
+if (typeof HTMLCanvasElement !== "undefined") {
+  HTMLCanvasElement.prototype.getContext = ((contextId: string) => {
+    if (contextId === "webgl" || contextId === "webgl2" || contextId === "experimental-webgl") {
+      return {} as unknown as WebGLRenderingContext;
+    }
+    return null;
+  }) as typeof HTMLCanvasElement.prototype.getContext;
+}

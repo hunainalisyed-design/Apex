@@ -9,6 +9,7 @@ vi.mock("../../src/components/showroom/useCaptureBuild", () => ({
 }));
 
 const { CaptureBuild } = await import("../../src/components/configurator/CaptureBuild/CaptureBuild");
+const { ToastProvider } = await import("../../src/components/shell/ToastProvider");
 
 const vehicle: VehicleDetailDto = {
   slug: "apex-gt",
@@ -20,6 +21,7 @@ const vehicle: VehicleDetailDto = {
   topSpeedKph: 280,
   zeroToHundredSec: 4.2,
   thumbnailUrl: "/thumb.jpg",
+  fallbackImageUrl: "/fallback.jpg",
   heroModelUrl: "/hero.glb",
   showroomModelUrl: "/showroom.glb",
   options: {} as VehicleDetailDto["options"],
@@ -49,12 +51,14 @@ function renderCaptureBuild(overrides: Partial<MockCaptureState> = {}, sceneRead
     ...overrides,
   });
   return render(
-    <CaptureBuild
-      vehicle={vehicle}
-      showroomControlsRef={showroomControlsRef}
-      currentPreset="default"
-      sceneReady={sceneReady}
-    />,
+    <ToastProvider>
+      <CaptureBuild
+        vehicle={vehicle}
+        showroomControlsRef={showroomControlsRef}
+        currentPreset="default"
+        sceneReady={sceneReady}
+      />
+    </ToastProvider>,
   );
 }
 

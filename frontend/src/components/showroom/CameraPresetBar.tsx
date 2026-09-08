@@ -26,7 +26,7 @@ export function CameraPresetBar({ currentPreset, onSelect, disabled = false }: C
           disabled={disabled}
           onClick={() => onSelect(preset.id)}
           aria-pressed={currentPreset === preset.id}
-          className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-40 ${
+          className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide transition focus-ring disabled:cursor-not-allowed disabled:opacity-40 ${
             currentPreset === preset.id
               ? "bg-white text-black"
               : "text-white/70 hover:bg-white/10 hover:text-white"
@@ -40,7 +40,7 @@ export function CameraPresetBar({ currentPreset, onSelect, disabled = false }: C
         disabled={disabled}
         onClick={() => onSelect("default")}
         aria-pressed={currentPreset === "default"}
-        className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-40 ${
+        className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide transition focus-ring disabled:cursor-not-allowed disabled:opacity-40 ${
           currentPreset === "default"
             ? "bg-white text-black"
             : "text-white/70 hover:bg-white/10 hover:text-white"

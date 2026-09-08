@@ -55,6 +55,7 @@ export function mapVehicleToSummaryDto(vehicle: Vehicle): VehicleSummaryDto {
     // doesn't produce a numeric value, so it must be converted explicitly.
     zeroToHundredSec: Number(vehicle.zeroToHundredSec),
     thumbnailUrl: vehicle.thumbnailUrl,
+    fallbackImageUrl: vehicle.fallbackImageUrl,
   };
 }
 

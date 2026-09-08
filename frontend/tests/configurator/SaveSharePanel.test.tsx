@@ -21,6 +21,15 @@ vi.mock("../../src/lib/api/configurations", () => ({
 
 const { SaveSharePanel } = await import("../../src/components/configurator/SaveSharePanel/SaveSharePanel");
 const { useConfigurationStore } = await import("../../src/state/configurationStore");
+const { ToastProvider } = await import("../../src/components/shell/ToastProvider");
+
+function renderPanel(vehicle: VehicleDetailDto) {
+  return render(
+    <ToastProvider>
+      <SaveSharePanel vehicle={vehicle} />
+    </ToastProvider>,
+  );
+}
 
 function makeOption(category: OptionCategory, suffix: string, isDefault: boolean): CustomizationOptionDto {
   return {
@@ -52,6 +61,7 @@ function makeVehicle(): VehicleDetailDto {
     topSpeedKph: 280,
     zeroToHundredSec: 4.2,
     thumbnailUrl: "/thumb.jpg",
+    fallbackImageUrl: "/fallback.jpg",
     heroModelUrl: "/hero.glb",
     showroomModelUrl: "/showroom.glb",
     options,
@@ -81,7 +91,7 @@ describe("SaveSharePanel", () => {
   });
 
   it("shows only Save (and Reset) at idle — no publicId, error, or copy actions", () => {
-    render(<SaveSharePanel vehicle={vehicle} />);
+    renderPanel(vehicle);
 
     expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
     expect(screen.queryByTestId("saved-public-id")).not.toBeInTheDocument();
@@ -92,7 +102,7 @@ describe("SaveSharePanel", () => {
     let resolveSave!: (value: typeof mockSavedResponse) => void;
     saveConfigurationMock.mockReturnValue(new Promise((resolve) => (resolveSave = resolve)));
 
-    render(<SaveSharePanel vehicle={vehicle} />);
+    renderPanel(vehicle);
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(screen.getByRole("button", { name: "Saving…" })).toBeDisabled());
@@ -105,7 +115,7 @@ describe("SaveSharePanel", () => {
   it("on success, shows the publicId, Copy/Share actions, and the server response's total, not the local estimate (AC-9)", async () => {
     saveConfigurationMock.mockResolvedValueOnce(mockSavedResponse);
 
-    render(<SaveSharePanel vehicle={vehicle} />);
+    renderPanel(vehicle);
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(screen.getByTestId("saved-public-id")).toHaveTextContent("APEX-7F82-K91X"));
@@ -116,21 +126,24 @@ describe("SaveSharePanel", () => {
     expect(screen.getByText(/99,999/)).toBeInTheDocument();
   });
 
-  it("on failure (AC-10), shows an inline error and leaves store selections exactly as they were", async () => {
-    saveConfigurationMock.mockRejectedValueOnce(new MockApiRequestError("VALIDATION_ERROR", "Something went wrong."));
+  it("on failure (AC-10), shows a mapped human-readable error (not the raw code/message) and leaves store selections exactly as they were", async () => {
+    saveConfigurationMock.mockRejectedValueOnce(new MockApiRequestError("VALIDATION_ERROR", "raw backend message"));
     const before = useConfigurationStore.getState().singleSelections;
 
-    render(<SaveSharePanel vehicle={vehicle} />);
+    renderPanel(vehicle);
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
-    await waitFor(() => expect(screen.getByText("Something went wrong.")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Something about this build isn't valid. Please try again.")).toBeInTheDocument(),
+    );
+    expect(screen.queryByText("raw backend message")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
     expect(useConfigurationStore.getState().singleSelections).toEqual(before);
   });
 
   it("Copy Configuration ID writes exactly the raw publicId and shows a toast (AC-6)", async () => {
     saveConfigurationMock.mockResolvedValueOnce(mockSavedResponse);
-    render(<SaveSharePanel vehicle={vehicle} />);
+    renderPanel(vehicle);
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(screen.getByTestId("saved-public-id")).toBeInTheDocument());
 
@@ -142,7 +155,7 @@ describe("SaveSharePanel", () => {
 
   it("Share writes the full shareable URL, a distinct payload from Copy ID (AC-7)", async () => {
     saveConfigurationMock.mockResolvedValueOnce(mockSavedResponse);
-    render(<SaveSharePanel vehicle={vehicle} />);
+    renderPanel(vehicle);
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(screen.getByTestId("saved-public-id")).toBeInTheDocument());
 
@@ -157,7 +170,7 @@ describe("SaveSharePanel", () => {
 
   it("Reset reverts to vehicle defaults and never calls save (AC-8)", () => {
     useConfigurationStore.getState().setSingleSelection("BRAKE_CALIPER", "BRAKE_CALIPER-alt");
-    render(<SaveSharePanel vehicle={vehicle} />);
+    renderPanel(vehicle);
 
     fireEvent.click(screen.getByRole("button", { name: "Reset configuration" }));
 

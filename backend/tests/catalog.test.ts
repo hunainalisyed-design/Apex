@@ -22,6 +22,7 @@ function makeVehicle(overrides: Partial<Vehicle> = {}): Vehicle {
     heroModelUrl: "/models/apex-gt/hero.glb",
     showroomModelUrl: "/models/apex-gt/showroom.glb",
     thumbnailUrl: "/models/apex-gt/thumbnail.jpg",
+    fallbackImageUrl: "/models/apex-gt/fallback.jpg",
     isActive: true,
     createdAt: new Date(),
     updatedAt: new Date(),

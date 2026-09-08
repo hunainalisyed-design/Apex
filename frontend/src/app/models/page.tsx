@@ -19,7 +19,7 @@ export default async function ModelsPage() {
   const vehicles = await getVehicles();
 
   return (
-    <main className="flex min-h-full flex-1 flex-col items-center gap-10 px-6 py-16">
+    <main id="main-content" tabIndex={-1} className="flex min-h-full flex-1 flex-col items-center gap-10 px-6 py-16">
       <div className="flex flex-col items-center gap-2 text-center">
         <p className="text-xs uppercase tracking-[0.3em] text-white/50">Apex Lineup</p>
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl" style={{ fontFamily: "var(--font-display)" }}>
@@ -32,7 +32,7 @@ export default async function ModelsPage() {
           <Link
             key={vehicle.slug}
             href={`/configure/${vehicle.slug}`}
-            className="glass-panel group flex flex-col gap-4 rounded-2xl p-6 transition hover:bg-white/[0.06] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            className="focus-ring glass-panel group flex flex-col gap-4 rounded-2xl p-6 transition hover:bg-white/[0.06]"
           >
             <div
               aria-hidden="true"
