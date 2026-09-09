@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AccessoriesPanel } from "@/components/configurator/AccessoriesPanel/AccessoriesPanel";
+import { CarAIAssistant } from "@/components/ai/CarAIAssistant";
 import { BuildSummary } from "@/components/configurator/BuildSummary/BuildSummary";
 import { CaptureBuild } from "@/components/configurator/CaptureBuild/CaptureBuild";
 import { ExteriorPanel } from "@/components/configurator/ExteriorPanel/ExteriorPanel";
@@ -15,6 +16,7 @@ import { resolveAccessoryAppearance } from "@/lib/showroom/accessoryAppearance";
 import type { CameraPresetId } from "@/lib/showroom/cameraPresets";
 import { resolveExteriorAppearance } from "@/lib/showroom/exteriorAppearance";
 import { resolveInteriorAppearance } from "@/lib/showroom/interiorAppearance";
+import { useCarAiChatStore } from "@/state/carAiChatStore";
 import { useConfigurationStore } from "@/state/configurationStore";
 import { SINGLE_SELECT_CATEGORIES, type OptionCategory, type VehicleDetailDto } from "@/types/catalog";
 import type { SavedConfigurationDto } from "@/types/configuration";
@@ -80,6 +82,18 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null }: Config
       hydrateDefaults(vehicle);
     }
   }, [vehicle, savedConfiguration, hydrateDefaults, hydrateFromSaved]);
+
+  const chatVehicleSlug = useCarAiChatStore((s) => s.vehicleSlug);
+  const resetChat = useCarAiChatStore((s) => s.reset);
+
+  // A CarAI conversation is scoped to one vehicle's context (Spec 15, AC-9) — mirrors the
+  // hydrate effect above exactly, but deliberately doesn't touch isOpen, so a nav-control-
+  // triggered "open" (set before navigating here, Spec 15 AC-2) survives this reset.
+  useEffect(() => {
+    if (chatVehicleSlug !== vehicle.slug) {
+      resetChat(vehicle.slug);
+    }
+  }, [vehicle.slug, chatVehicleSlug, resetChat]);
 
   const handleReady = useCallback((controls: ShowroomControls) => {
     showroomControlsRef.current = controls;
@@ -154,89 +168,92 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null }: Config
   const mainProps = { id: "main-content", "data-scene-ready": sceneReady };
 
   return (
-    <ShowroomLayout
-      mainProps={mainProps}
-      scene={
-        <>
-          <div className="relative aspect-video w-full">
-            <Canvas3DErrorBoundary vehicle={vehicle} onError={() => setSceneError(true)}>
-              <ShowroomScene
-                headlightsOn={headlightsOn}
-                brakePulsing={brakePulsing}
-                reducedMotion={reducedMotion}
-                appearance={appearance}
-                interior={interior}
-                accessories={accessories}
-                onReady={handleReady}
-                onPresetChange={setCurrentPreset}
-                onHover={setHover}
-              />
-            </Canvas3DErrorBoundary>
-            {hover && hoverLabelText && <HotspotLabel label={hoverLabelText} x={hover.x} y={hover.y} />}
-          </div>
-
-          <div className="glass-panel flex flex-col gap-2 rounded-2xl px-6 py-6">
-            <p className="text-xs uppercase tracking-[0.3em] text-white/50">{vehicle.tagline}</p>
-            <h1
-              className="text-3xl font-bold tracking-tight"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              {vehicle.name}
-            </h1>
-            <p className="text-lg text-white/80" data-testid="total-price">
-              {formatPriceCents(totalPriceCents, vehicle.currency)}
-            </p>
-          </div>
-
-          {!sceneError && (
-            <div className="flex flex-col gap-3">
-              <CameraPresetBar
-                currentPreset={currentPreset}
-                onSelect={handleSelectPreset}
-                disabled={!sceneReady}
-              />
-              <LightingControls
-                headlightsOn={headlightsOn}
-                onToggleHeadlights={() => setHeadlightsOn((on) => !on)}
-                onPulseBrakeLights={handlePulseBrakeLights}
-              />
+    <>
+      <ShowroomLayout
+        mainProps={mainProps}
+        scene={
+          <>
+            <div className="relative aspect-video w-full">
+              <Canvas3DErrorBoundary vehicle={vehicle} onError={() => setSceneError(true)}>
+                <ShowroomScene
+                  headlightsOn={headlightsOn}
+                  brakePulsing={brakePulsing}
+                  reducedMotion={reducedMotion}
+                  appearance={appearance}
+                  interior={interior}
+                  accessories={accessories}
+                  onReady={handleReady}
+                  onPresetChange={setCurrentPreset}
+                  onHover={setHover}
+                />
+              </Canvas3DErrorBoundary>
+              {hover && hoverLabelText && <HotspotLabel label={hoverLabelText} x={hover.x} y={hover.y} />}
             </div>
-          )}
-        </>
-      }
-      panel={
-        <>
-          <BuildSummary vehicle={vehicle} />
-          <SaveSharePanel vehicle={vehicle} />
-          <CaptureBuild
-            vehicle={vehicle}
-            showroomControlsRef={showroomControlsRef}
-            currentPreset={currentPreset}
-            sceneReady={sceneReady}
-          />
 
-          <div className="glass-panel flex gap-1 rounded-full p-1" role="tablist" aria-label="Customization panel">
-            {(["exterior", "interior", "accessories"] as const).map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                role="tab"
-                aria-selected={activeTab === tab}
-                onClick={() => handleSelectTab(tab)}
-                className={`focus-ring flex-1 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide transition ${
-                  activeTab === tab ? "bg-white text-black" : "text-white/70 hover:bg-white/10 hover:text-white"
-                }`}
+            <div className="glass-panel flex flex-col gap-2 rounded-2xl px-6 py-6">
+              <p className="text-xs uppercase tracking-[0.3em] text-white/50">{vehicle.tagline}</p>
+              <h1
+                className="text-3xl font-bold tracking-tight"
+                style={{ fontFamily: "var(--font-display)" }}
               >
-                {TAB_LABELS[tab]}
-              </button>
-            ))}
-          </div>
+                {vehicle.name}
+              </h1>
+              <p className="text-lg text-white/80" data-testid="total-price">
+                {formatPriceCents(totalPriceCents, vehicle.currency)}
+              </p>
+            </div>
 
-          {activeTab === "exterior" && <ExteriorPanel vehicle={vehicle} />}
-          {activeTab === "interior" && <InteriorPanel vehicle={vehicle} />}
-          {activeTab === "accessories" && <AccessoriesPanel vehicle={vehicle} />}
-        </>
-      }
-    />
+            {!sceneError && (
+              <div className="flex flex-col gap-3">
+                <CameraPresetBar
+                  currentPreset={currentPreset}
+                  onSelect={handleSelectPreset}
+                  disabled={!sceneReady}
+                />
+                <LightingControls
+                  headlightsOn={headlightsOn}
+                  onToggleHeadlights={() => setHeadlightsOn((on) => !on)}
+                  onPulseBrakeLights={handlePulseBrakeLights}
+                />
+              </div>
+            )}
+          </>
+        }
+        panel={
+          <>
+            <BuildSummary vehicle={vehicle} />
+            <SaveSharePanel vehicle={vehicle} />
+            <CaptureBuild
+              vehicle={vehicle}
+              showroomControlsRef={showroomControlsRef}
+              currentPreset={currentPreset}
+              sceneReady={sceneReady}
+            />
+
+            <div className="glass-panel flex gap-1 rounded-full p-1" role="tablist" aria-label="Customization panel">
+              {(["exterior", "interior", "accessories"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === tab}
+                  onClick={() => handleSelectTab(tab)}
+                  className={`focus-ring flex-1 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide transition ${
+                    activeTab === tab ? "bg-white text-black" : "text-white/70 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  {TAB_LABELS[tab]}
+                </button>
+              ))}
+            </div>
+
+            {activeTab === "exterior" && <ExteriorPanel vehicle={vehicle} />}
+            {activeTab === "interior" && <InteriorPanel vehicle={vehicle} />}
+            {activeTab === "accessories" && <AccessoriesPanel vehicle={vehicle} />}
+          </>
+        }
+      />
+      <CarAIAssistant vehicle={vehicle} />
+    </>
   );
 }

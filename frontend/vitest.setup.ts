@@ -31,3 +31,11 @@ if (typeof HTMLCanvasElement !== "undefined") {
     return null;
   }) as typeof HTMLCanvasElement.prototype.getContext;
 }
+
+// jsdom doesn't implement scrolling at all — Element.prototype.scrollTo is simply absent,
+// which throws for any component that auto-scrolls a container (e.g. ChatWindow's message
+// list, Spec 15 AC-3). A no-op stub is sufficient since tests assert on rendered content,
+// never actual scroll position.
+if (typeof Element !== "undefined" && !Element.prototype.scrollTo) {
+  Element.prototype.scrollTo = () => {};
+}

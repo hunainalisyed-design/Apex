@@ -32,6 +32,10 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...except the template documenting which vars exist — backend/ has no .gitignore of its
+# own, so its .env.example is tracked by default; this blanket .env* pattern (Next.js's own
+# scaffolded default) accidentally swept the frontend's equivalent file up too.
+!.env.example
 
 # vercel
 .vercel
