@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import { AppErrorBoundary } from "@/components/shell/AppErrorBoundary";
+import { Nav } from "@/components/shell/Nav/Nav";
 import { SkipLink } from "@/components/shell/SkipLink";
 import { ToastProvider } from "@/components/shell/ToastProvider";
 import "./globals.css";
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <SkipLink />
+        <Nav />
         <AppErrorBoundary>
           <ToastProvider>{children}</ToastProvider>
         </AppErrorBoundary>

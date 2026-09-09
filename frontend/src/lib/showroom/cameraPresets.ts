@@ -15,6 +15,15 @@ export interface Vec3Tuple {
   z: number;
 }
 
+/** A raw camera position/target pair — the shape both the interactive showroom's
+ * click-driven transitions (useCameraTransition.ts) and the landing page's scroll-driven
+ * showcase (Spec 13) interpolate between. Lives here rather than in the hook, since it's
+ * built directly from Vec3Tuple and the showcase needs it from a non-"use client" module. */
+export interface CameraState {
+  position: Vec3Tuple;
+  target: Vec3Tuple;
+}
+
 export interface CameraPreset {
   id: CameraPresetId;
   label: string;

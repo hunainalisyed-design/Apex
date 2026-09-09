@@ -14,7 +14,11 @@ test("first visit shows the hero headline promptly and Configure Your Car reache
     timeout: 5000,
   });
 
-  const configureLink = page.getByRole("link", { name: "Configure Your Car" });
+  // The showcase below the hero (Spec 13) also renders its own "Configure Your Car" CTA
+  // (in its static fallback unconditionally, or its live scene's summary beat once
+  // scrolled to) — .first() targets specifically the hero's own, matching this test's
+  // documented intent ("the hero headline promptly").
+  const configureLink = page.getByRole("link", { name: "Configure Your Car" }).first();
   await expect(configureLink).toBeVisible();
   await configureLink.click();
 
@@ -26,7 +30,9 @@ test("dragging the hero vehicle responds without navigating or crashing (AC-7)",
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "BUILD YOUR VISION." })).toBeVisible();
 
-  const heroArea = page.locator("[aria-hidden='true']").first();
+  // Scoped to <main> — Nav (Spec 13) also has its own legitimate aria-hidden elements
+  // (the disabled Compare item's "Soon" badge), which now precede Hero's in DOM order.
+  const heroArea = page.locator("main [aria-hidden='true']").first();
   const box = await heroArea.boundingBox();
   expect(box).not.toBeNull();
 

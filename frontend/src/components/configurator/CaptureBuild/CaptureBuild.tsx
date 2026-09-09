@@ -4,6 +4,7 @@ import { useEffect, useId, useMemo, useRef } from "react";
 import type { ShowroomControls } from "@/components/showroom/ShowroomScene";
 import { useCaptureBuild } from "@/components/showroom/useCaptureBuild";
 import { useToast } from "@/components/shell/ToastProvider";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import type { CameraPresetId } from "@/lib/showroom/cameraPresets";
 import { buildShareUrl } from "@/lib/showroom/shareUrl";
 import type { VehicleDetailDto } from "@/types/catalog";
@@ -14,8 +15,6 @@ export interface CaptureBuildProps {
   currentPreset: CameraPresetId;
   sceneReady: boolean;
 }
-
-const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /** "Capture Build" button + success modal (Spec 11) — a sibling directly below
  * SaveSharePanel, both "build sharing" actions clustered together in the right column.
@@ -47,40 +46,9 @@ export function CaptureBuild({ vehicle, showroomControlsRef, currentPreset, scen
     };
   }, [imageUrl]);
 
-  // Focus moves into the dialog on open; Tab/Shift+Tab cycles within it; Escape dismisses.
-  useEffect(() => {
-    if (!isOpen) return;
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    const focusables = () => Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
-    focusables()[0]?.focus();
-
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        dismiss();
-        return;
-      }
-      if (e.key !== "Tab") return;
-
-      const items = focusables();
-      if (items.length === 0) return;
-      const first = items[0];
-      const last = items[items.length - 1];
-
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, dismiss]);
+  // Focus moves into the dialog on open; Tab/Shift+Tab cycles within it; Escape dismisses
+  // (Spec 11) — shared with Nav's mobile menu (Spec 13) via useFocusTrap.
+  useFocusTrap(dialogRef, isOpen, dismiss);
 
   function handleSaveImage() {
     if (!imageUrl || !filename) return;

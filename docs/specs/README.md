@@ -31,7 +31,7 @@ Status values: **Backlog** (not yet spec'd) → **Draft** → **Approved** → *
 | 10 | `10-save-share-configuration.md` | §18 | Implemented |
 | 11 | `11-screenshot-capture.md` | §19 | Implemented |
 | 12 | `12-loading-error-a11y-shell.md` | §26, §27, §28, §29 | Implemented |
-| 13 | `13-navigation-scroll-shell.md` | §22, §23 | Approved |
+| 13 | `13-navigation-scroll-shell.md` | §22, §23 | Implemented |
 
 Build order follows the table: 1–3 are shared foundations every later spec depends on; 4–13 can mostly proceed in parallel once 1–3 land, except 6/7/8 depend on 3, and 9/10/11 depend on 6/7/8.
 

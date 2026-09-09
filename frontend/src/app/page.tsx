@@ -1,4 +1,5 @@
 import { Hero } from "@/components/landing/Hero";
+import { ScrollShowcase } from "@/components/landing/ScrollShowcase/ScrollShowcase";
 import type { VehicleSummaryDto } from "@/types/catalog";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
@@ -34,5 +35,10 @@ async function getFeaturedVehicle(): Promise<VehicleSummaryDto> {
 export default async function Home() {
   const vehicle = await getFeaturedVehicle();
 
-  return <Hero vehicle={vehicle} />;
+  return (
+    <>
+      <Hero vehicle={vehicle} />
+      <ScrollShowcase vehicle={vehicle} />
+    </>
+  );
 }

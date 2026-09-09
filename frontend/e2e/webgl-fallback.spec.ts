@@ -22,9 +22,13 @@ test("landing hero shows the vehicle-specific static fallback when WebGL is unav
   await disableWebGL(page);
   await page.goto("/");
 
-  await expect(page.getByText(/3D preview unavailable/i)).toBeVisible({ timeout: 10000 });
-  await expect(page.getByRole("heading", { name: "Apex GT" })).toBeVisible();
-  await expect(page.getByText(/hp$/)).toBeVisible();
+  // Scoped to <main> (Hero's own landmark) — the scroll showcase below it (Spec 13) also
+  // wraps its own Canvas in Canvas3DErrorBoundary and independently shows the same
+  // vehicle's fallback when WebGL is unavailable, so an unscoped query would find two.
+  const hero = page.locator("main");
+  await expect(hero.getByText(/3D preview unavailable/i)).toBeVisible({ timeout: 10000 });
+  await expect(hero.getByRole("heading", { name: "Apex GT" })).toBeVisible();
+  await expect(hero.getByText(/hp$/)).toBeVisible();
   // The rest of the page stays usable even though the 3D scene failed.
   await expect(page.getByRole("link", { name: "Configure Your Car" })).toBeVisible();
 });

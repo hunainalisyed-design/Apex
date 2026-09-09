@@ -1,19 +1,6 @@
 import Link from "next/link";
+import { getVehicles } from "@/lib/api/vehicles";
 import { formatPriceCents } from "@/lib/format/currency";
-import type { VehicleSummaryDto } from "@/types/catalog";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
-
-async function getVehicles(): Promise<VehicleSummaryDto[]> {
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/vehicles`, { cache: "no-store" });
-    if (!res.ok) return [];
-    const { data } = (await res.json()) as { data: VehicleSummaryDto[] };
-    return data;
-  } catch {
-    return [];
-  }
-}
 
 export default async function ModelsPage() {
   const vehicles = await getVehicles();

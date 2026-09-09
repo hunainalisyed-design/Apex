@@ -4,16 +4,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import type { Camera } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import { getCameraPreset, type CameraPresetId, type Vec3Tuple } from "@/lib/showroom/cameraPresets";
+import { getCameraPreset, type CameraPresetId, type CameraState, type Vec3Tuple } from "@/lib/showroom/cameraPresets";
 import { withReducedMotion } from "@/lib/motion/withReducedMotion";
 
 const TRANSITION_DURATION = 0.9; // seconds — AC-5's "fixed duration"
 const DOOR_DURATION = 0.7;
 
-export interface CameraState {
-  position: Vec3Tuple;
-  target: Vec3Tuple;
-}
+export type { CameraState };
 
 export interface CameraTransitionControls {
   currentPreset: CameraPresetId;
