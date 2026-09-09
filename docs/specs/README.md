@@ -39,7 +39,7 @@ Build order follows the table: 1–3 are shared foundations every later spec dep
 
 | # | Spec file | SRS section(s) | Status |
 |---|---|---|---|
-| 14 | `14-ai-configuration-backend.md` | §13, §14, §16 | Approved |
+| 14 | `14-ai-configuration-backend.md` | §13, §14, §16 | Implemented |
 | 15 | `15-carai-assistant-ui.md` | §15 | Approved |
 | 16 | `16-authentication.md` | §36.1–36.3, §36.5–36.6 | Approved |
 | 17 | `17-account-dashboard-my-garage.md` | §36.4 | Approved |

@@ -1,7 +1,7 @@
 # Spec: AI Configuration Backend (CarAI)
 
 **File:** `docs/specs/14-ai-configuration-backend.md`
-**Status:** Approved
+**Status:** Implemented
 **Author:** Syed Hunain Raza
 **Reviewer:** hunainalisyed@gmail.com
 **Related:** SRS §13 (AI Car Configuration Assistant), §14 (AI Configuration Commands), §16 (AI API Architecture); depends on `02-vehicle-catalog-data-model.md` (catalog, category constants), `03-dynamic-pricing-engine.md`
@@ -78,6 +78,7 @@ The recommendation is intentionally partial (only the categories CarAI decided t
 | `502` | `AI_PROVIDER_ERROR` | the Claude API call failed, timed out, or its output could not be parsed at all |
 | `404` | `VEHICLE_NOT_FOUND` | reused from Spec 2 |
 | `400` | `VALIDATION_ERROR` | malformed request shape |
+| `503` | `AI_ASSISTANT_DISABLED` | `AI_ASSISTANT_ENABLED` is explicitly set to `"false"` (added during implementation — see Rollout and §7a) |
 
 ### Breaking-change check
 
@@ -152,6 +153,21 @@ This spec has no UI of its own (Spec 15 owns the chat interface). It defines the
 - Recommending a *different vehicle* than the one currently open — CarAI operates within the currently-loaded vehicle's catalog only; cross-vehicle recommendations ("which car should I get") are not handled. See Risk #2.
 - Persisted conversation history across sessions — Phase 2 is stateless per the frontend's own session; a "saved chat history" feature is not requested anywhere in the SRS.
 - Enforcing a stated budget constraint (e.g. "under €100,000") beyond passing the user's own words to the model and returning the real computed total — see Risk #1.
+
+---
+
+## 7a. Implementation notes
+
+- **A schema that only constrains option ids gives the model nothing to reason with.** `buildConfigureToolSchema` enforces which ids are *valid*, but doesn't tell the model what any id *is* — mapping "make the interior darker" to a specific `INTERIOR_MATERIAL`/`INTERIOR_LIGHTING` id needs option names/descriptions/prices, and the user's current selections resolved to names, not bare ids. `buildPrompt.ts` builds this: static persona/rules go in `system`; the per-vehicle catalog (every option's name/description/price, grouped by category) plus current selections (ids resolved to names) plus `history` plus the latest `message` go in `messages`, in that order — this is what makes AC-5's relative commands actually work, not just what the enum constraint alone provides.
+- **One forced tool, never free text to parse.** `recommend_configuration` is always called via `tool_choice: {type: "tool", name: ...}` — the backend never branches on "did the model call a tool or reply in prose," it only ever reads the tool's structured `input`. `assistantMessage` lives *inside* that same tool call (not a separate content block), so there's exactly one code path for extracting output, not two.
+- **Flat per-category schema, not a nested optional `recommendation` object.** Strict mode requires every property in `required`; optionality is expressed via a nullable type (`{"anyOf": [{"type":"null"}, {"type":"string","enum":[...]}]}` per category), not omission. A nested object would need the same per-category nullable leaves one level deeper, plus an extra null/object branch — flat is simpler and no less constrained. All-category-null is how "no recommendation is warranted" (AC-4) is represented.
+- **Merge semantics** (not stated as precisely as this in §3, resolved here): `singleSelections` — the recommendation replaces the current value per changed category (only one value is ever possible per category). `multiSelections` — the recommendation's ids are *added* to the current selections per category (per §3's own DTO comment, "accessories/packages to add"), deduplicated via `Set` before merging — this specifically avoids `calculatePrice` throwing `DUPLICATE_OPTION_SELECTION` when the model "recommends" an accessory the user already has.
+- **Every Claude API failure collapses to one `AiProviderError` → 502, deliberately not distinguished by SDK exception subclass.** The `try` block around the API call wraps nothing else, so any error it throws — a typed SDK exception or otherwise — is by definition an AI-provider failure, not a bug elsewhere in the orchestration; AC-6 treats all of them identically, so there's no behavioral reason to branch on error type.
+- **Thinking is left adaptive (Opus 5's own default) at `effort: "low"`, not disabled**, even though this task ("pick from a constrained catalog, write a short reply") doesn't obviously need extended thinking. Disabling thinking on Opus 5 has a documented failure mode where the model can write what should be a tool call into visible text instead of a real `tool_use` block — for a forced-single-tool endpoint that would surface as an avoidable `AI_PROVIDER_ERROR`, not a correctness risk, but there's no reason to accept that cost. Model/timeout/max_tokens/thinking/effort are all pinned as named constants in `claudeClient.ts` (Risk #3), not inline literals.
+- **No live-API smoke test was run during this implementation** — every test (unit and integration) exercises this against a mocked `createConfigureMessage`, never the real Claude API, since no `ANTHROPIC_API_KEY` was available in this environment at implementation time. In particular, the exact nullable-`anyOf` JSON-schema shape and forced `tool_choice` + adaptive-thinking combination are believed correct from Anthropic's own current documentation but have **not** been empirically verified against a live call. Do this before shipping Spec 15's chat UI against this endpoint for real.
+- **`AI_ASSISTANT_ENABLED` and its `503 AI_ASSISTANT_DISABLED` code were added during implementation**, not originally in this spec's §3 — the Rollout section only suggested the flag as something to "consider," but building it was cheap and this is explicitly the first endpoint in the product that spends real money per request. The error code is now listed in §3 alongside the two ACs' original three.
+- **This repo's first `vi.mock()` usage.** No prior backend test mocked an external dependency — every earlier integration test ran against a real seeded Postgres only. `claudeClient.ts` is deliberately a one-function wrapper (`createConfigureMessage`) specifically so the mocking surface stays minimal — tests mock that one function, never the `@anthropic-ai/sdk` package itself.
+- **The AI rate limiter's tight window (1 request / 5s) blocked this file's own rapid-fire integration tests against each other** — `aiRateLimit` isn't what `ai.int.test.ts` is testing, so that test file mocks `middleware/rateLimit.js` to bypass it (`aiRateLimit` replaced with a pass-through, `configurationRateLimit` left real via `importOriginal`), rather than adding test-only reset surface area to production code.
 
 ---
 

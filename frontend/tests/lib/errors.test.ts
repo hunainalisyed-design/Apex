@@ -15,6 +15,8 @@ describe("getErrorMessage", () => {
     ],
     ["CONFIGURATION_NOT_FOUND", "This build could not be found."],
     ["RATE_LIMITED", "Too many requests. Please wait a moment and try again."],
+    ["AI_PROVIDER_ERROR", "CarAI is temporarily unavailable. You can continue configuring manually."],
+    ["AI_ASSISTANT_DISABLED", "CarAI is temporarily unavailable. You can continue configuring manually."],
   ])("maps %s to its human-readable message", (code, expected) => {
     expect(getErrorMessage(code)).toBe(expected);
   });

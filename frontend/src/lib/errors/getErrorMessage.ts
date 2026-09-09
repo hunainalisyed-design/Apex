@@ -5,6 +5,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   DUPLICATE_OPTION_SELECTION: "A selection was submitted more than once. Please refresh and try again.",
   CONFIGURATION_NOT_FOUND: "This build could not be found.",
   RATE_LIMITED: "Too many requests. Please wait a moment and try again.",
+  AI_PROVIDER_ERROR: "CarAI is temporarily unavailable. You can continue configuring manually.",
+  AI_ASSISTANT_DISABLED: "CarAI is temporarily unavailable. You can continue configuring manually.",
 };
 
 const FALLBACK_MESSAGE = "Something went wrong. Please try again.";
