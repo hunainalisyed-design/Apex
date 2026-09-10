@@ -11,6 +11,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   INVALID_CREDENTIALS: "Incorrect email or password.",
   TOO_MANY_ATTEMPTS: "Too many attempts. Please wait a moment and try again.",
   INVALID_OR_EXPIRED_TOKEN: "This reset link is invalid or has expired. Please request a new one.",
+  ALREADY_CLAIMED: "This build has already been claimed by another account.",
+  UNAUTHENTICATED: "Please sign in to continue.",
 };
 
 const FALLBACK_MESSAGE = "Something went wrong. Please try again.";

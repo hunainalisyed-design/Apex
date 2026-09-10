@@ -1,7 +1,7 @@
 # Spec: Account Dashboard ("My Garage")
 
 **File:** `docs/specs/17-account-dashboard-my-garage.md`
-**Status:** Approved
+**Status:** Implemented
 **Author:** Syed Hunain Raza
 **Reviewer:** hunainalisyed@gmail.com
 **Related:** SRS §36.4 (Account Dashboard); depends on `16-authentication.md`, `10-save-share-configuration.md` (`Configuration`, `publicId`), `09-build-summary.md` (condensed summary)
@@ -155,12 +155,27 @@ Also specify:
 
 ---
 
+## 7a. Implementation notes
+
+- **A real, independent bug in already-shipped Spec 10 code was fixed in this PR.** `getConfigurationByPublicId` unconditionally refreshed `expiresAt` to +90 days on every load. Since "Load" from My Garage (AC-3) hits this exact function, every load of an owned build would have silently un-nulled its "never expires" status (AC-6/§4) back to a 90-day countdown. Fixed by guarding the refresh to only run for a guest build (`userId === null`); an owned build's `expiresAt` is never touched again once set to `null`.
+- **`SavedConfigurationDto` gained one additive field: `ownerId: string | null`.** The spec's own §3 breaking-change check ("no field removed/renamed/narrowed") permits this — nothing about the existing shape changed. It's populated by a new shared `mapConfigurationToDto()` helper (extracted from `getConfigurationByPublicId`'s previously-inline mapping, now reused by the list endpoint too) and is what lets the frontend know whether a loaded build is claimable at all: without it, there'd be no way to distinguish "a guest build I can claim" from "a build someone else already owns" from "my own build" on the loaded-build view.
+- **AC-4 ("edit creates a new entry, never an in-place mutation") needed zero new code.** There was exactly one `prisma.configuration.update` call anywhere in the backend before this spec (the `expiresAt` refresh above, now guarded) and no PUT/PATCH route on `Configuration` — `save()` already always creates a fresh row via `createWithFreshPublicId`. Loading a build and clicking Save again was already guaranteed to produce a new `publicId`, confirmed by `garage.int.test.ts` and `my-garage.spec.ts` rather than assumed.
+- **Claiming a build you already own is treated as idempotent success, not a 409.** AC-7/AC-8 don't cover a caller re-claiming their own already-claimed build. `decideClaimOutcome` (a pure, DB-independent function, unit-tested in `garage.test.ts`) resolves this as `"idempotent"` — a self-claim isn't an ownership change, so erroring would be surprising. Only a build owned by a *different* user 409s (`ALREADY_CLAIMED`).
+- **Password change (AC-9) needed `requireAuth` to expose the raw session token, not just the resolved user.** `req.sessionToken` (a new field alongside `req.user`) lets `PUT /me/password` identify and exclude its own session from the bulk revocation — a new `revokeAllSessionsForUserExcept` mirrors Spec 16's `revokeAllSessionsForUser`, and is composed into the same `prisma.$transaction` pattern `passwordReset.ts` established, so the password-hash update and the other-session revocation happen atomically.
+- **Wrong-current-password on `PUT /me/password` extends Spec 16's `ApiError.details` convention into a new context.** It returns `401 INVALID_CREDENTIALS` with `details: {currentPassword: [...]}` so the frontend shows it inline under the Current Password field rather than a generic banner — safe here specifically because the route is authenticated (the caller's identity is already known), unlike login's deliberately vague reuse of the same error code.
+- **`(auth)/layout.tsx` now honors a `?returnTo=` query param (AC-1), validated by a new `isSafeReturnTo` open-redirect guard** — rejects anything not starting with a single `/`, and specifically also rejects a leading `/\` or `\`, since browsers normalize a leading backslash to a protocol-relative `//` before resolving a URL. Reading `returnTo` required `useSearchParams()`, which must be called in a descendant of a `<Suspense>` boundary — the layout now supplies one around `{children}` (fallback `null`, the same brief-flash trade-off already accepted on `authStore`), which let `reset-password/page.tsx` drop its own now-redundant local `<Suspense>` wrapper.
+- **The garage list fetches each unique vehicle's full detail client-side, in parallel**, since `deriveBuildSummary` (Spec 9) needs the full option catalog per vehicle, not just name/thumbnail — `getVehicleDetail(slug)` was promoted from a page-local, non-exported helper in `configure/[slug]/page.tsx` to a shared `lib/api/vehicles.ts` export used by both. `GarageCard` treats "this vehicle's detail hasn't loaded yet" as an explicit skeleton state (a prop check), separate from "the summary genuinely failed to derive" (a try/catch), so the two don't get conflated into one silent fallback.
+- **Delete is deliberately not optimistic.** A row stays in the list, with its own per-`publicId`-keyed pending/error state in `garageStore`, until the server confirms — matching §5's UI-states row. The delete confirmation dialog (`DeleteConfirmDialog`) is this app's first reusable confirm-before-destructive-action component, modeled directly on `CaptureBuild.tsx`'s existing success-modal pattern rather than inventing a new one.
+- **State is split three ways, matching each store's existing purpose**: `garageStore` (new) owns only the list; profile-name and change-password live on `authStore` (an identity concern, alongside signup/login/reset, sharing its existing `isLoading`/`details`/`errorCode` fields — the two forms' field-specific `details` keys never collide, so inline errors always land under the right field regardless of which form last submitted); claiming the *currently-loaded single build* lives on `configurationStore`, since that's the store that already owns the configurator session's save state.
+
+---
+
 ## 8. Risks and open questions
 
 | # | Risk / question | Owner | Resolution |
 |---|---|---|---|
 | 1 | SRS §36.4 says the dashboard shows saved builds "with load/edit/delete actions" — "edit" could be read as in-place mutation of a saved build rather than creating a new entry. | Product owner | Resolved — "edit" means load-then-save-as-new (AC-4), not in-place mutation, to preserve the integrity of any already-shared link to the original build (Spec 10's save/share model treats every `Configuration` row as an immutable snapshot once created). |
-| 2 | The claim flow (AC-7) requires the frontend to show a "Save to My Garage" affordance on a shared-build view for signed-in users — this touches Spec 10's build-loading UI, which was written before accounts existed. | Implementer | Open — a small, additive UI addition to Spec 10's existing loaded-build view; doesn't change Spec 10's own acceptance criteria, just adds a control visible only when signed in. |
+| 2 | The claim flow (AC-7) requires the frontend to show a "Save to My Garage" affordance on a shared-build view for signed-in users — this touches Spec 10's build-loading UI, which was written before accounts existed. | Implementer | Resolved — added directly to `SaveSharePanel.tsx`'s existing success state, conditioned on `authStore.user` being set and the loaded build's new `ownerId` field being `null`; never shows for a build the signed-in user already owns (including their own fresh saves, AC-6). |
 
 ---
 

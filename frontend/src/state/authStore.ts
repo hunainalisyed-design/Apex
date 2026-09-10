@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import * as authApi from "@/lib/api/auth";
 import { ApiRequestError } from "@/lib/api/configurations";
+import * as meApi from "@/lib/api/me";
 import type { UserDto } from "@/types/auth";
 
 export interface AuthState {
@@ -23,6 +24,11 @@ export interface AuthState {
   /** Calls GET /api/auth/me once (AC-10) — invoked by AuthHydrator on mount. */
   refreshMe: () => Promise<void>;
   clearError: () => void;
+  /** Profile editing (Spec 17, AC-9) — lives here, not garageStore, since it's an identity
+   * concern like the rest of this store. Success updates `user` in place so Nav's
+   * displayed name stays in sync immediately. */
+  updateProfile: (name: string) => Promise<boolean>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
 }
 
 /**
@@ -115,4 +121,32 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   clearError: () => set({ details: null, errorCode: null }),
+
+  updateProfile: async (name) => {
+    set({ isLoading: true, details: null, errorCode: null });
+    try {
+      const user = await meApi.updateProfile({ name });
+      set({ user, isLoading: false });
+      return true;
+    } catch (err) {
+      const details = err instanceof ApiRequestError ? (err.details ?? null) : null;
+      const errorCode = err instanceof ApiRequestError ? err.code : null;
+      set({ isLoading: false, details, errorCode });
+      return false;
+    }
+  },
+
+  changePassword: async (currentPassword, newPassword) => {
+    set({ isLoading: true, details: null, errorCode: null });
+    try {
+      await meApi.changePassword({ currentPassword, newPassword });
+      set({ isLoading: false });
+      return true;
+    } catch (err) {
+      const details = err instanceof ApiRequestError ? (err.details ?? null) : null;
+      const errorCode = err instanceof ApiRequestError ? err.code : null;
+      set({ isLoading: false, details, errorCode });
+      return false;
+    }
+  },
 }));

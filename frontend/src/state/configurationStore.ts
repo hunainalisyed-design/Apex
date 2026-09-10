@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { ApiRequestError, saveConfiguration } from "@/lib/api/configurations";
+import { ApiRequestError, claimConfiguration, saveConfiguration } from "@/lib/api/configurations";
 import { getErrorMessage } from "@/lib/errors/getErrorMessage";
 import { MULTI_SELECT_CATEGORIES, SINGLE_SELECT_CATEGORIES } from "@/types/catalog";
 import type { VehicleDetailDto } from "@/types/catalog";
@@ -77,6 +77,11 @@ export interface ConfigurationState {
   /** True when the current selections differ from savedConfiguration (or nothing has been
    * saved yet) — the basis for Spec 11 AC-1/AC-2's "skip a redundant save." */
   isDirtySinceLastSave: () => boolean;
+  /** Claims the currently-loaded unowned build for the signed-in caller (Spec 17, AC-7).
+   * Lives here rather than garageStore because it operates on the single build loaded into
+   * this configurator session, not the garage list. Replaces savedConfiguration with the
+   * now-owned dto on success so the "Save to My Garage" affordance disappears reactively. */
+  claim: () => Promise<void>;
 }
 
 /**
@@ -191,6 +196,13 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => {
         JSON.stringify(state.multiSelections) !== JSON.stringify(saved.multiSelections) ||
         state.customPaintHex !== saved.customPaintHex
       );
+    },
+
+    claim: async () => {
+      const publicId = get().savedConfiguration?.publicId;
+      if (!publicId) return;
+      const claimed = await claimConfiguration(publicId);
+      set({ savedConfiguration: claimed });
     },
   };
 });

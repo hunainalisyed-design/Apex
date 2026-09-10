@@ -1,8 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useToast } from "@/components/shell/ToastProvider";
+import { ApiRequestError } from "@/lib/api/configurations";
 import { formatPriceCents } from "@/lib/format/currency";
+import { getErrorMessage } from "@/lib/errors/getErrorMessage";
 import { buildShareUrl } from "@/lib/showroom/shareUrl";
+import { useAuthStore } from "@/state/authStore";
 import { useConfigurationStore } from "@/state/configurationStore";
 import type { VehicleDetailDto } from "@/types/catalog";
 
@@ -26,7 +30,10 @@ export function SaveSharePanel({ vehicle }: SaveSharePanelProps) {
   const saveError = useConfigurationStore((s) => s.saveError);
   const save = useConfigurationStore((s) => s.save);
   const reset = useConfigurationStore((s) => s.reset);
+  const claim = useConfigurationStore((s) => s.claim);
+  const user = useAuthStore((s) => s.user);
   const { show: showToast } = useToast();
+  const [isClaiming, setIsClaiming] = useState(false);
 
   async function handleSave() {
     // Sends the full current selection state; the server recalculates the price
@@ -62,6 +69,19 @@ export function SaveSharePanel({ vehicle }: SaveSharePanelProps) {
 
   function handleReset() {
     reset();
+  }
+
+  async function handleClaim() {
+    setIsClaiming(true);
+    try {
+      await claim();
+      showToast("Saved to My Garage");
+    } catch (err) {
+      const message = getErrorMessage(err instanceof ApiRequestError ? err.code : undefined);
+      showToast(message, "assertive");
+    } finally {
+      setIsClaiming(false);
+    }
   }
 
   return (
@@ -132,6 +152,20 @@ export function SaveSharePanel({ vehicle }: SaveSharePanelProps) {
               Share
             </button>
           </div>
+
+          {/* Only a guest-owned build a signed-in visitor is looking at — a build they
+              just saved themselves already has ownerId set (Spec 17, AC-6), so this never
+              shows for their own fresh saves. */}
+          {user && savedConfiguration.ownerId === null && (
+            <button
+              type="button"
+              onClick={handleClaim}
+              disabled={isClaiming}
+              className="rounded-full border border-white/20 px-3 py-1.5 font-semibold uppercase tracking-wide text-white/80 transition hover:border-white/50 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 focus-ring"
+            >
+              {isClaiming ? "Saving to My Garage…" : "Save to My Garage"}
+            </button>
+          )}
         </div>
       )}
     </div>

@@ -14,101 +14,22 @@ const MAX_CREATE_ATTEMPTS = 3;
 export interface CreateConfigurationInput extends Omit<SaveConfigurationRequest, "vehicleSlug"> {
   vehicle: Vehicle;
   options: CustomizationOption[];
+  /** Set when the save is made with a valid session (Spec 17, AC-6) — the created row is
+   * owned and never expires, instead of the guest path (null owner, 90-day expiry). */
+  userId?: string | null;
 }
 
-/**
- * Persists a configuration. calculatePrice is called first — same as pricing.ts's route,
- * this both produces the breakdown and is free validation, letting PricingError propagate
- * uncaught to the route's existing status-map catch block.
- */
-export async function createConfiguration(input: CreateConfigurationInput): Promise<SavedConfigurationDto> {
-  const breakdown = calculatePrice({
-    vehicle: {
-      slug: input.vehicle.slug,
-      basePriceCents: input.vehicle.basePriceCents,
-      currency: input.vehicle.currency,
-    },
-    options: input.options.map(mapOptionToDto),
-    singleSelections: input.singleSelections,
-    multiSelections: input.multiSelections,
-  });
-
-  const optionIds = [...Object.values(input.singleSelections), ...Object.values(input.multiSelections).flat()];
-  const configuration = await createWithFreshPublicId(
-    input.vehicle,
-    optionIds,
-    breakdown.totalPriceCents,
-    input.customPaintHex,
-  );
-
-  return {
-    publicId: configuration.publicId,
-    vehicleSlug: input.vehicle.slug,
-    singleSelections: input.singleSelections,
-    multiSelections: input.multiSelections,
-    customPaintHex: input.customPaintHex,
-    breakdown,
-    createdAt: configuration.createdAt.toISOString(),
-  };
-}
+type ConfigurationWithRelations = Prisma.ConfigurationGetPayload<{
+  include: { vehicle: true; selections: { include: { option: true } } };
+}>;
 
 /**
- * generatePublicId's own isTaken pre-check isn't atomic with this create — two concurrent
- * saves could both pass the check for the same candidate. Defense-in-depth: on a unique-
- * constraint violation targeting publicId specifically, regenerate and retry; anything
- * else propagates (there's no global error handler in app.ts, so an uncaught P2002 would
- * otherwise surface as a raw 500).
+ * Maps a Configuration row (with its vehicle + selections eager-loaded) to the wire DTO.
+ * Shared by every read path (single lookup, list) so there is exactly one place that knows
+ * how selections split back into single/multi-select maps and how the breakdown is
+ * recomputed — never read verbatim from the stored totalPriceCents snapshot.
  */
-async function createWithFreshPublicId(
-  vehicle: Vehicle,
-  optionIds: string[],
-  totalPriceCents: number,
-  customPaintHex: string | null,
-) {
-  for (let attempt = 0; attempt < MAX_CREATE_ATTEMPTS; attempt++) {
-    const publicId = await generatePublicId(vehicle.name, (candidate) =>
-      prisma.configuration.findUnique({ where: { publicId: candidate } }).then(Boolean),
-    );
-
-    try {
-      return await prisma.configuration.create({
-        data: {
-          publicId,
-          vehicleId: vehicle.id,
-          totalPriceCents,
-          customPaintHex,
-          expiresAt: new Date(Date.now() + EXPIRES_IN_MS),
-          selections: { create: optionIds.map((optionId) => ({ optionId })) },
-        },
-      });
-    } catch (err) {
-      const isPublicIdCollision =
-        err instanceof Prisma.PrismaClientKnownRequestError &&
-        err.code === "P2002" &&
-        (err.meta?.target as string[] | undefined)?.includes("publicId");
-      if (!isPublicIdCollision || attempt === MAX_CREATE_ATTEMPTS - 1) throw err;
-    }
-  }
-  // Unreachable — the loop above always either returns or throws on its final attempt.
-  throw new Error("createWithFreshPublicId: exhausted attempts without returning or throwing");
-}
-
-/**
- * The schema stores only optionId join rows (no denormalized name/price), so the returned
- * breakdown is recomputed live via calculatePrice against the exact options that were
- * originally selected — not read verbatim from the stored totalPriceCents snapshot, which
- * exists for other future uses (e.g. a My Garage list), not this endpoint. Refreshes
- * expiresAt to another 90 days out on every load (AC-11), so actively-shared builds don't
- * expire out from under people still viewing them.
- */
-export async function getConfigurationByPublicId(publicId: string): Promise<SavedConfigurationDto | null> {
-  const configuration = await prisma.configuration.findUnique({
-    where: { publicId },
-    include: { vehicle: true, selections: { include: { option: true } } },
-  });
-
-  if (!configuration) return null;
-
+function mapConfigurationToDto(configuration: ConfigurationWithRelations): SavedConfigurationDto {
   const singleSelections = {} as Record<SingleSelectCategory, string>;
   const multiSelections = Object.fromEntries(
     MULTI_SELECT_CATEGORIES.map((category): [MultiSelectCategory, string[]] => [category, []]),
@@ -134,11 +55,6 @@ export async function getConfigurationByPublicId(publicId: string): Promise<Save
     multiSelections,
   });
 
-  await prisma.configuration.update({
-    where: { id: configuration.id },
-    data: { expiresAt: new Date(Date.now() + EXPIRES_IN_MS) },
-  });
-
   return {
     publicId: configuration.publicId,
     vehicleSlug: configuration.vehicle.slug,
@@ -147,5 +63,191 @@ export async function getConfigurationByPublicId(publicId: string): Promise<Save
     customPaintHex: configuration.customPaintHex,
     breakdown,
     createdAt: configuration.createdAt.toISOString(),
+    ownerId: configuration.userId,
   };
+}
+
+/**
+ * Persists a configuration. calculatePrice is called first — same as pricing.ts's route,
+ * this both produces the breakdown and is free validation, letting PricingError propagate
+ * uncaught to the route's existing status-map catch block.
+ */
+export async function createConfiguration(input: CreateConfigurationInput): Promise<SavedConfigurationDto> {
+  const breakdown = calculatePrice({
+    vehicle: {
+      slug: input.vehicle.slug,
+      basePriceCents: input.vehicle.basePriceCents,
+      currency: input.vehicle.currency,
+    },
+    options: input.options.map(mapOptionToDto),
+    singleSelections: input.singleSelections,
+    multiSelections: input.multiSelections,
+  });
+
+  const optionIds = [...Object.values(input.singleSelections), ...Object.values(input.multiSelections).flat()];
+  const configuration = await createWithFreshPublicId(
+    input.vehicle,
+    optionIds,
+    breakdown.totalPriceCents,
+    input.customPaintHex,
+    input.userId ?? null,
+  );
+
+  return {
+    publicId: configuration.publicId,
+    vehicleSlug: input.vehicle.slug,
+    singleSelections: input.singleSelections,
+    multiSelections: input.multiSelections,
+    customPaintHex: input.customPaintHex,
+    breakdown,
+    createdAt: configuration.createdAt.toISOString(),
+    ownerId: configuration.userId,
+  };
+}
+
+/**
+ * generatePublicId's own isTaken pre-check isn't atomic with this create — two concurrent
+ * saves could both pass the check for the same candidate. Defense-in-depth: on a unique-
+ * constraint violation targeting publicId specifically, regenerate and retry; anything
+ * else propagates (there's no global error handler in app.ts, so an uncaught P2002 would
+ * otherwise surface as a raw 500).
+ */
+async function createWithFreshPublicId(
+  vehicle: Vehicle,
+  optionIds: string[],
+  totalPriceCents: number,
+  customPaintHex: string | null,
+  userId: string | null,
+) {
+  for (let attempt = 0; attempt < MAX_CREATE_ATTEMPTS; attempt++) {
+    const publicId = await generatePublicId(vehicle.name, (candidate) =>
+      prisma.configuration.findUnique({ where: { publicId: candidate } }).then(Boolean),
+    );
+
+    try {
+      return await prisma.configuration.create({
+        data: {
+          publicId,
+          vehicleId: vehicle.id,
+          totalPriceCents,
+          customPaintHex,
+          userId,
+          // A signed-in save (Spec 17, AC-6) never expires; a guest save gets the
+          // existing 90-day retention window.
+          expiresAt: userId ? null : new Date(Date.now() + EXPIRES_IN_MS),
+          selections: { create: optionIds.map((optionId) => ({ optionId })) },
+        },
+      });
+    } catch (err) {
+      const isPublicIdCollision =
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === "P2002" &&
+        (err.meta?.target as string[] | undefined)?.includes("publicId");
+      if (!isPublicIdCollision || attempt === MAX_CREATE_ATTEMPTS - 1) throw err;
+    }
+  }
+  // Unreachable — the loop above always either returns or throws on its final attempt.
+  throw new Error("createWithFreshPublicId: exhausted attempts without returning or throwing");
+}
+
+/**
+ * The schema stores only optionId join rows (no denormalized name/price), so the returned
+ * breakdown is recomputed live via calculatePrice against the exact options that were
+ * originally selected — not read verbatim from the stored totalPriceCents snapshot, which
+ * exists for other future uses (e.g. My Garage), not this endpoint. Refreshes expiresAt to
+ * another 90 days out on every load for a GUEST build only (AC-11 of Spec 10), so actively-
+ * shared builds don't expire out from under people still viewing them — an owned build
+ * (userId set) is never touched, since Spec 17 AC-6/§4 requires it to never expire; without
+ * this guard, every "Load" from My Garage would silently re-add a 90-day expiry to a build
+ * that's supposed to be permanent.
+ */
+export async function getConfigurationByPublicId(publicId: string): Promise<SavedConfigurationDto | null> {
+  const configuration = await prisma.configuration.findUnique({
+    where: { publicId },
+    include: { vehicle: true, selections: { include: { option: true } } },
+  });
+
+  if (!configuration) return null;
+
+  if (!configuration.userId) {
+    await prisma.configuration.update({
+      where: { id: configuration.id },
+      data: { expiresAt: new Date(Date.now() + EXPIRES_IN_MS) },
+    });
+  }
+
+  return mapConfigurationToDto(configuration);
+}
+
+/** The current user's saved builds, most recently saved first (Spec 17, AC-2). No
+ * expiresAt refresh here — owned builds never expire, so there's nothing to extend. */
+export async function getConfigurationsForUser(userId: string): Promise<SavedConfigurationDto[]> {
+  const configurations = await prisma.configuration.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    include: { vehicle: true, selections: { include: { option: true } } },
+  });
+
+  return configurations.map(mapConfigurationToDto);
+}
+
+/** Deletes a configuration, scoped to the caller's ownership in the same query — a
+ * mismatched publicId and a publicId owned by someone else are indistinguishable to the
+ * caller (both delete zero rows), matching Spec 17's "never confirm existence to a
+ * non-owner" error-table note. Returns whether a row was actually deleted. */
+export async function deleteConfigurationForUser(publicId: string, userId: string): Promise<boolean> {
+  const result = await prisma.configuration.deleteMany({ where: { publicId, userId } });
+  return result.count > 0;
+}
+
+export type ClaimOutcome = "claim" | "idempotent" | "conflict";
+
+/**
+ * Pure decision logic for claiming a guest build (Spec 17, AC-7/AC-8) — no Prisma, so it's
+ * unit-testable in isolation (backend/tests/garage.test.ts) the same way Spec 16's
+ * auth.test.ts only unit-tests pure crypto/policy functions, leaving DB-touching behavior
+ * to the integration layer. "idempotent" (re-claiming a build you already own) is a
+ * deliberate judgment call for an ambiguous spec case: a self-claim isn't an ownership
+ * change, so success is more appropriate than a 409 conflict.
+ */
+export function decideClaimOutcome(existingUserId: string | null, callerUserId: string): ClaimOutcome {
+  if (existingUserId === null) return "claim";
+  if (existingUserId === callerUserId) return "idempotent";
+  return "conflict";
+}
+
+export type ClaimResult =
+  | { ok: true; dto: SavedConfigurationDto }
+  | { ok: false; reason: "NOT_FOUND" | "ALREADY_CLAIMED" };
+
+/** Claims an unowned (guest) build for the caller (Spec 17, AC-7). The initial updateMany
+ * is scoped to userId: null so a genuine claim is atomic against a concurrent claim
+ * attempt; the fallback read after a zero-row update only distinguishes the error case
+ * (not found vs. already claimed) for the response, it never itself performs a write. */
+export async function claimConfigurationForUser(publicId: string, userId: string): Promise<ClaimResult> {
+  const claimed = await prisma.configuration.updateMany({
+    where: { publicId, userId: null },
+    data: { userId, expiresAt: null },
+  });
+
+  if (claimed.count > 0) {
+    const configuration = await prisma.configuration.findUniqueOrThrow({
+      where: { publicId },
+      include: { vehicle: true, selections: { include: { option: true } } },
+    });
+    return { ok: true, dto: mapConfigurationToDto(configuration) };
+  }
+
+  const existing = await prisma.configuration.findUnique({ where: { publicId } });
+  if (!existing) return { ok: false, reason: "NOT_FOUND" };
+
+  const outcome = decideClaimOutcome(existing.userId, userId);
+  if (outcome === "conflict") return { ok: false, reason: "ALREADY_CLAIMED" };
+
+  // "idempotent": already claimed by this same caller — return current state as success.
+  const configuration = await prisma.configuration.findUniqueOrThrow({
+    where: { publicId },
+    include: { vehicle: true, selections: { include: { option: true } } },
+  });
+  return { ok: true, dto: mapConfigurationToDto(configuration) };
 }

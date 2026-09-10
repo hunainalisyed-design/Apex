@@ -14,6 +14,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   }
 
   req.user = user;
+  req.sessionToken = token;
   next();
 }
 

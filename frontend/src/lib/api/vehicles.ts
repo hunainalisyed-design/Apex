@@ -1,4 +1,4 @@
-import type { VehicleSummaryDto } from "@/types/catalog";
+import type { VehicleDetailDto, VehicleSummaryDto } from "@/types/catalog";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
 
@@ -24,4 +24,20 @@ export async function getVehicles(): Promise<VehicleSummaryDto[]> {
 export async function getDefaultVehicleSlug(): Promise<string | null> {
   const vehicles = await getVehicles();
   return vehicles[0]?.slug ?? null;
+}
+
+/** Fetches one vehicle's full detail (all options included) by slug. Promoted from a
+ * page-local, non-exported helper that used to live only in configure/[slug]/page.tsx
+ * (Spec 17) — the garage list needs the same full detail, per vehicle, to run
+ * deriveBuildSummary for each card. Collapses failure to null, same convention as
+ * getVehicles above. */
+export async function getVehicleDetail(slug: string): Promise<VehicleDetailDto | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/vehicles/${slug}`, { cache: "no-store" });
+    if (!res.ok) return null;
+    const { data } = (await res.json()) as { data: VehicleDetailDto };
+    return data;
+  } catch {
+    return null;
+  }
 }

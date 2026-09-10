@@ -58,6 +58,18 @@ export async function revokeAllSessionsForUser(userId: string, client: PrismaOrT
   await client.session.deleteMany({ where: { userId } });
 }
 
+/** Invalidates every OTHER session for a user, keeping the caller's own session signed in
+ * (Spec 17 AC-9's password-change requirement — unlike a password reset, a password change
+ * from a known, authenticated session shouldn't sign the user themselves out). */
+export async function revokeAllSessionsForUserExcept(
+  userId: string,
+  exceptRawToken: string,
+  client: PrismaOrTx = prisma,
+): Promise<void> {
+  const exceptHash = hashToken(exceptRawToken);
+  await client.session.deleteMany({ where: { userId, tokenHash: { not: exceptHash } } });
+}
+
 const COOKIE_OPTIONS = {
   httpOnly: true,
   sameSite: "lax" as const,

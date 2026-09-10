@@ -15,4 +15,6 @@ export interface SavedConfigurationDto {
   customPaintHex: string | null;
   breakdown: PriceBreakdownDto;
   createdAt: string; // ISO 8601
+  /** null = guest build, claimable (Spec 17 AC-7). Set = owned, never expires. */
+  ownerId: string | null;
 }

@@ -21,10 +21,16 @@ export class ApiRequestError extends Error {
 }
 
 /** Saves a configuration. Deliberately does NOT collapse failure to a fallback value like
- * fetchConfiguration below — a failed save must surface a real error (AC-10). */
+ * fetchConfiguration below — a failed save must surface a real error (AC-10).
+ *
+ * credentials:"include" (Spec 17, AC-6) — without it, a signed-in visitor's session cookie
+ * never reaches the backend, so POST /api/configurations can never tell the save apart from
+ * a guest's and the build would silently save as an anonymous, expiring row instead of an
+ * owned one. */
 export async function saveConfiguration(payload: SaveConfigurationRequest): Promise<SavedConfigurationDto> {
   const res = await fetch(`${API_BASE_URL}/api/configurations`, {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
@@ -50,4 +56,31 @@ export async function fetchConfiguration(publicId: string): Promise<SavedConfigu
   } catch {
     return null;
   }
+}
+
+/** Claims an unowned guest build for the signed-in caller (Spec 17, AC-7). Like
+ * saveConfiguration, a failed claim must surface a real error rather than a fallback. */
+export async function claimConfiguration(publicId: string): Promise<SavedConfigurationDto> {
+  const res = await fetch(`${API_BASE_URL}/api/configurations/${publicId}/claim`, {
+    method: "POST",
+    credentials: "include",
+  });
+
+  const json = await res.json();
+  if (!res.ok) {
+    throw new ApiRequestError(json.code ?? "UNKNOWN_ERROR", json.message ?? "Something went wrong while claiming this build.", json.details);
+  }
+  return json.data as SavedConfigurationDto;
+}
+
+/** Deletes a build the caller owns (Spec 17, AC-5). */
+export async function deleteConfiguration(publicId: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/api/configurations/${publicId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (res.status === 204) return;
+  const json = await res.json();
+  throw new ApiRequestError(json.code ?? "UNKNOWN_ERROR", json.message ?? "Something went wrong while deleting this build.");
 }

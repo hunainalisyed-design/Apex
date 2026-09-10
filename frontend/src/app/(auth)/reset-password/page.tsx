@@ -2,14 +2,18 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { FormField } from "@/components/auth/FormField";
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
 import { getErrorMessage } from "@/lib/errors/getErrorMessage";
 import { validatePassword } from "@/lib/auth/validation";
 import { useAuthStore } from "@/state/authStore";
 
-function ResetPasswordForm() {
+/** No page-local Suspense boundary needed here — (auth)/layout.tsx now provides one
+ * (Spec 17, so it could also honor a ?returnTo= param), and a descendant's
+ * useSearchParams() call suspends up to the nearest ancestor boundary regardless of how
+ * many component layers sit in between. */
+export default function ResetPasswordPage() {
   const token = useSearchParams().get("token");
   const resetPassword = useAuthStore((s) => s.resetPassword);
   const isLoading = useAuthStore((s) => s.isLoading);
@@ -97,13 +101,3 @@ function ResetPasswordForm() {
   );
 }
 
-/** useSearchParams() requires a Suspense boundary in the App Router — this route's own
- * page-level one, since (auth)/layout.tsx wraps every sibling page and shouldn't suspend
- * the ones that don't need it. */
-export default function ResetPasswordPage() {
-  return (
-    <Suspense fallback={null}>
-      <ResetPasswordForm />
-    </Suspense>
-  );
-}
