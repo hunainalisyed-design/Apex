@@ -1,5 +1,6 @@
 import { CarAINavControl } from "@/components/ai/CarAINavControl";
 import { getDefaultVehicleSlug } from "@/lib/api/vehicles";
+import { AuthNavControl } from "./AuthNavControl";
 import { NavClient } from "./NavClient";
 
 const AI_ASSISTANT_ENABLED = process.env.NEXT_PUBLIC_AI_ASSISTANT_ENABLED !== "false";
@@ -16,7 +17,12 @@ export async function Nav() {
   return (
     <NavClient
       configureHref={configureHref}
-      rightSlot={AI_ASSISTANT_ENABLED ? <CarAINavControl defaultVehicleSlug={defaultVehicleSlug} /> : undefined}
+      rightSlot={
+        <>
+          {AI_ASSISTANT_ENABLED && <CarAINavControl defaultVehicleSlug={defaultVehicleSlug} />}
+          <AuthNavControl />
+        </>
+      }
     />
   );
 }

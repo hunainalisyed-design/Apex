@@ -7,11 +7,16 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4
  * fallback (Spec 10, AC-10 needs a real message). */
 export class ApiRequestError extends Error {
   code: string;
+  /** Field-specific validation messages (Spec 16) — e.g. { email: ["..."] } for
+   * EMAIL_ALREADY_REGISTERED. Undefined for every error that isn't field-specific, in which
+   * case getErrorMessage(code) is the form-level fallback. */
+  details?: Record<string, string[]>;
 
-  constructor(code: string, message: string) {
+  constructor(code: string, message: string, details?: Record<string, string[]>) {
     super(message);
     this.name = "ApiRequestError";
     this.code = code;
+    this.details = details;
   }
 }
 

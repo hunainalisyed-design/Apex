@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import { AppErrorBoundary } from "@/components/shell/AppErrorBoundary";
+import { AuthHydrator } from "@/components/shell/AuthHydrator";
 import { Nav } from "@/components/shell/Nav/Nav";
 import { SkipLink } from "@/components/shell/SkipLink";
 import { ToastProvider } from "@/components/shell/ToastProvider";
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <SkipLink />
+        <AuthHydrator />
         <Nav />
         <AppErrorBoundary>
           <ToastProvider>{children}</ToastProvider>

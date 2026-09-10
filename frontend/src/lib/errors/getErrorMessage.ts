@@ -7,6 +7,10 @@ const ERROR_MESSAGES: Record<string, string> = {
   RATE_LIMITED: "Too many requests. Please wait a moment and try again.",
   AI_PROVIDER_ERROR: "CarAI is temporarily unavailable. You can continue configuring manually.",
   AI_ASSISTANT_DISABLED: "CarAI is temporarily unavailable. You can continue configuring manually.",
+  EMAIL_ALREADY_REGISTERED: "An account with this email already exists.",
+  INVALID_CREDENTIALS: "Incorrect email or password.",
+  TOO_MANY_ATTEMPTS: "Too many attempts. Please wait a moment and try again.",
+  INVALID_OR_EXPIRED_TOKEN: "This reset link is invalid or has expired. Please request a new one.",
 };
 
 const FALLBACK_MESSAGE = "Something went wrong. Please try again.";
