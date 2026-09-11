@@ -76,12 +76,12 @@ configurationsRouter.delete("/configurations/:publicId", requireAuth, async (req
   const result = await deleteConfigurationForUser(req.params.publicId, req.user!.id);
 
   if (!result.ok) {
-    if (result.reason === "HAS_LEADS") {
+    if (result.reason === "HAS_DEPENDENTS") {
       sendApiError(
         res,
         409,
-        "CONFIGURATION_HAS_LEADS",
-        "This build has a quote or test-drive request attached and can't be deleted.",
+        "CONFIGURATION_IN_USE",
+        "This build has an active request or reservation attached and can't be deleted.",
       );
       return;
     }

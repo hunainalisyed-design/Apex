@@ -5,6 +5,7 @@
 // Spec 12: Vehicle.fallbackImageUrl (WebGL-unavailable static fallback, see that spec's §4).
 // Spec 16: User/Session/PasswordResetToken + Configuration.userId's real FK (see that spec's §4).
 // Spec 19: Lead (see that spec's §4).
+// Spec 20: Reservation (see that spec's §4).
 
 generator client {
   provider = "prisma-client-js"
@@ -61,6 +62,13 @@ enum LeadStatus {
   NEW
   CONTACTED
   CLOSED
+}
+
+enum ReservationStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
 }
 
 model Vehicle {
@@ -123,8 +131,9 @@ model Configuration {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  selections ConfigurationSelection[]
-  leads      Lead[]
+  selections   ConfigurationSelection[]
+  leads        Lead[]
+  reservations Reservation[]
 
   @@index([userId])
 }
@@ -153,6 +162,7 @@ model User {
   passwordResetTokens PasswordResetToken[]
   configurations      Configuration[]
   leads               Lead[]
+  reservations        Reservation[]
 }
 
 /// An opaque, cryptographically random session token's hash — never the raw token itself,
@@ -207,4 +217,33 @@ model Lead {
   @@index([status])
   @@index([configurationId])
   @@index([userId])
+}
+
+/// A Stripe test-mode deposit reservation tied to the exact Configuration the user was
+/// checking out (Spec 20). `configuration` is deliberately left Restrict (Prisma's
+/// default, no onDelete annotation) — same reasoning as Lead above, written explicitly
+/// this time rather than left implicit: a Reservation is a durable business/payment record
+/// for Spec 21's admin panel and should never silently disappear just because the
+/// underlying build was later deleted. `user` gets SetNull, mirroring Lead.userId, so a
+/// future account deletion isn't blocked by, or doesn't destroy, a reservation record.
+/// `stripeCheckoutSessionId` is nullable because it isn't known until after Stripe returns
+/// the created session, which itself needs this row's `id` already assigned (for its
+/// success_url) — the row is created first with this field null, then updated once Stripe
+/// responds. Postgres unique constraints ignore multiple NULLs, so this is safe.
+model Reservation {
+  id                      String            @id @default(cuid())
+  configurationId         String
+  configuration           Configuration     @relation(fields: [configurationId], references: [id])
+  userId                  String? // null = guest reservation
+  user                    User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  stripeCheckoutSessionId String?           @unique
+  amountCents             Int
+  currency                String            @default("EUR")
+  status                  ReservationStatus @default(PENDING)
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+
+  @@index([configurationId])
+  @@index([userId])
+  @@index([status])
 }

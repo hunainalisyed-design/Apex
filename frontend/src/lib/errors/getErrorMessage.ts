@@ -13,7 +13,9 @@ const ERROR_MESSAGES: Record<string, string> = {
   INVALID_OR_EXPIRED_TOKEN: "This reset link is invalid or has expired. Please request a new one.",
   ALREADY_CLAIMED: "This build has already been claimed by another account.",
   UNAUTHENTICATED: "Please sign in to continue.",
-  CONFIGURATION_HAS_LEADS: "This build has a quote or test-drive request attached and can't be deleted.",
+  CONFIGURATION_IN_USE: "This build has an active request or reservation attached and can't be deleted.",
+  RESERVATIONS_DISABLED: "Reservations are temporarily unavailable. Please try again later.",
+  PAYMENT_PROVIDER_ERROR: "We couldn't start checkout. Please try again in a moment.",
 };
 
 const FALLBACK_MESSAGE = "Something went wrong. Please try again.";

@@ -97,3 +97,12 @@ export const leadRateLimit = createRateLimit({
   code: "RATE_LIMITED",
   message: "Too many requests. Try again shortly.",
 });
+
+/** POST /api/reservations/checkout-session (Spec 20) — creates a real (test-mode) Stripe
+ * API call per request and is unauthenticated, matching leadRateLimit's exact reasoning. */
+export const reservationRateLimit = createRateLimit({
+  windowMs: 60_000,
+  maxRequests: 5,
+  code: "RATE_LIMITED",
+  message: "Too many requests. Try again shortly.",
+});

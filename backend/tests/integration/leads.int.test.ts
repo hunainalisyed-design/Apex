@@ -147,7 +147,7 @@ describe("Leads endpoints (integration, Spec 19)", () => {
 
       const deleteRes = await agent.delete(`/api/configurations/${publicId}`);
       expect(deleteRes.status).toBe(409);
-      expect(deleteRes.body.code).toBe("CONFIGURATION_HAS_LEADS");
+      expect(deleteRes.body.code).toBe("CONFIGURATION_IN_USE");
 
       // The row must still exist — the delete was blocked, not partially applied.
       const stillThere = await prisma.configuration.findUnique({ where: { publicId } });

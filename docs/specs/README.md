@@ -52,7 +52,7 @@ All 19 specs below are written (Draft) and awaiting review/approval as a batch.
 | # | Spec file | SRS section(s) | Status |
 |---|---|---|---|
 | 19 | `19-lead-capture-quote-request.md` | §34.1 | Implemented |
-| 20 | `20-reservation-deposit.md` | §34.1 | Draft |
+| 20 | `20-reservation-deposit.md` | §34.1 | Implemented |
 | 21 | `21-admin-cms-panel.md` | §34.1 | Draft |
 | 22 | `22-cicd-monitoring-logging.md` | §34.2 | Draft |
 | 23 | `23-seo-og-analytics.md` | §34.3 | Draft |

@@ -1,0 +1,19 @@
+import { ReservationConfirmation } from "@/components/reservations/ReservationConfirmation";
+
+export default async function ReservationConfirmationPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+
+  return (
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="flex min-h-full flex-1 flex-col items-center justify-center gap-6 px-6 py-16"
+    >
+      <ReservationConfirmation id={id} />
+    </main>
+  );
+}
