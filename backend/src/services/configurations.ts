@@ -191,13 +191,34 @@ export async function getConfigurationsForUser(userId: string): Promise<SavedCon
   return configurations.map(mapConfigurationToDto);
 }
 
-/** Deletes a configuration, scoped to the caller's ownership in the same query — a
+export type DeleteConfigurationResult = { ok: true } | { ok: false; reason: "NOT_FOUND" | "HAS_LEADS" };
+
+/**
+ * Deletes a configuration, scoped to the caller's ownership in the same query — a
  * mismatched publicId and a publicId owned by someone else are indistinguishable to the
  * caller (both delete zero rows), matching Spec 17's "never confirm existence to a
- * non-owner" error-table note. Returns whether a row was actually deleted. */
-export async function deleteConfigurationForUser(publicId: string, userId: string): Promise<boolean> {
-  const result = await prisma.configuration.deleteMany({ where: { publicId, userId } });
-  return result.count > 0;
+ * non-owner" error-table note.
+ *
+ * Spec 19 gave `Lead.configurationId` a required, Restrict-by-default FK to this table —
+ * deleteMany enforces that Postgres constraint exactly like delete would, so once any Lead
+ * references this row, the delete throws P2003. Left uncaught, that would propagate as an
+ * unhandled rejection: this backend runs Express 4 (no auto-catch of a rejected async
+ * handler) with no error-handling middleware, and Node terminates the process on an
+ * unhandled rejection by default — so an uncaught P2003 here wouldn't just fail one
+ * request, it would crash the whole backend. Caught and turned into a normal "blocked"
+ * result instead. Exported as a real result type (not a route-local try/catch) since a
+ * future guest-build expiry sweep job will hit this identical failure mode at batch scale.
+ */
+export async function deleteConfigurationForUser(publicId: string, userId: string): Promise<DeleteConfigurationResult> {
+  try {
+    const result = await prisma.configuration.deleteMany({ where: { publicId, userId } });
+    return result.count > 0 ? { ok: true } : { ok: false, reason: "NOT_FOUND" };
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2003") {
+      return { ok: false, reason: "HAS_LEADS" };
+    }
+    throw err;
+  }
 }
 
 export type ClaimOutcome = "claim" | "idempotent" | "conflict";

@@ -1,14 +1,4 @@
-import { Resend } from "resend";
-
-const RESEND_FROM_ADDRESS = process.env.RESEND_FROM_ADDRESS ?? "Apex <onboarding@resend.dev>";
-
-let client: Resend | null = null;
-function getClient(): Resend | null {
-  if (client) return client;
-  if (!process.env.RESEND_API_KEY) return null;
-  client = new Resend(process.env.RESEND_API_KEY);
-  return client;
-}
+import { getResendClient, RESEND_FROM_ADDRESS } from "../../lib/email.js";
 
 /**
  * Sends the password-reset email (Spec 16 AC-6/AC-7). Deliberately self-catching — never
@@ -19,7 +9,7 @@ function getClient(): Resend | null {
  * configured in this environment, so every path through here in practice hits this branch.
  */
 export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<void> {
-  const resend = getClient();
+  const resend = getResendClient();
 
   if (!resend) {
     console.log(`[dev] Password reset link for ${to}: ${resetUrl}`);

@@ -87,3 +87,13 @@ export const loginRateLimitByEmail = createRateLimit({
   message: "Too many login attempts. Please try again shortly.",
   keyFn: (req) => `email:${String(req.body?.email ?? "").trim().toLowerCase()}`,
 });
+
+/** POST /api/leads (Spec 19) — creates a real business record and sends two real emails
+ * per request, matching this codebase's own convention of rate-limiting every endpoint
+ * with a real side effect. */
+export const leadRateLimit = createRateLimit({
+  windowMs: 60_000,
+  maxRequests: 5,
+  code: "RATE_LIMITED",
+  message: "Too many requests. Try again shortly.",
+});

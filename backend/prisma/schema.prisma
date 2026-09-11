@@ -4,6 +4,7 @@
 // Spec 10: Configuration.expiresAt (guest-build retention, see that spec's §4).
 // Spec 12: Vehicle.fallbackImageUrl (WebGL-unavailable static fallback, see that spec's §4).
 // Spec 16: User/Session/PasswordResetToken + Configuration.userId's real FK (see that spec's §4).
+// Spec 19: Lead (see that spec's §4).
 
 generator client {
   provider = "prisma-client-js"
@@ -40,6 +41,26 @@ enum ApplyMode {
   MATERIAL_SWAP // the mesh is always visible; only its material/color changes
   MESH_VARIANT_SWAP // multiple distinct mesh variants exist; the selected one is shown
   MESH_VISIBILITY // toggles a specific mesh's visibility (optionally tinting it too)
+}
+
+/// Real enums rather than the spec's own plain-string sketch (Spec 19 §4) — matches this
+/// schema's established convention (OptionCategory, ApplyMode) for every other fixed-value
+/// field; Spec 21's admin panel only ever needs to toggle LeadStatus between these three
+/// known values, never write an arbitrary future one.
+enum PreferredContact {
+  EMAIL
+  PHONE
+}
+
+enum LeadRequestType {
+  QUOTE
+  TEST_DRIVE
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  CLOSED
 }
 
 model Vehicle {
@@ -103,6 +124,7 @@ model Configuration {
   updatedAt       DateTime @updatedAt
 
   selections ConfigurationSelection[]
+  leads      Lead[]
 
   @@index([userId])
 }
@@ -130,6 +152,7 @@ model User {
   sessions            Session[]
   passwordResetTokens PasswordResetToken[]
   configurations      Configuration[]
+  leads               Lead[]
 }
 
 /// An opaque, cryptographically random session token's hash — never the raw token itself,
@@ -156,5 +179,32 @@ model PasswordResetToken {
   usedAt    DateTime?
   createdAt DateTime  @default(now())
 
+  @@index([userId])
+}
+
+/// A quote/test-drive request tied to the exact Configuration the requester was looking at
+/// (Spec 19). `configuration` is deliberately left Restrict (Prisma's default, no onDelete
+/// annotation) rather than Cascade or SetNull — a Lead is meant to be a durable business
+/// record for Spec 21's admin panel, so it should never silently disappear or lose its
+/// business context just because the underlying build was later deleted. `user` gets
+/// SetNull, mirroring Configuration.userId's own precedent, since a future account deletion
+/// shouldn't be blocked by, or destroy, a lead record.
+model Lead {
+  id               String           @id @default(cuid())
+  configurationId  String
+  configuration    Configuration    @relation(fields: [configurationId], references: [id])
+  userId           String? // null = guest submission (Spec 19 AC-4)
+  user             User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name             String
+  email            String
+  phone            String?
+  preferredContact PreferredContact
+  message          String?
+  requestType      LeadRequestType
+  status           LeadStatus       @default(NEW) // managed by Spec 21's admin panel
+  createdAt        DateTime         @default(now())
+
+  @@index([status])
+  @@index([configurationId])
   @@index([userId])
 }

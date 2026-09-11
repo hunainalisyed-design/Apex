@@ -5,6 +5,7 @@ import { aiRouter } from "./routes/ai.js";
 import { authRouter } from "./routes/auth.js";
 import { configurationsRouter } from "./routes/configurations.js";
 import { healthRouter } from "./routes/health.js";
+import { leadsRouter } from "./routes/leads.js";
 import { meRouter } from "./routes/me.js";
 import { pricingRouter } from "./routes/pricing.js";
 import { vehiclesRouter } from "./routes/vehicles.js";
@@ -31,6 +32,7 @@ export function createApp() {
   app.use("/api", aiRouter);
   app.use("/api", authRouter);
   app.use("/api", meRouter);
+  app.use("/api", leadsRouter);
 
   return app;
 }

@@ -14,7 +14,10 @@ export async function seedDatabase(prisma: PrismaClient) {
     }
   }
 
-  // FK-safe delete order: leaf tables first.
+  // FK-safe delete order: leaf tables first. Lead (Spec 19) has a Restrict FK to
+  // Configuration, so it must go before it — otherwise re-seeding after any integration
+  // test has created a lead fails with a P2003 foreign key violation.
+  await prisma.lead.deleteMany();
   await prisma.configurationSelection.deleteMany();
   await prisma.configuration.deleteMany();
   await prisma.customizationOption.deleteMany();

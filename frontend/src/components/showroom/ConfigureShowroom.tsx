@@ -9,6 +9,7 @@ import { CaptureBuild } from "@/components/configurator/CaptureBuild/CaptureBuil
 import { ExteriorPanel } from "@/components/configurator/ExteriorPanel/ExteriorPanel";
 import { InteriorPanel } from "@/components/configurator/InteriorPanel/InteriorPanel";
 import { SaveSharePanel } from "@/components/configurator/SaveSharePanel/SaveSharePanel";
+import { LeadCaptureButtons } from "@/components/leads/LeadCaptureButtons";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { formatPriceCents } from "@/lib/format/currency";
 import { calculatePrice } from "@/lib/pricing";
@@ -229,6 +230,7 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null }: Config
               currentPreset={currentPreset}
               sceneReady={sceneReady}
             />
+            <LeadCaptureButtons />
 
             <div className="glass-panel flex gap-1 rounded-full p-1" role="tablist" aria-label="Customization panel">
               {(["exterior", "interior", "accessories"] as const).map((tab) => (

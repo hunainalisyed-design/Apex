@@ -73,9 +73,18 @@ configurationsRouter.get("/configurations/:publicId", async (req, res) => {
 // A non-owner deleting/claiming and a nonexistent publicId are indistinguishable to the
 // caller (Spec 17's own error-table note) — both resolve to the same 404.
 configurationsRouter.delete("/configurations/:publicId", requireAuth, async (req, res) => {
-  const deleted = await deleteConfigurationForUser(req.params.publicId, req.user!.id);
+  const result = await deleteConfigurationForUser(req.params.publicId, req.user!.id);
 
-  if (!deleted) {
+  if (!result.ok) {
+    if (result.reason === "HAS_LEADS") {
+      sendApiError(
+        res,
+        409,
+        "CONFIGURATION_HAS_LEADS",
+        "This build has a quote or test-drive request attached and can't be deleted.",
+      );
+      return;
+    }
     sendApiError(res, 404, "CONFIGURATION_NOT_FOUND", "No configuration matches this ID.");
     return;
   }
