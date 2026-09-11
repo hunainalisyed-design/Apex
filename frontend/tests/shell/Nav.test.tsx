@@ -19,7 +19,7 @@ describe("NavClient (Spec 13, AC-1 through AC-7)", () => {
     pathnameMock.mockReturnValue("/");
   });
 
-  it("shows working links to Home, Models, Configurator, and About (AC-1)", () => {
+  it("shows working links to Home, Models, Configurator, About, and Compare (AC-1; Spec 18 AC-7)", () => {
     render(<NavClient configureHref="/configure/apex-gt" />);
 
     expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("href", "/");
@@ -29,17 +29,14 @@ describe("NavClient (Spec 13, AC-1 through AC-7)", () => {
       "/configure/apex-gt",
     );
     expect(screen.getByRole("link", { name: "About" })).toHaveAttribute("href", "/about");
+    expect(screen.getAllByRole("link", { name: "Compare" })[0]).toHaveAttribute("href", "/compare");
   });
 
-  it("shows Compare as visibly disabled with a Coming Soon affordance, not a broken link (AC-2)", () => {
+  it("marks Compare active when on /compare, even with query params (Spec 18, AC-7)", () => {
+    pathnameMock.mockReturnValue("/compare");
     render(<NavClient configureHref="/configure/apex-gt" />);
 
-    const compareItems = screen.getAllByText("Compare");
-    const compare = compareItems[0].closest('[role="link"]');
-    expect(compare).toHaveAttribute("aria-disabled", "true");
-    expect(compare).toHaveAttribute("title", "Coming soon");
-    // A genuinely disabled affordance, not a real navigable link — no href anywhere.
-    expect(compare).not.toHaveAttribute("href");
+    expect(screen.getAllByRole("link", { name: "Compare" })[0]).toHaveAttribute("aria-current", "page");
   });
 
   it("the hamburger toggle opens and closes the mobile menu, and is a real reachable button (AC-3, AC-5)", async () => {

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Desktop nav (Spec 13, AC-1, AC-2, AC-7)", () => {
-  test("shows working links to Home, Models, Configurator, About, and marks the active route (AC-1, AC-7)", async ({
+  test("shows working links to Home, Models, Configurator, About, Compare, and marks the active route (AC-1, AC-7; Spec 18 AC-7)", async ({
     page,
   }) => {
     await page.goto("/");
@@ -12,6 +12,7 @@ test.describe("Desktop nav (Spec 13, AC-1, AC-2, AC-7)", () => {
     await expect(nav.getByRole("link", { name: "Models" })).toHaveAttribute("href", "/models");
     await expect(nav.getByRole("link", { name: "Configurator" })).toHaveAttribute("href", "/configure/apex-gt");
     await expect(nav.getByRole("link", { name: "About" })).toHaveAttribute("href", "/about");
+    await expect(nav.getByRole("link", { name: "Compare" })).toHaveAttribute("href", "/compare");
 
     await nav.getByRole("link", { name: "Models" }).click();
     await expect(page).toHaveURL(/\/models$/);
@@ -19,16 +20,13 @@ test.describe("Desktop nav (Spec 13, AC-1, AC-2, AC-7)", () => {
     await expect(nav.getByRole("link", { name: "Home" })).not.toHaveAttribute("aria-current");
   });
 
-  test("Compare shows as visibly disabled with a Coming Soon affordance, not a broken link (AC-2)", async ({
-    page,
-  }) => {
+  test("Compare is a real working link, marked active on /compare (Spec 18, AC-7)", async ({ page }) => {
     await page.goto("/");
     const nav = page.getByRole("navigation", { name: "Primary" });
 
-    const compare = nav.locator('[role="link"][aria-disabled="true"]');
-    await expect(compare).toBeVisible();
-    await expect(compare).toHaveAttribute("title", "Coming soon");
-    await expect(compare).not.toHaveAttribute("href");
+    await nav.getByRole("link", { name: "Compare" }).click();
+    await expect(page).toHaveURL(/\/compare$/);
+    await expect(nav.getByRole("link", { name: "Compare" })).toHaveAttribute("aria-current", "page");
   });
 });
 

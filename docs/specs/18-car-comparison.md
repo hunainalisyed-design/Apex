@@ -1,7 +1,7 @@
 # Spec: Car Comparison
 
 **File:** `docs/specs/18-car-comparison.md`
-**Status:** Approved
+**Status:** Implemented
 **Author:** Syed Hunain Raza
 **Reviewer:** hunainalisyed@gmail.com
 **Related:** SRS §20 (Car Comparison); depends on `02-vehicle-catalog-data-model.md`, `05-3d-showroom-core.md`, `13-navigation-scroll-shell.md` (Compare nav placeholder), `12-loading-error-a11y-shell.md`
@@ -108,12 +108,23 @@ Also specify:
 
 ---
 
+## 7a. Implementation notes
+
+- **AC-5's "both vehicles' `showroomModelUrl` GLBs load" is satisfied by the same procedural placeholder rig every other 3D spec in this project uses, not real GLB loading.** No real 3D asset exists anywhere in the codebase (`docs/CLAUDE.md`'s "Known open blocker"); `VehicleDetailDto.showroomModelUrl` is declared but read nowhere. `CompareScene.tsx` mounts two `PlaceholderShowroomRig` instances side by side, each showing that vehicle's own default (non-customized) appearance — a continuation of the established pattern from Specs 4–8, not a new deviation. Resolves Risk #2 below: there's no "loading two full GLBs" cost to measure, since neither vehicle ever loads a GLB.
+- **Each vehicle's default appearance is resolved directly (`resolveExteriorAppearance`/`resolveInteriorAppearance`/`resolveAccessoryAppearance`, fed by a newly-exported `buildDefaultsFromVehicle`), never via `useConfigurationStore`.** That store is a single module-level singleton — hydrating it twice (once per compared vehicle) would silently clobber one vehicle's selections with the other's. `buildDefaultsFromVehicle` is a pure read of a vehicle's own catalog data, so calling it twice independently is safe.
+- **A real, permanent consequence of today's 2-vehicle catalog**: AC-4's mutual exclusion means that with exactly two active vehicles, once a pair is chosen, neither selector has any other option to switch to — not a bug, just what a 2-vehicle catalog always produces. AC-3 (a live selector change updating the URL) is therefore covered at the component level against a synthetic 3-vehicle fixture (`CompareView.test.tsx`); the e2e suite proves the URL→render direction via direct navigation to `/compare?left=apex-rs&right=apex-gt` instead of a selector click, documented explicitly in `car-comparison.spec.ts` rather than silently worked around. The feature becomes fully interactive the moment a third vehicle is ever added to the catalog.
+- **`isWebGLAvailable()` was extracted from `Canvas3DErrorBoundary.tsx` into a shared `lib/webgl.ts`**, used by both that boundary and the new `CompareSceneErrorBoundary` — a pure refactor, no behavior change. `CompareSceneErrorBoundary` renders `null` on failure rather than a fallback card, since AC-6 wants the always-visible spec table to remain the sole content; it shares one `onError` handler with the case a boundary can never see on its own — a vehicle-detail fetch resolving to `null` before `CompareScene` is ever given props.
+- **The initial camera framing needed tuning after the first manual render came back nearly unreadable** — both seeded vehicles' default paint is very dark (Apex GT defaults to "Obsidian Black"), and the first pass's farther, flatter `[0, 3.2, 11]` camera made both cars small and low-contrast. Moved to a closer, angled `[3.5, 2.2, 9]` position (closer to the single-vehicle showroom's own successful 3/4-angle framing, scaled out for two cars) and raised the scene's ambient/key/fill light intensities above the single-vehicle scene's own values (0.75/1.8/0.5 vs. 0.55/1.3/0.35) specifically to keep dark default paints legible from farther back — confirmed by re-screenshotting before and after.
+- **The `set-state-in-effect` lint rule (react-hooks) rejected the first draft's local component state + `useEffect` design** — calling `setState` synchronously inside an effect body is flagged by static analysis when the function doing it is defined in the same component (a local `useCallback`), but not when it's an imported store action, since that's opaque to the analysis. Rather than working around the lint, all of Compare's fetch-driven state moved into a new `compareStore.ts` (Zustand), matching this codebase's existing convention for every other fetch-driven feature (`configurationStore`, `garageStore`, `authStore`, `carAiChatStore`) — the component was the outlier for using local state in the first draft, not the exception the rule failed to account for.
+
+---
+
 ## 8. Risks and open questions
 
 | # | Risk / question | Owner | Resolution |
 |---|---|---|---|
 | 1 | SRS §20 sits right after §12–19's customization/pricing/build-summary flow, which could be read as implying comparison should include a user's actual customized builds, not just base vehicles. | Product owner | Resolved — SRS §20's own worked example only shows base-vehicle specs and starting prices, no customization, so that's the literal scope implemented here. A "compare two of my saved builds" feature is a reasonable follow-up but would need its own spec (different data source: `Configuration` rows via Spec 17's My Garage, not `Vehicle` rows). |
-| 2 | Loading two full vehicle GLBs into one scene simultaneously for the 3D view (AC-5) is a heavier load than the single-vehicle showroom (Spec 5) — worth confirming this stays within SRS §26's performance expectations, especially on mobile. | Implementer | Open — a performance check during implementation; the AC-6 fallback exists partly as a safety valve if this proves too heavy on some devices, not only for outright WebGL absence. |
+| 2 | Loading two full vehicle GLBs into one scene simultaneously for the 3D view (AC-5) is a heavier load than the single-vehicle showroom (Spec 5) — worth confirming this stays within SRS §26's performance expectations, especially on mobile. | Implementer | Resolved — moot as implemented: no real GLB is ever loaded for either vehicle (see Implementation Notes above), just two instances of the existing procedural placeholder rig, which the single-vehicle showroom already renders performantly. Revisit once a real GLB asset exists (Spec 2 Risk #1). |
 
 ---
 

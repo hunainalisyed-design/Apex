@@ -20,13 +20,19 @@ export function emptyMultiSelections(): Record<MultiSelectCategory, string[]> {
   ) as Record<MultiSelectCategory, string[]>;
 }
 
-interface Defaults {
+export interface Defaults {
   vehicleSlug: string;
   singleSelections: Record<SingleSelectCategory, string>;
   multiSelections: Record<MultiSelectCategory, string[]>;
 }
 
-function buildDefaultsFromVehicle(vehicle: VehicleDetailDto): Defaults {
+/** Exported for Spec 18's Car Comparison view, which needs each compared vehicle's default
+ * selections to resolve its appearance directly (via resolveExteriorAppearance et al.)
+ * WITHOUT going through useConfigurationStore — that store is a single module-level
+ * singleton, so calling hydrateDefaults() twice (once per compared vehicle) would silently
+ * clobber one vehicle's selections with the other's. This function has no such problem:
+ * it's a pure read of a vehicle's own catalog data. */
+export function buildDefaultsFromVehicle(vehicle: VehicleDetailDto): Defaults {
   const singleSelections = emptySingleSelections();
   for (const category of SINGLE_SELECT_CATEGORIES) {
     const options = vehicle.options[category] ?? [];

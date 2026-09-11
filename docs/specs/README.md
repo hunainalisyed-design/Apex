@@ -43,7 +43,7 @@ Build order follows the table: 1–3 are shared foundations every later spec dep
 | 15 | `15-carai-assistant-ui.md` | §15 | Implemented |
 | 16 | `16-authentication.md` | §36.1–36.3, §36.5–36.6 | Implemented |
 | 17 | `17-account-dashboard-my-garage.md` | §36.4 | Implemented |
-| 18 | `18-car-comparison.md` | §20 | Approved |
+| 18 | `18-car-comparison.md` | §20 | Implemented |
 
 ## Phase 3 — Business, hygiene, compliance & trending features
 

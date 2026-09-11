@@ -1,6 +1,7 @@
 "use client";
 
 import { Component, type ReactNode } from "react";
+import { isWebGLAvailable } from "@/lib/webgl";
 import type { VehicleSummaryDto } from "@/types/catalog";
 import { Static3DFallback } from "./Static3DFallback";
 
@@ -14,15 +15,6 @@ interface Canvas3DErrorBoundaryProps {
 
 interface Canvas3DErrorBoundaryState {
   hasError: boolean;
-}
-
-function isWebGLAvailable(): boolean {
-  try {
-    const canvas = document.createElement("canvas");
-    return !!(canvas.getContext("webgl2") || canvas.getContext("webgl") || canvas.getContext("experimental-webgl"));
-  } catch {
-    return false;
-  }
 }
 
 /**

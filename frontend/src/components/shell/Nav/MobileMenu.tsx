@@ -6,7 +6,6 @@ import { useRef, type RefObject } from "react";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { withReducedMotion } from "@/lib/motion/withReducedMotion";
-import { CompareNavItem } from "./CompareNavItem";
 import { isActiveLink, type NavLink } from "./navLinks";
 
 export interface MobileMenuProps {
@@ -54,7 +53,6 @@ export function MobileMenu({ isOpen, onClose, links, pathname, toggleRef }: Mobi
               {link.label}
             </Link>
           ))}
-          <CompareNavItem className="px-3 py-3" />
         </motion.div>
       )}
     </AnimatePresence>

@@ -47,3 +47,18 @@ test("the configurator shows the vehicle-specific static fallback when WebGL is 
   await expect(page.getByRole("group", { name: "Camera presets" })).not.toBeVisible();
   await expect(page.getByRole("button", { name: "Save" })).toBeVisible();
 });
+
+test("Compare's 3D toggle falls back to the spec table (already the sole content) when WebGL is unavailable (Spec 18, AC-6)", async ({
+  page,
+}) => {
+  await disableWebGL(page);
+  await page.goto("/compare");
+
+  await page.getByRole("tab", { name: "3D View" }).click();
+
+  // No fallback graphic to wait for here — unlike the single-vehicle showroom, Compare's
+  // spec table is already the always-visible content; the 3D toggle just reverts and
+  // disables itself once the failure is detected.
+  await expect(page.getByRole("tab", { name: "3D View" })).toBeDisabled({ timeout: 10000 });
+  await expect(page.getByRole("columnheader", { name: "Apex GT" })).toBeVisible();
+});

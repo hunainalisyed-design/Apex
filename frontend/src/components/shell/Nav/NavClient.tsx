@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useRef, useState, type ReactNode } from "react";
-import { CompareNavItem } from "./CompareNavItem";
 import { MobileMenu } from "./MobileMenu";
 import { buildNavLinks, isActiveLink } from "./navLinks";
 
@@ -48,9 +47,6 @@ export function NavClient({ configureHref, rightSlot }: NavClientProps) {
             </Link>
           </li>
         ))}
-        <li>
-          <CompareNavItem />
-        </li>
       </ul>
 
       <div className="flex items-center gap-3">
