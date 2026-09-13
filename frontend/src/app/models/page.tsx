@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getVehicles } from "@/lib/api/vehicles";
 import { formatPriceCents } from "@/lib/format/currency";
+import { PorscheModelPreview } from "@/components/models/PorscheModelPreview";
+import { PORSCHE_GT3_R_SLUG } from "@/lib/showroom/porscheVehicle";
 
 export default async function ModelsPage() {
   const vehicles = await getVehicles();
@@ -21,18 +23,22 @@ export default async function ModelsPage() {
             href={`/configure/${vehicle.slug}`}
             className="focus-ring glass-panel group flex flex-col gap-4 rounded-2xl p-6 transition hover:bg-white/[0.06]"
           >
-            <div
-              aria-hidden="true"
-              className="flex h-32 w-full items-center justify-center rounded-xl"
-              style={{
-                background:
-                  "radial-gradient(circle at 50% 40%, rgba(61,111,224,0.25), rgba(10,10,12,0.5) 70%)",
-              }}
-            >
-              <span className="text-xs uppercase tracking-[0.3em] text-white/40">
-                {vehicle.name}
-              </span>
-            </div>
+            {vehicle.slug === PORSCHE_GT3_R_SLUG ? (
+              <PorscheModelPreview vehicle={vehicle} />
+            ) : (
+              <div
+                aria-hidden="true"
+                className="flex h-32 w-full items-center justify-center rounded-xl"
+                style={{
+                  background:
+                    "radial-gradient(circle at 50% 40%, rgba(61,111,224,0.25), rgba(10,10,12,0.5) 70%)",
+                }}
+              >
+                <span className="text-xs uppercase tracking-[0.3em] text-white/40">
+                  {vehicle.name}
+                </span>
+              </div>
+            )}
             <div className="flex flex-col gap-1">
               <h2 className="text-xl font-bold tracking-tight">{vehicle.name}</h2>
               <p className="text-sm text-white/60">{vehicle.tagline}</p>

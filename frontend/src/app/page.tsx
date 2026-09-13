@@ -1,4 +1,7 @@
 import { Hero } from "@/components/landing/Hero";
+import { FeatureStrip } from "@/components/landing/FeatureStrip";
+import { ModelsSection } from "@/components/landing/ModelsSection/ModelsSection";
+import { StatsSection } from "@/components/landing/StatsSection";
 import { ScrollShowcase } from "@/components/landing/ScrollShowcase/ScrollShowcase";
 import type { VehicleSummaryDto } from "@/types/catalog";
 
@@ -38,6 +41,9 @@ export default async function Home() {
   return (
     <>
       <Hero vehicle={vehicle} />
+      <FeatureStrip />
+      <ModelsSection />
+      <StatsSection vehicle={vehicle} />
       <ScrollShowcase vehicle={vehicle} />
     </>
   );

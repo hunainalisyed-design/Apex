@@ -30,26 +30,44 @@ export function NavClient({ configureHref, rightSlot }: NavClientProps) {
   const closeMenu = useCallback(() => setIsOpen(false), []);
 
   return (
-    <nav aria-label="Primary" className="glass-panel sticky top-0 z-40 flex items-center justify-between gap-4 px-6 py-4">
-      <Link href="/" className="focus-ring rounded text-sm font-bold uppercase tracking-[0.3em]">
+    <nav
+      aria-label="Primary"
+      className="glass-panel sticky top-0 z-40 flex items-center justify-between gap-4 border-x-0 border-t-0 px-6 py-4 lg:px-10"
+    >
+      <Link href="/" className="focus-ring rounded text-sm font-bold uppercase tracking-[0.35em] transition hover:text-white/80">
         Apex
       </Link>
 
-      <ul className="hidden items-center gap-6 lg:flex">
+      <ul className="hidden items-center gap-8 lg:flex">
         {links.map((link) => (
           <li key={link.label}>
             <Link
               href={link.href}
               aria-current={isActiveLink(pathname, link.href) ? "page" : undefined}
-              className="focus-ring rounded text-xs font-semibold uppercase tracking-wide text-white/70 transition hover:text-white aria-[current=page]:text-white"
+              className="focus-ring group relative rounded py-1 text-xs font-semibold uppercase tracking-wide text-white/60 transition hover:text-white aria-[current=page]:text-white"
             >
               {link.label}
+              <span
+                aria-hidden="true"
+                className="absolute -bottom-1 left-0 h-px w-0 bg-white transition-all duration-300 group-hover:w-full group-aria-[current=page]:w-full"
+              />
             </Link>
           </li>
         ))}
       </ul>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
+        {/* Visual affordance only — no search functionality wired up yet. */}
+        <button
+          type="button"
+          aria-label="Search"
+          className="focus-ring hidden h-9 w-9 items-center justify-center rounded-full text-white/60 transition hover:bg-white/10 hover:text-white lg:flex"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-4 w-4">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.2-3.2" strokeLinecap="round" />
+          </svg>
+        </button>
         {rightSlot}
         <button
           ref={toggleRef}
@@ -57,7 +75,7 @@ export function NavClient({ configureHref, rightSlot }: NavClientProps) {
           onClick={() => setIsOpen((open) => !open)}
           aria-expanded={isOpen}
           aria-label={isOpen ? "Close menu" : "Open menu"}
-          className="focus-ring flex h-9 w-9 items-center justify-center rounded-full text-lg lg:hidden"
+          className="focus-ring flex h-9 w-9 items-center justify-center rounded-full text-lg transition hover:bg-white/10 lg:hidden"
         >
           {/* No aria-hidden needed here — the button's own aria-label above already fully
               determines its accessible name, so this glyph is purely decorative already. A
