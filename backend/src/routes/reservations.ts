@@ -6,7 +6,7 @@ import { optionalAuth } from "../middleware/auth.js";
 import { reservationRateLimit } from "../middleware/rateLimit.js";
 import { createCheckoutSession } from "../services/reservations/createCheckoutSession.js";
 import { getReservationById } from "../services/reservations/getReservation.js";
-import { handleCheckoutSessionCompleted } from "../services/reservations/webhook.js";
+import { handleCheckoutSessionCompleted, handleCheckoutSessionFailed } from "../services/reservations/webhook.js";
 import type { ApiResponse } from "../types/api.js";
 import type { CreateCheckoutSessionRequest, ReservationDto } from "../types/reservations.js";
 
@@ -84,6 +84,8 @@ export async function reservationsWebhookHandler(req: Request, res: Response): P
 
   if (event.type === "checkout.session.completed") {
     await handleCheckoutSessionCompleted(event.data.object);
+  } else if (event.type === "checkout.session.expired" || event.type === "checkout.session.async_payment_failed") {
+    await handleCheckoutSessionFailed(event.data.object, event.type);
   }
 
   // Every event type is acknowledged with 200, even ones we don't act on — standard Stripe

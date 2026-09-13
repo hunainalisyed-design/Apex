@@ -16,17 +16,27 @@ const testStripeClient = new Stripe("sk_test_fake_key_for_integration_tests");
 const createCheckoutSessionMock = vi.fn();
 testStripeClient.checkout.sessions.create = createCheckoutSessionMock as unknown as typeof testStripeClient.checkout.sessions.create;
 
+// A vi.fn (not a plain arrow function) so individual tests can override its return value —
+// e.g. mockReturnValueOnce(null) to simulate a missing/unconfigured STRIPE_SECRET_KEY
+// (getStripeClient's own real "no key" branch) without touching real env-driven client
+// construction.
+const getStripeClientMock = vi.fn((): Stripe | null => testStripeClient);
+
 vi.mock("../../src/lib/stripe.js", () => ({
-  getStripeClient: () => testStripeClient,
+  getStripeClient: () => getStripeClientMock(),
 }));
 
 // Rate limiting isn't what these tests exercise — bypass it, same as leads.int.test.ts does
-// for its own limiter.
+// for its own limiter. configurationRateLimit is bypassed too: this file's own volume of
+// POST /api/configurations saves (one nearly per test, to get a fresh reservable
+// configuration) is large enough on its own to trip that route's 10-per-minute limit, which
+// isn't what any of these tests are about either.
 vi.mock("../../src/middleware/rateLimit.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/middleware/rateLimit.js")>();
   return {
     ...actual,
     reservationRateLimit: (_req: unknown, _res: unknown, next: () => void) => next(),
+    configurationRateLimit: (_req: unknown, _res: unknown, next: () => void) => next(),
   };
 });
 
@@ -89,6 +99,15 @@ function checkoutSessionCompletedEvent(sessionId: string, metadata: Record<strin
   };
 }
 
+function checkoutSessionExpiredEvent(sessionId: string, metadata: Record<string, string> = {}) {
+  return {
+    id: `evt_${sessionId}`,
+    object: "event",
+    type: "checkout.session.expired",
+    data: { object: { id: sessionId, object: "checkout.session", metadata } },
+  };
+}
+
 describe("Reservations endpoints (integration, Spec 20)", () => {
   let gt: Awaited<ReturnType<typeof defaultSelectionsFor>>;
 
@@ -104,6 +123,8 @@ describe("Reservations endpoints (integration, Spec 20)", () => {
 
   beforeEach(() => {
     createCheckoutSessionMock.mockReset();
+    getStripeClientMock.mockReset();
+    getStripeClientMock.mockReturnValue(testStripeClient);
     delete process.env.RESERVATIONS_ENABLED;
   });
 
@@ -180,6 +201,72 @@ describe("Reservations endpoints (integration, Spec 20)", () => {
     expect(JSON.stringify(res.body)).not.toContain("connection reset");
   });
 
+  it("returns 502 PAYMENT_PROVIDER_ERROR when Stripe isn't configured (missing STRIPE_SECRET_KEY), before any DB write", async () => {
+    const saveRes = await request(createApp()).post("/api/configurations").send(saveBody(gt));
+    const { publicId } = saveRes.body.data;
+    getStripeClientMock.mockReturnValueOnce(null);
+
+    const countBefore = await prisma.reservation.count();
+    const res = await request(createApp())
+      .post("/api/reservations/checkout-session")
+      .send({ configurationPublicId: publicId });
+
+    expect(res.status).toBe(502);
+    expect(res.body.code).toBe("PAYMENT_PROVIDER_ERROR");
+    expect(createCheckoutSessionMock).not.toHaveBeenCalled();
+    expect(await prisma.reservation.count()).toBe(countBefore);
+  });
+
+  it("responds 503 to a webhook delivery when Stripe/webhook secret isn't configured, without attempting signature verification", async () => {
+    getStripeClientMock.mockReturnValueOnce(null);
+
+    const res = await request(createApp())
+      .post("/api/reservations/webhook")
+      .set("Content-Type", "application/json")
+      .set("stripe-signature", "t=1,v1=irrelevant")
+      .send(JSON.stringify({ id: "evt_whatever" }));
+
+    expect(res.status).toBe(503);
+  });
+
+  it("rejects a webhook request missing the stripe-signature header entirely with 400", async () => {
+    const payload = JSON.stringify(checkoutSessionCompletedEvent("cs_test_no_sig_header"));
+    const res = await request(createApp())
+      .post("/api/reservations/webhook")
+      .set("Content-Type", "application/json")
+      .send(payload);
+
+    expect(res.status).toBe(400);
+  });
+
+  it("acknowledges a validly-signed webhook for an event type it doesn't act on with 200, and mutates nothing", async () => {
+    const saveRes = await request(createApp()).post("/api/configurations").send(saveBody(gt));
+    mockStripeSession("cs_test_ignored_event");
+    await request(createApp())
+      .post("/api/reservations/checkout-session")
+      .send({ configurationPublicId: saveRes.body.data.publicId });
+
+    const res = await sendSignedWebhook({
+      id: "evt_unrelated",
+      object: "event",
+      type: "payment_intent.succeeded",
+      data: { object: { id: "pi_test_unrelated" } },
+    });
+
+    expect(res.status).toBe(200);
+    const row = await prisma.reservation.findUniqueOrThrow({
+      where: { stripeCheckoutSessionId: "cs_test_ignored_event" },
+    });
+    expect(row.status).toBe("PENDING");
+  });
+
+  it("acknowledges a validly-signed checkout.session.completed webhook with 200 even when no Reservation matches by session id or metadata (self-heal exhausted, avoids needless Stripe retries)", async () => {
+    const res = await sendSignedWebhook(checkoutSessionCompletedEvent("cs_test_totally_unknown"));
+    expect(res.status).toBe(200);
+    const rows = await prisma.reservation.findMany({ where: { stripeCheckoutSessionId: "cs_test_totally_unknown" } });
+    expect(rows).toHaveLength(0);
+  });
+
   it("a validly-signed checkout.session.completed webhook marks the matching Reservation PAID (AC-3)", async () => {
     const saveRes = await request(createApp()).post("/api/configurations").send(saveBody(gt));
     mockStripeSession("cs_test_webhook_paid");
@@ -253,6 +340,59 @@ describe("Reservations endpoints (integration, Spec 20)", () => {
     const row = await prisma.reservation.findUniqueOrThrow({ where: { id: orphan.id } });
     expect(row.status).toBe("PAID");
     expect(row.stripeCheckoutSessionId).toBe("cs_test_orphan");
+  });
+
+  it("a validly-signed checkout.session.expired webhook marks the matching Reservation FAILED (AC-4's abandoned-session state)", async () => {
+    const saveRes = await request(createApp()).post("/api/configurations").send(saveBody(gt));
+    mockStripeSession("cs_test_webhook_expired");
+    await request(createApp())
+      .post("/api/reservations/checkout-session")
+      .send({ configurationPublicId: saveRes.body.data.publicId });
+
+    const res = await sendSignedWebhook(checkoutSessionExpiredEvent("cs_test_webhook_expired"));
+    expect(res.status).toBe(200);
+
+    const row = await prisma.reservation.findUniqueOrThrow({
+      where: { stripeCheckoutSessionId: "cs_test_webhook_expired" },
+    });
+    expect(row.status).toBe("FAILED");
+  });
+
+  it("self-heals a checkout.session.expired webhook via metadata.reservationId when stripeCheckoutSessionId was never written back", async () => {
+    const saveRes = await request(createApp()).post("/api/configurations").send(saveBody(gt));
+    const configuration = await prisma.configuration.findUniqueOrThrow({
+      where: { publicId: saveRes.body.data.publicId },
+    });
+
+    const orphan = await prisma.reservation.create({
+      data: { configurationId: configuration.id, userId: null, amountCents: 50000, currency: "EUR", status: "PENDING" },
+    });
+
+    const res = await sendSignedWebhook(
+      checkoutSessionExpiredEvent("cs_test_orphan_expired", { reservationId: orphan.id }),
+    );
+    expect(res.status).toBe(200);
+
+    const row = await prisma.reservation.findUniqueOrThrow({ where: { id: orphan.id } });
+    expect(row.status).toBe("FAILED");
+    expect(row.stripeCheckoutSessionId).toBe("cs_test_orphan_expired");
+  });
+
+  it("does not let a checkout.session.expired webhook clobber a Reservation already marked PAID (out-of-order delivery safety)", async () => {
+    const saveRes = await request(createApp()).post("/api/configurations").send(saveBody(gt));
+    mockStripeSession("cs_test_already_paid");
+    await request(createApp())
+      .post("/api/reservations/checkout-session")
+      .send({ configurationPublicId: saveRes.body.data.publicId });
+
+    await sendSignedWebhook(checkoutSessionCompletedEvent("cs_test_already_paid"));
+    const res = await sendSignedWebhook(checkoutSessionExpiredEvent("cs_test_already_paid"));
+    expect(res.status).toBe(200);
+
+    const row = await prisma.reservation.findUniqueOrThrow({
+      where: { stripeCheckoutSessionId: "cs_test_already_paid" },
+    });
+    expect(row.status).toBe("PAID");
   });
 
   it("GET /reservations/:id returns the reservation's current status", async () => {

@@ -1,21 +1,29 @@
 import type Stripe from "stripe";
 import { prisma } from "../../lib/prisma.js";
 
+type TerminalStatus = "PAID" | "FAILED";
+
 /**
- * Marks the matching Reservation PAID (Spec 20, AC-3). Uses updateMany, not update — this
- * is what makes the handler idempotent against Stripe's at-least-once webhook delivery: a
- * retried checkout.session.completed event just re-applies the same update (0 or 1 rows
- * affected either way), never an error for "already PAID."
+ * Shared idempotent-update logic behind both handlers below: match by
+ * stripeCheckoutSessionId first, falling back to session.metadata.reservationId to
+ * self-heal if createCheckoutSession's write-back never landed (see that file's own doc
+ * comment). Uses updateMany, not update, so a retried webhook delivery (Stripe's at-least-
+ * once guarantee) re-applies the same update harmlessly instead of erroring.
  *
- * If no row matches by stripeCheckoutSessionId (the createCheckoutSession's final
- * write-back never landed — see that file's own doc comment), falls back to
- * session.metadata.reservationId to self-heal: the session genuinely got paid, so the
- * Reservation row must be found and marked PAID one way or another, not silently orphaned.
+ * `fromStatus` guards the update to only apply from that current status — this is what
+ * stops a late/out-of-order `checkout.session.expired` from clobbering a Reservation a
+ * `checkout.session.completed` already marked PAID (Stripe won't fire both for the same
+ * session, but the guard is cheap insurance against delivery reordering).
  */
-export async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session): Promise<void> {
+async function applyTerminalStatus(
+  session: Stripe.Checkout.Session,
+  status: TerminalStatus,
+  fromStatus: "PENDING",
+  eventType: string,
+): Promise<void> {
   const bySessionId = await prisma.reservation.updateMany({
-    where: { stripeCheckoutSessionId: session.id },
-    data: { status: "PAID" },
+    where: { stripeCheckoutSessionId: session.id, status: fromStatus },
+    data: { status },
   });
 
   if (bySessionId.count > 0) return;
@@ -23,19 +31,39 @@ export async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Se
   const reservationId = session.metadata?.reservationId;
   if (!reservationId) {
     console.error(
-      `[reservations] checkout.session.completed for unknown session ${session.id} with no reservationId metadata to fall back on`,
+      `[reservations] ${eventType} for unknown session ${session.id} with no reservationId metadata to fall back on`,
     );
     return;
   }
 
   const byMetadata = await prisma.reservation.updateMany({
-    where: { id: reservationId },
-    data: { status: "PAID", stripeCheckoutSessionId: session.id },
+    where: { id: reservationId, status: fromStatus },
+    data: { status, stripeCheckoutSessionId: session.id },
   });
 
   if (byMetadata.count === 0) {
     console.error(
-      `[reservations] checkout.session.completed for session ${session.id} — no Reservation row matched by session id or metadata.reservationId (${reservationId})`,
+      `[reservations] ${eventType} for session ${session.id} — no ${fromStatus} Reservation row matched by session id or metadata.reservationId (${reservationId})`,
     );
   }
+}
+
+/** Marks the matching Reservation PAID (Spec 20, AC-3). */
+export async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session): Promise<void> {
+  await applyTerminalStatus(session, "PAID", "PENDING", "checkout.session.completed");
+}
+
+/**
+ * Marks the matching Reservation FAILED when the checkout session expires unpaid or an
+ * async payment method fails (Spec 20, AC-4's "abandoned session" state) — without this,
+ * FAILED was unreachable and an abandoned checkout left the Reservation stuck PENDING
+ * forever, which the confirmation page's polling has no way to distinguish from "webhook
+ * just hasn't landed yet." `eventType` is only for the error log, so it names whichever of
+ * the two source events actually triggered it.
+ */
+export async function handleCheckoutSessionFailed(
+  session: Stripe.Checkout.Session,
+  eventType: "checkout.session.expired" | "checkout.session.async_payment_failed",
+): Promise<void> {
+  await applyTerminalStatus(session, "FAILED", "PENDING", eventType);
 }
