@@ -183,4 +183,25 @@ export const seedVehicles: SeedVehicle[] = [
     fallbackImageUrl: "/models/apex-rs/fallback.jpg",
     options: buildOptionCatalog(),
   },
+  {
+    // The one vehicle in this catalog with a real GLB behind it (see
+    // frontend/src/components/landing/HeroVehicleModel.tsx) — heroModelUrl points at that
+    // actual asset rather than a placeholder path, unlike the two Apex entries above.
+    // showroomModelUrl/options still reuse the shared procedural-rig catalog: the showroom's
+    // customization dispatch is keyed to that rig's mesh/material names (Spec 6/8), not to
+    // this GLB, which isn't wired into it yet (docs/CLAUDE.md's "Known open blocker").
+    slug: "porsche-992-gt3-r",
+    name: "Porsche 992 GT3 R",
+    tagline: "GT3 racing homologation car.",
+    basePriceCents: 45_000_000,
+    currency: "EUR",
+    horsepower: 510,
+    topSpeedKph: 296,
+    zeroToHundredSec: 3.2,
+    heroModelUrl: "/assets/models/porsche-992-gt3-r.glb",
+    showroomModelUrl: "/models/porsche-992-gt3-r/showroom.glb",
+    thumbnailUrl: "/models/porsche-992-gt3-r/thumbnail.jpg",
+    fallbackImageUrl: "/models/porsche-992-gt3-r/fallback.jpg",
+    options: buildOptionCatalog(),
+  },
 ];

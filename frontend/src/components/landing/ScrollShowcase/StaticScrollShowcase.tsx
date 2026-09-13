@@ -23,8 +23,12 @@ export function StaticScrollShowcase({ vehicle }: StaticScrollShowcaseProps) {
     <section aria-label={`${vehicle.name} showcase`} className="flex flex-col items-center gap-10 px-6 py-16">
       {stages.map((stage) => (
         <div key={stage.id} className="glass-panel flex w-full max-w-md flex-col items-center gap-4 rounded-2xl p-6 text-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={vehicle.fallbackImageUrl} alt="" className="max-h-40 w-auto object-contain" />
+          {/* Skipped when empty (e.g. the API-unreachable FALLBACK_VEHICLE in app/page.tsx) —
+              an <img src=""> makes the browser re-request the current document. */}
+          {vehicle.fallbackImageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={vehicle.fallbackImageUrl} alt="" className="max-h-40 w-auto object-contain" />
+          )}
           <p className="text-sm text-white/80">{stage.caption}</p>
         </div>
       ))}

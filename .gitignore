@@ -50,3 +50,6 @@ Thumbs.db
 
 # TypeScript
 *.tsbuildinfo
+
+# Raw 3D model sources (large, pre-compression — not deployable as-is)
+assets/raw/

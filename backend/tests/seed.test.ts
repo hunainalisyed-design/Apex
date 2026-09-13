@@ -26,8 +26,8 @@ const MINIMUM_ROWS: Record<OptionCategory, number> = {
 };
 
 describe("seed data", () => {
-  it("seeds exactly the two vehicles from SRS §6", () => {
-    expect(seedVehicles.map((v) => v.slug).sort()).toEqual(["apex-gt", "apex-rs"]);
+  it("seeds at least the two example vehicles from SRS §6 ('Support multiple vehicles' — Apex GT/RS are its examples, not an exhaustive list)", () => {
+    expect(seedVehicles.map((v) => v.slug)).toEqual(expect.arrayContaining(["apex-gt", "apex-rs"]));
   });
 
   for (const vehicle of [

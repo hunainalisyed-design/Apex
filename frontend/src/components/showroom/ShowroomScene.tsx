@@ -6,6 +6,8 @@ import { OrbitControls } from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { Camera } from "three";
 import { PlaceholderShowroomRig, type HoveredMesh } from "./PlaceholderShowroomRig";
+import { PorscheShowroomRig } from "./PorscheShowroomRig";
+import { PORSCHE_GT3_R_SLUG } from "@/lib/showroom/porscheVehicle";
 import { useCameraTransition, type CameraTransitionControls } from "./useCameraTransition";
 import { SHOWROOM_CAMERA_BOUNDS } from "@/lib/showroom/camera";
 import { getCameraPreset, type CameraPresetId } from "@/lib/showroom/cameraPresets";
@@ -37,6 +39,7 @@ export interface ShowroomControls {
 }
 
 interface ShowroomRigProps {
+  vehicleSlug: string;
   headlightsOn: boolean;
   brakePulsing: boolean;
   reducedMotion: boolean;
@@ -49,6 +52,7 @@ interface ShowroomRigProps {
 }
 
 function ShowroomRig({
+  vehicleSlug,
   headlightsOn,
   brakePulsing,
   reducedMotion,
@@ -100,15 +104,19 @@ function ShowroomRig({
       <ambientLight intensity={0.55} />
       <directionalLight position={[4, 6, 5]} intensity={1.3} />
       <directionalLight position={[-4, 2, -5]} intensity={0.35} color="#3d6fe0" />
-      <PlaceholderShowroomRig
-        doorOpenAmount={doorOpenAmount}
-        headlightsOn={headlightsOn}
-        brakePulsing={brakePulsing}
-        onHoverMesh={handleHoverMesh}
-        interior={interior}
-        accessories={accessories}
-        {...appearance}
-      />
+      {vehicleSlug === PORSCHE_GT3_R_SLUG ? (
+        <PorscheShowroomRig appearance={appearance} />
+      ) : (
+        <PlaceholderShowroomRig
+          doorOpenAmount={doorOpenAmount}
+          headlightsOn={headlightsOn}
+          brakePulsing={brakePulsing}
+          onHoverMesh={handleHoverMesh}
+          interior={interior}
+          accessories={accessories}
+          {...appearance}
+        />
+      )}
       <OrbitControls
         ref={controlsRef}
         enablePan={false}
@@ -123,6 +131,7 @@ function ShowroomRig({
 }
 
 export interface ShowroomSceneProps {
+  vehicleSlug: string;
   headlightsOn: boolean;
   brakePulsing: boolean;
   reducedMotion: boolean;

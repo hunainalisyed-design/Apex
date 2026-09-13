@@ -10,12 +10,12 @@ describe("Vehicle catalog endpoints (integration)", () => {
     await seedDatabase(prisma);
   }, 30000);
 
-  it("GET /api/vehicles returns both seeded vehicles (AC-1)", async () => {
+  it("GET /api/vehicles returns at least both seeded example vehicles (AC-1)", async () => {
     const res = await request(createApp()).get("/api/vehicles");
 
     expect(res.status).toBe(200);
-    const slugs = res.body.data.map((v: { slug: string }) => v.slug).sort();
-    expect(slugs).toEqual(["apex-gt", "apex-rs"]);
+    const slugs = res.body.data.map((v: { slug: string }) => v.slug);
+    expect(slugs).toEqual(expect.arrayContaining(["apex-gt", "apex-rs"]));
 
     const gt = res.body.data.find((v: { slug: string }) => v.slug === "apex-gt");
     expect(gt).toMatchObject({ name: "Apex GT", basePriceCents: 8_500_000 });

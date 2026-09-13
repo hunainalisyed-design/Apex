@@ -20,9 +20,13 @@ export function Static3DFallback({ vehicle }: Static3DFallbackProps) {
       {/* No real static asset exists behind any placeholder URL in this catalog yet (Spec
           2 Risk #1) — a plain <img> tolerates a broken image rather than requiring
           next/image's optimizer to resolve a real file. Decorative (empty alt): the
-          vehicle name is already announced as adjacent heading text. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={vehicle.fallbackImageUrl} alt="" className="max-h-40 w-auto object-contain" />
+          vehicle name is already announced as adjacent heading text. Skipped entirely when
+          empty (e.g. the API-unreachable FALLBACK_VEHICLE in app/page.tsx) — an <img
+          src=""> makes the browser re-request the current document. */}
+      {vehicle.fallbackImageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={vehicle.fallbackImageUrl} alt="" className="max-h-40 w-auto object-contain" />
+      )}
       <div>
         <p className="text-xs uppercase tracking-[0.3em] text-white/50">3D preview unavailable</p>
         <h2 className="text-xl font-bold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>

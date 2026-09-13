@@ -178,6 +178,7 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null }: Config
             <div className="relative aspect-video w-full">
               <Canvas3DErrorBoundary vehicle={vehicle} onError={() => setSceneError(true)}>
                 <ShowroomScene
+                  vehicleSlug={vehicle.slug}
                   headlightsOn={headlightsOn}
                   brakePulsing={brakePulsing}
                   reducedMotion={reducedMotion}
