@@ -4,7 +4,7 @@ import { useEffect, useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
 import { Box3, Vector3 } from "three";
 
-const MODEL_URL = "/assets/models/porsche-992-gt3-r.glb";
+const DEFAULT_MODEL_URL = "/assets/models/porsche-992-gt3-r.glb";
 
 // The placeholder box this replaces was 2.4 units long, but at that scale the real (much more
 // detailed) model reads as small and distant against HeroScene's existing camera (position z
@@ -16,7 +16,7 @@ const TARGET_LENGTH = 4.2;
 // Sketchfab export via `gltf-transform optimize`) download as soon as this module is
 // evaluated — i.e. as soon as HeroScene's own dynamic import chunk loads — rather than
 // waiting for HeroVehicleModel to first render.
-useGLTF.preload(MODEL_URL);
+useGLTF.preload(DEFAULT_MODEL_URL);
 
 export interface HeroVehicleModelProps {
   /** Called once, the first time this component successfully renders — since useGLTF
@@ -28,6 +28,11 @@ export interface HeroVehicleModelProps {
   /** Overrides TARGET_LENGTH for a smaller consumer (e.g. the /models page's compact
    * showcase card) that frames the same model tighter than the Hero does. */
   targetLength?: number;
+  /** Overrides DEFAULT_MODEL_URL so other real-GLB catalog vehicles (realGlbVehicles.ts) can
+   * reuse this same load/auto-fit logic for their own /models showcase preview, without the
+   * Hero itself (which never passes this) changing which model it shows. Not eagerly
+   * preloaded like the default — only the above-the-fold Hero asset earns that. */
+  modelUrl?: string;
 }
 
 /**
@@ -42,8 +47,12 @@ export interface HeroVehicleModelProps {
  * CAD unit (bounding box on the order of 0.01-0.05 units) — hardcoding a scale factor would
  * silently break the moment a differently-scaled model was ever swapped in.
  */
-export function HeroVehicleModel({ onReady, targetLength = TARGET_LENGTH }: HeroVehicleModelProps) {
-  const { scene } = useGLTF(MODEL_URL);
+export function HeroVehicleModel({
+  onReady,
+  targetLength = TARGET_LENGTH,
+  modelUrl = DEFAULT_MODEL_URL,
+}: HeroVehicleModelProps) {
+  const { scene } = useGLTF(modelUrl);
 
   const { object, scale } = useMemo(() => {
     const clone = scene.clone(true);

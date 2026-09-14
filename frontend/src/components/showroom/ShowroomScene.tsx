@@ -6,8 +6,8 @@ import { OrbitControls } from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { Camera } from "three";
 import { PlaceholderShowroomRig, type HoveredMesh } from "./PlaceholderShowroomRig";
-import { PorscheShowroomRig } from "./PorscheShowroomRig";
-import { PORSCHE_GT3_R_SLUG } from "@/lib/showroom/porscheVehicle";
+import { RealGlbShowroomRig } from "./RealGlbShowroomRig";
+import { getRealGlbVehicleConfig } from "@/lib/showroom/realGlbVehicles";
 import { useCameraTransition, type CameraTransitionControls } from "./useCameraTransition";
 import { SHOWROOM_CAMERA_BOUNDS } from "@/lib/showroom/camera";
 import { getCameraPreset, type CameraPresetId } from "@/lib/showroom/cameraPresets";
@@ -98,14 +98,15 @@ function ShowroomRig({
   };
 
   const defaultPreset = getCameraPreset("default");
+  const realGlbConfig = getRealGlbVehicleConfig(vehicleSlug);
 
   return (
     <>
       <ambientLight intensity={0.55} />
       <directionalLight position={[4, 6, 5]} intensity={1.3} />
       <directionalLight position={[-4, 2, -5]} intensity={0.35} color="#3d6fe0" />
-      {vehicleSlug === PORSCHE_GT3_R_SLUG ? (
-        <PorscheShowroomRig appearance={appearance} />
+      {realGlbConfig ? (
+        <RealGlbShowroomRig config={realGlbConfig} appearance={appearance} />
       ) : (
         <PlaceholderShowroomRig
           doorOpenAmount={doorOpenAmount}

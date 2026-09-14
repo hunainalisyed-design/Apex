@@ -204,4 +204,57 @@ export const seedVehicles: SeedVehicle[] = [
     fallbackImageUrl: "/models/porsche-992-gt3-r/fallback.jpg",
     options: buildOptionCatalog(),
   },
+  {
+    // Real GLB #2 (see frontend/src/lib/showroom/realGlbVehicles.ts) — same pattern as the
+    // Porsche entry above: heroModelUrl/showroomModelUrl both point at the one real asset
+    // (RealGlbShowroomRig ignores showroomModelUrl for every slug in that registry, same as
+    // it always has for Porsche), options still reuse the shared procedural-rig catalog.
+    slug: "pagani-huayra-codalunga-speedster",
+    name: "Pagani Huayra Codalunga Speedster",
+    tagline: "Open-top carbon-titanium hypercar.",
+    basePriceCents: 780_000_00,
+    currency: "EUR",
+    horsepower: 838,
+    topSpeedKph: 322,
+    zeroToHundredSec: 3.3,
+    heroModelUrl: "/assets/models/pagani-huayra-codalunga-speedster.glb",
+    showroomModelUrl: "/models/pagani-huayra-codalunga-speedster/showroom.glb",
+    thumbnailUrl: "/models/pagani-huayra-codalunga-speedster/thumbnail.jpg",
+    fallbackImageUrl: "/models/pagani-huayra-codalunga-speedster/fallback.jpg",
+    options: buildOptionCatalog(),
+  },
+  {
+    // Real GLB #3 — see comment on the Pagani entry above.
+    slug: "lamborghini-revuelto",
+    name: "Lamborghini Revuelto",
+    tagline: "High-performance electrified V12 hybrid.",
+    basePriceCents: 608_000_00,
+    currency: "EUR",
+    horsepower: 1015,
+    topSpeedKph: 350,
+    zeroToHundredSec: 2.5,
+    heroModelUrl: "/assets/models/lamborghini-revuelto.glb",
+    showroomModelUrl: "/models/lamborghini-revuelto/showroom.glb",
+    thumbnailUrl: "/models/lamborghini-revuelto/thumbnail.jpg",
+    fallbackImageUrl: "/models/lamborghini-revuelto/fallback.jpg",
+    options: buildOptionCatalog(),
+  },
+  {
+    // Real GLB #4 — see comment on the Pagani entry above. The one heritage/classic entry in
+    // the catalog rather than a modern supercar; basePriceCents reflects a numbers-matching,
+    // fully restored 1965 example rather than its original period sticker price.
+    slug: "mustang-1965",
+    name: "1965 Ford Mustang Fastback",
+    tagline: "American classic muscle car, fully restored.",
+    basePriceCents: 120_000_00,
+    currency: "EUR",
+    horsepower: 271,
+    topSpeedKph: 190,
+    zeroToHundredSec: 8.0,
+    heroModelUrl: "/assets/models/mustang-1965.glb",
+    showroomModelUrl: "/models/mustang-1965/showroom.glb",
+    thumbnailUrl: "/models/mustang-1965/thumbnail.jpg",
+    fallbackImageUrl: "/models/mustang-1965/fallback.jpg",
+    options: buildOptionCatalog(),
+  },
 ];
