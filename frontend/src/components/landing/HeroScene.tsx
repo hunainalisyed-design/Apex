@@ -75,8 +75,14 @@ export function HeroScene({ stage }: HeroSceneProps) {
           then stop updating. */}
       <ContactShadows position={[0, -0.001, 0]} opacity={0.55} scale={14} blur={2.4} far={3} frames={240} />
       {/* Lighting-only environment map (no visible background) for realistic paint/glass/
-          chrome specular highlights — a one-time PMREM bake, not a per-frame cost. */}
-      <Environment preset="city" />
+          chrome specular highlights — a one-time PMREM bake, not a per-frame cost.
+          Own Suspense boundary (fallback={null}) so a slow/blocked fetch of the remote
+          HDRI can't suspend the whole Canvas — the outer dynamic-import Suspense in
+          Hero.tsx would otherwise keep the entire scene, car included, stuck on the
+          "Loading…" fallback until this resolves. */}
+      <Suspense fallback={null}>
+        <Environment preset="city" />
+      </Suspense>
       <OrbitControls
         enableZoom={false}
         enablePan={false}
