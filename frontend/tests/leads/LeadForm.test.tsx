@@ -73,7 +73,9 @@ describe("Lead capture (Spec 19)", () => {
   });
 
   it("pre-fills name and email from the signed-in user, still editable", () => {
-    useAuthStore.setState({ user: { id: "u1", name: "Jamie Signed In", email: "jamie@signedin.com", createdAt: "" } });
+    useAuthStore.setState({
+      user: { id: "u1", name: "Jamie Signed In", email: "jamie@signedin.com", role: "USER", createdAt: "" },
+    });
     render(<LeadCaptureButtons />);
     fireEvent.click(screen.getByRole("button", { name: "Request Quote" }));
 

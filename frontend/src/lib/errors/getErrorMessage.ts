@@ -16,6 +16,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   CONFIGURATION_IN_USE: "This build has an active request or reservation attached and can't be deleted.",
   RESERVATIONS_DISABLED: "Reservations are temporarily unavailable. Please try again later.",
   PAYMENT_PROVIDER_ERROR: "We couldn't start checkout. Please try again in a moment.",
+  OPTION_NOT_FOUND: "This option could not be found. Please refresh and try again.",
+  LEAD_NOT_FOUND: "This lead could not be found. Please refresh and try again.",
 };
 
 const FALLBACK_MESSAGE = "Something went wrong. Please try again.";

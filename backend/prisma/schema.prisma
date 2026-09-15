@@ -106,6 +106,14 @@ model CustomizationOption {
   applyMode       ApplyMode      @default(MATERIAL_SWAP)
   isDefault       Boolean        @default(false)
   sortOrder       Int            @default(0)
+  /// Soft-delete flag (Spec 21, AC-3) — same convention Vehicle.isActive already
+  /// established. Removing an option through the admin panel sets this false rather than
+  /// issuing a real delete: ConfigurationSelection.option has no onDelete override (Prisma
+  /// default Restrict), so a hard delete would fail outright for any option ever selected
+  /// in a saved build, and even where it wouldn't fail it would orphan history. The
+  /// catalog's option-listing query filters on this for *new* selections; a saved build's
+  /// existing ConfigurationSelection row keeps resolving normally regardless.
+  isActive        Boolean        @default(true)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
@@ -155,6 +163,12 @@ model User {
   email           String    @unique
   passwordHash    String
   termsAcceptedAt DateTime
+  /// "USER" | "ADMIN" (Spec 21) — a plain string, not an enum: the spec explicitly rules out
+  /// a permission hierarchy beyond this single flat distinction (§7, "no editor vs.
+  /// super-admin"), so there's no near-term case list an enum would need to enumerate.
+  /// There is deliberately no self-service path to ADMIN — see
+  /// backend/scripts/promoteAdmin.ts.
+  role            String    @default("USER")
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -163,6 +177,28 @@ model User {
   configurations      Configuration[]
   leads               Lead[]
   reservations        Reservation[]
+  auditLogEntries     AuditLogEntry[]
+}
+
+/// Lightweight admin-action audit trail (Spec 21, AC-6) — the first place in this product
+/// where an internal actor's actions need traceability. Written best-effort, right after
+/// each successful admin write, by services/admin/auditLog.ts; a failure to write this row
+/// is logged but never rolled back into the business write it's recording (an audit-log
+/// write failing after a real mutation already succeeded is an acceptable edge case for
+/// this internal tool, not worth atomic dual-write complexity). Write-only for now — no
+/// read endpoint/DTO exists because no AC asks for one; add one later if that changes.
+model AuditLogEntry {
+  id          String   @id @default(cuid())
+  adminUserId String
+  admin       User     @relation(fields: [adminUserId], references: [id])
+  action      String // e.g. "vehicle.create", "option.deactivate"
+  targetType  String // "Vehicle" | "CustomizationOption" | "Lead"
+  targetId    String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([adminUserId])
+  @@index([targetType, targetId])
 }
 
 /// An opaque, cryptographically random session token's hash — never the raw token itself,

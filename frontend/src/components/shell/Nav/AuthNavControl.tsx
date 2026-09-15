@@ -25,6 +25,11 @@ export function AuthNavControl() {
   if (user) {
     return (
       <div className="flex items-center gap-1">
+        {user.role === "ADMIN" && (
+          <Link href="/admin" className={LINK_CLASS}>
+            Admin
+          </Link>
+        )}
         <Link href="/garage" className={LINK_CLASS}>
           {user.name}
         </Link>

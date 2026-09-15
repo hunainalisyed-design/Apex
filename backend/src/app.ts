@@ -1,6 +1,7 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
+import { adminRouter } from "./routes/admin.js";
 import { aiRouter } from "./routes/ai.js";
 import { authRouter } from "./routes/auth.js";
 import { configurationsRouter } from "./routes/configurations.js";
@@ -45,6 +46,7 @@ export function createApp() {
   app.use("/api", meRouter);
   app.use("/api", leadsRouter);
   app.use("/api", reservationsRouter);
+  app.use("/api", adminRouter);
 
   return app;
 }

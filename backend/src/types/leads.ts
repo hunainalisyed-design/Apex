@@ -10,4 +10,14 @@ export interface CreateLeadRequest {
 
 export interface LeadDto {
   id: string;
+  configurationPublicId: string;
+  vehicleSlug: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  preferredContact: "EMAIL" | "PHONE";
+  message: string | null;
+  requestType: "QUOTE" | "TEST_DRIVE";
+  status: "NEW" | "CONTACTED" | "CLOSED";
+  createdAt: string;
 }

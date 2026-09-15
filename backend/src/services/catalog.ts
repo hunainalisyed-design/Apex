@@ -19,8 +19,11 @@ export async function getVehicleWithOptions(slug: string) {
     return null;
   }
 
+  // isActive: true — a deactivated option (Spec 21 AC-3's soft-delete) must disappear from
+  // every public read, not just the admin panel's write path, otherwise deactivating an
+  // option here would have no visible effect on the actual configurator.
   const options = await prisma.customizationOption.findMany({
-    where: { vehicleId: vehicle.id },
+    where: { vehicleId: vehicle.id, isActive: true },
     orderBy: [{ category: "asc" }, { sortOrder: "asc" }],
   });
 

@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
+    "promote-admin": "tsx scripts/promoteAdmin.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

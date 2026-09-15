@@ -19,10 +19,13 @@ export interface ResetPasswordRequest {
   newPassword: string;
 }
 
+export type UserRole = "USER" | "ADMIN";
+
 export interface UserDto {
   id: string;
   name: string;
   email: string;
+  role: UserRole;
   createdAt: string;
 }
 

@@ -1,7 +1,7 @@
 # Spec: Admin / CMS Panel
 
 **File:** `docs/specs/21-admin-cms-panel.md`
-**Status:** Draft
+**Status:** Implemented
 **Author:** Syed Hunain Raza
 **Reviewer:** hunainalisyed@gmail.com
 **Related:** SRS §34.1 (Admin/CMS panel); depends on `02-vehicle-catalog-data-model.md`, `16-authentication.md`, `19-lead-capture-quote-request.md`, `20-reservation-deposit.md`
@@ -39,14 +39,20 @@
 
 | Method | Route | Auth | Success | Notes |
 |---|---|---|---|---|
+| `GET` | `/api/admin/vehicles` | admin | `200` `ApiResponse<VehicleAdminDto[]>` | added during implementation — see note below |
 | `POST` | `/api/admin/vehicles` | admin | `201` | |
-| `PUT` | `/api/admin/vehicles/:id` | admin | `200` | |
+| `PUT` | `/api/admin/vehicles/:id` | admin | `200` | `isActive:false` in the body is the deactivate action; no separate route |
+| `GET` | `/api/admin/vehicles/:id/options` | admin | `200` `ApiResponse<OptionAdminDto[]>` | added during implementation — see note below |
 | `POST` | `/api/admin/vehicles/:id/options` | admin | `201` | |
 | `PUT` | `/api/admin/options/:id` | admin | `200` | |
 | `DELETE` | `/api/admin/options/:id` | admin | `204` | soft-deactivates, per AC-3 |
-| `GET` | `/api/admin/leads` | admin | `200` `ApiResponse<LeadDto[]>` | |
-| `PUT` | `/api/admin/leads/:id` | admin | `200` | status only |
-| `GET` | `/api/admin/reservations` | admin | `200` `ApiResponse<ReservationDto[]>` | |
+| `GET` | `/api/admin/leads` | admin | `200` `ApiResponse<LeadDto[]>` | supports `?status=` and `?page=&pageSize=` |
+| `PUT` | `/api/admin/leads/:id` | admin | `200` | status only, restricted to `CONTACTED`/`CLOSED` |
+| `GET` | `/api/admin/reservations` | admin | `200` `ApiResponse<ReservationDto[]>` | supports `?page=&pageSize=` |
+
+**Note (added during implementation):** the original endpoint table had no `GET` for listing Vehicles or a given vehicle's Options — an oversight, since AC-2/AC-3's create/edit/deactivate flow has no way to know what to edit without a listing endpoint first. Both were added following this table's existing conventions (admin-gated, paginated where it's a flat list). `VehicleAdminDto` extends the public `VehicleSummaryDto` with `id`, `heroModelUrl`, `showroomModelUrl`, and `isActive` (all needed for editing but not exposed publicly); `OptionAdminDto` extends `CustomizationOptionDto` with `isActive`, since the admin view — unlike the public catalog — must show deactivated rows too, to find and reactivate them.
+
+**Note on the single-default invariant (added during implementation):** every single-select `OptionCategory` (Spec 6) is meant to have exactly one active default. AC-3's writes are guarded against *regressing* that — rejected if a write would leave two active defaults, or would remove a category's sole existing active default — but a category that simply has zero options yet (e.g. immediately after AC-2 creates a brand-new vehicle, before any options exist) is not treated as a violation; there is nothing to break yet. This distinction matters because a naive "every category must have exactly one default at all times" check would make it impossible to ever build up a new vehicle's catalog one option at a time.
 
 An `admin` auth middleware checks the session (Spec 16) and `User.role === "ADMIN"`, returning `404` (not `403`) for anyone else, per AC-1's information-hiding choice.
 

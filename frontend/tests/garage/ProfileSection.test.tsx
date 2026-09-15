@@ -36,7 +36,13 @@ const { ProfileSection } = await import("../../src/components/garage/ProfileSect
 const { useAuthStore } = await import("../../src/state/authStore");
 const { ToastProvider } = await import("../../src/components/shell/ToastProvider");
 
-const BASE_USER = { id: "u1", name: "Original Name", email: "user@example.com", createdAt: "2026-01-01T00:00:00.000Z" };
+const BASE_USER = {
+  id: "u1",
+  name: "Original Name",
+  email: "user@example.com",
+  role: "USER" as const,
+  createdAt: "2026-01-01T00:00:00.000Z",
+};
 const RESET_STATE = { user: BASE_USER, hydrated: true, isLoading: false, details: null, errorCode: null };
 
 function renderProfileSection() {

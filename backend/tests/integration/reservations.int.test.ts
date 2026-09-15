@@ -118,6 +118,9 @@ describe("Reservations endpoints (integration, Spec 20)", () => {
     await prisma.lead.deleteMany();
     await prisma.passwordResetToken.deleteMany();
     await prisma.session.deleteMany();
+    // Spec 21's AuditLogEntry has a Restrict FK to User (adminUserId) — must go before the
+    // user wipe below, same reasoning as every other FK-dependent table in this list.
+    await prisma.auditLogEntry.deleteMany();
     await prisma.user.deleteMany();
   });
 

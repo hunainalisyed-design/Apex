@@ -1,6 +1,7 @@
 import { prisma } from "../../lib/prisma.js";
 import type { CreateLeadRequest, LeadDto } from "../../types/leads.js";
 import { sendDealerNotificationEmail, sendRequesterConfirmationEmail } from "./email.js";
+import { mapLeadToDto } from "./mapLeadToDto.js";
 
 export type CreateLeadResult = { ok: true; lead: LeadDto } | { ok: false; reason: "NOT_FOUND" };
 
@@ -31,6 +32,7 @@ export async function createLead(input: CreateLeadRequest, userId: string | null
       message: input.message,
       requestType: input.requestType,
     },
+    include: { configuration: { include: { vehicle: true } } },
   });
 
   const configurationUrl = `${process.env.FRONTEND_ORIGIN ?? "http://localhost:3000"}/configure/${configuration.vehicle.slug}?build=${configuration.publicId}`;
@@ -38,5 +40,5 @@ export async function createLead(input: CreateLeadRequest, userId: string | null
   await sendDealerNotificationEmail(lead, configurationUrl);
   await sendRequesterConfirmationEmail(lead);
 
-  return { ok: true, lead: { id: lead.id } };
+  return { ok: true, lead: mapLeadToDto(lead) };
 }
