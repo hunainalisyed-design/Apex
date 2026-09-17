@@ -19,6 +19,8 @@ vi.mock("../../src/lib/api/me", () => ({
   getMyConfigurations: vi.fn(),
   updateProfile: (...args: unknown[]) => updateProfileMock(...args),
   changePassword: (...args: unknown[]) => changePasswordMock(...args),
+  exportMyData: vi.fn(),
+  deleteAccount: vi.fn(),
 }));
 vi.mock("../../src/lib/api/configurations", () => ({
   ApiRequestError: MockApiRequestError,

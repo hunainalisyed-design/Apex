@@ -1,8 +1,10 @@
 import { Router } from "express";
 import { sendApiError } from "../lib/apiError.js";
 import { requireAuth } from "../middleware/auth.js";
+import { clearSessionCookie } from "../services/auth/session.js";
 import { changePassword, updateProfileName } from "../services/auth/user.js";
 import { getConfigurationsForUser } from "../services/configurations.js";
+import { deleteAccount, exportUserData } from "../services/gdpr.js";
 import type { ApiResponse } from "../types/api.js";
 import type { UserDto } from "../types/auth.js";
 import type { SavedConfigurationDto } from "../types/configuration.js";
@@ -54,4 +56,40 @@ meRouter.put("/me/password", requireAuth, async (req, res) => {
 
   const responseBody: ApiResponse<{ message: string }> = { data: { message: "Password updated." } };
   res.status(200).json(responseBody);
+});
+
+/** Spec 24, AC-5 — a raw file download, not the usual `{ data }` envelope: this response's
+ * only consumer is the browser saving it, not frontend JS unpacking an ApiResponse. */
+meRouter.get("/me/export", requireAuth, async (req, res) => {
+  const data = await exportUserData(req.user!.id);
+
+  res.setHeader("Content-Disposition", `attachment; filename="apex-my-data-${req.user!.id}.json"`);
+  res.status(200).json(data);
+});
+
+meRouter.delete("/me", requireAuth, async (req, res) => {
+  const body = req.body as { confirmEmail?: unknown } | undefined;
+
+  if (!body || typeof body.confirmEmail !== "string" || !body.confirmEmail.trim()) {
+    sendApiError(res, 400, "VALIDATION_ERROR", "confirmEmail is required.", {
+      confirmEmail: ["Type your account email to confirm."],
+    });
+    return;
+  }
+
+  const result = await deleteAccount(req.user!.id, body.confirmEmail);
+
+  if (!result.ok) {
+    if (result.reason === "ADMIN_ACCOUNT") {
+      sendApiError(res, 409, "ADMIN_ACCOUNT_CANNOT_SELF_DELETE", "Admin accounts can't be deleted this way.");
+      return;
+    }
+    sendApiError(res, 400, "VALIDATION_ERROR", "That doesn't match your account email.", {
+      confirmEmail: ["That doesn't match your account email."],
+    });
+    return;
+  }
+
+  clearSessionCookie(res);
+  res.status(204).end();
 });

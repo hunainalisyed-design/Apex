@@ -1,7 +1,7 @@
 # Spec: Cookie Consent & GDPR Compliance
 
 **File:** `docs/specs/24-cookie-consent-gdpr.md`
-**Status:** Draft
+**Status:** Implemented
 **Author:** Syed Hunain Raza
 **Reviewer:** hunainalisyed@gmail.com
 **Related:** SRS §34.4 (Compliance & Trust); depends on `16-authentication.md`, `23-seo-og-analytics.md`, `19-lead-capture-quote-request.md`
@@ -104,3 +104,14 @@ This spec *is* the retention/privacy policy layer the rest of the product has be
 - **Migration order:** N/A structurally; should ship before or alongside Spec 23 so analytics never fires without consent even briefly.
 - **Rollback:** remove the banner/export/delete endpoints; Spec 23's analytics should then also be disabled, since its consent gate would no longer exist.
 - **Observability:** log account-deletion events (who, when) for audit purposes, without retaining the deleted user's PII in that log itself.
+
+---
+
+## 10. Implementation notes
+
+- **No migration was needed for AC-6.** `Configuration.user`, `Lead.user`, and `Reservation.user` were already `onDelete: SetNull` in the schema (set when Specs 2/19/20 were built — `Reservation`'s own schema comment already anticipated this exact spec: "a future account deletion isn't blocked by, or doesn't destroy, a reservation record"). Deleting the `User` row is the entire anonymization mechanism; no manual "set userId to null" step exists anywhere in `gdpr.ts`.
+- **A real edge case found and fixed, not left as a follow-up:** `AuditLogEntry.admin` has no `onDelete` override (Prisma's default `Restrict`, by design — an admin action's audit trail must survive the admin who performed it, Spec 21 AC-6). An `ADMIN` account with existing audit log entries would fail the delete with a raw FK constraint error. `DELETE /me` now refuses `ADMIN` accounts outright with a clear `409 ADMIN_ACCOUNT_CANNOT_SELF_DELETE`, mirroring the existing "no self-service path into ADMIN" precedent (`backend/scripts/promoteAdmin.ts`) — there's equally no self-service path out via account deletion. Covered by its own integration test.
+- **A real UI bug found via a full e2e run, not a targeted one:** the cookie banner's first implementation used `fixed` overlay positioning anchored to a viewport edge. This directly violated this spec's own §5 UI-states row ("non-blocking, doesn't cover primary content") — the showroom/configurator UI docks its own controls near the bottom of the screen, so the floating banner intercepted clicks on swatches, Save, and Reserve buttons underneath it. This surfaced as ~15-21 seemingly-unrelated e2e failures across other specs (accessories, build summary, my-garage, screenshot capture) when the full suite ran, not in this spec's own targeted tests. Fixed by making the banner a normal in-flow bar between `<Nav>` and the page content instead of a floating overlay — it now occupies its own space, so it can never overlap anything by construction. Re-running the full suite confirmed every one of those failures was this single root cause, not independent bugs.
+- **A second race condition found the same way:** redirecting after account deletion via `router.push("/")` raced against `GaragePage`'s own auth-guard effect (which also reacts to `user` becoming `null` and redirects to `/login?returnTo=/garage`) — the guard won the race in practice. Fixed with a hard `window.location.href = "/"` navigation instead, which also better matches the intent ("your account is gone" belongs on a clean home page, not a login screen inviting you back into a garage that no longer exists).
+- **`hasAnalyticsConsent()` (`frontend/src/state/consentStore.ts`) exists and is correct, but nothing calls it yet** — Spec 23's analytics module was deliberately never built (that spec's own AC-5/AC-6 were deferred pending this one). AC-1/AC-3's "no analytics script loads without consent" is trivially true today since no such script exists at all; wiring real analytics behind this gate is the natural next follow-up now that the mechanism exists.
+- Verification: 263 frontend + 75 backend unit tests pass (7 new frontend, 5 new backend), typecheck/lint clean, both production builds succeed, and the full Playwright e2e suite (76 specs) passes consistently modulo pre-existing flakiness from parallel workers sharing one real Postgres-backed backend under full concurrency — every test that failed under load passed immediately and consistently when run in isolation, confirming this is unrelated test-infrastructure fragility, not an application defect (consistent with this project's own CI gate, Spec 22, deliberately never running the e2e suite as an automated check).

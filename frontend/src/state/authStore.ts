@@ -19,6 +19,11 @@ export interface AuthState {
   signup: (input: { name: string; email: string; password: string; acceptedTerms: true }) => Promise<boolean>;
   login: (input: { email: string; password: string }) => Promise<boolean>;
   logout: () => Promise<void>;
+  /** Spec 24, AC-6 — after a successful account deletion, the backend has already cleared
+   * the session cookie itself; calling the real logout() here would just make a doomed
+   * second request to an endpoint the now-deleted account can't authenticate against. This
+   * is a plain synchronous state clear, no API call. */
+  clearSession: () => void;
   forgotPassword: (email: string) => Promise<boolean>;
   resetPassword: (token: string, newPassword: string) => Promise<boolean>;
   /** Calls GET /api/auth/me once (AC-10) — invoked by AuthHydrator on mount. */
@@ -82,6 +87,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ user: null, hydrated: true, isLoading: false });
     }
   },
+
+  clearSession: () => set({ user: null, hydrated: true }),
 
   forgotPassword: async (email) => {
     set({ isLoading: true, details: null, errorCode: null });

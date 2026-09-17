@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import { AppErrorBoundary } from "@/components/shell/AppErrorBoundary";
 import { AuthHydrator } from "@/components/shell/AuthHydrator";
+import { Footer } from "@/components/shell/Footer";
 import { Nav } from "@/components/shell/Nav/Nav";
 import { SkipLink } from "@/components/shell/SkipLink";
 import { ToastProvider } from "@/components/shell/ToastProvider";
+import { CookieConsentBanner } from "@/components/consent/CookieConsentBanner";
 import { SITE_URL } from "@/lib/seo/siteUrl";
 import "./globals.css";
 
@@ -57,9 +59,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SkipLink />
         <AuthHydrator />
         <Nav />
+        <CookieConsentBanner />
         <AppErrorBoundary>
           <ToastProvider>{children}</ToastProvider>
         </AppErrorBoundary>
+        <Footer />
       </body>
     </html>
   );
