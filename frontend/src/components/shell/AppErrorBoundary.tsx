@@ -1,6 +1,7 @@
 "use client";
 
 import { Component, type ReactNode } from "react";
+import * as Sentry from "@sentry/nextjs";
 
 interface AppErrorBoundaryProps {
   children: ReactNode;
@@ -24,10 +25,11 @@ export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorB
   }
 
   componentDidCatch(error: unknown) {
-    // Phase 3 (§34.2) will wire this into real error monitoring (e.g. Sentry) — logged to
-    // console.error in the meantime so failures are at least visible in development, per
-    // this spec's own rollout note.
+    // Spec 22, AC-3: every error this boundary catches is reported to Sentry (a no-op if
+    // NEXT_PUBLIC_SENTRY_DSN is unset, same as instrumentation-client.ts). Also logged to
+    // console.error so it's still visible in local dev without a DSN configured.
     console.error(error);
+    Sentry.captureException(error);
   }
 
   handleReload = () => {

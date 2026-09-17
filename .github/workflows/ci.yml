@@ -1,0 +1,79 @@
+name: CI
+
+# Spec 22, AC-1: lint, typecheck, unit+integration tests, and build for both frontend/ and
+# backend/ on every PR, blocking merge on any failure. Split into separate jobs (rather than
+# one long sequential job) so each shows as its own required status check and a slow
+# integration suite doesn't hold up the fast lint/typecheck/build feedback.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-typecheck-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run test
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    # Only backend/ has integration tests today (they exercise real Postgres per
+    # tests/integration/*.int.test.ts) — this job is backend-only on purpose.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: apex
+          POSTGRES_PASSWORD: apex
+          POSTGRES_DB: apex_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U apex"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://apex:apex@localhost:5432/apex_dev?schema=public
+      # Integration tests mock the Anthropic/Stripe/Resend clients directly rather than
+      # calling out for real (see vi.mock in tests/integration/{ai,reservations,leads}.int.test.ts)
+      # — these placeholders only need to be non-empty so app code that checks "is this key
+      # configured" takes the real-provider branch the mocks intercept, not the dev-fallback one.
+      ANTHROPIC_API_KEY: test-anthropic-key
+      RESEND_API_KEY: test-resend-key
+      STRIPE_SECRET_KEY: sk_test_placeholder
+      STRIPE_WEBHOOK_SECRET: whsec_placeholder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx prisma migrate deploy
+        working-directory: backend
+      - run: npm run test:integration --workspace=backend

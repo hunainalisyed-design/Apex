@@ -1,7 +1,8 @@
 "use client";
 
 import { Component, type ReactNode } from "react";
-import { isWebGLAvailable } from "@/lib/webgl";
+import * as Sentry from "@sentry/nextjs";
+import { getWebGLRendererInfo, isWebGLAvailable } from "@/lib/webgl";
 
 interface CompareSceneErrorBoundaryProps {
   children: ReactNode;
@@ -38,7 +39,10 @@ export class CompareSceneErrorBoundary extends Component<
     }
   }
 
-  componentDidCatch() {
+  componentDidCatch(error: unknown) {
+    // Spec 22, AC-3 — mirrors Canvas3DErrorBoundary's Sentry reporting exactly (see that
+    // file's doc comment for why the GPU/renderer string matters here).
+    Sentry.captureException(error, { tags: { webglRenderer: getWebGLRendererInfo() } });
     this.props.onError();
   }
 

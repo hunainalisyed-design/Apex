@@ -1,7 +1,8 @@
 "use client";
 
 import { Component, type ReactNode } from "react";
-import { isWebGLAvailable } from "@/lib/webgl";
+import * as Sentry from "@sentry/nextjs";
+import { getWebGLRendererInfo, isWebGLAvailable } from "@/lib/webgl";
 import type { VehicleSummaryDto } from "@/types/catalog";
 import { Static3DFallback } from "./Static3DFallback";
 
@@ -57,7 +58,13 @@ export class Canvas3DErrorBoundary extends Component<Canvas3DErrorBoundaryProps,
     }
   }
 
-  componentDidCatch() {
+  componentDidCatch(error: unknown) {
+    // Spec 22, AC-3: a real render error inside the 3D subtree (as opposed to the
+    // WebGL-unavailable feature-detection path above, which is an expected condition, not a
+    // bug) is exactly the "hard-to-reproduce WebGL/3D bug" SRS §34.2 calls out — the
+    // GPU/renderer string is usually the only thing that distinguishes a report that
+    // reproduces from one that never will, so it's attached as a tag here.
+    Sentry.captureException(error, { tags: { webglRenderer: getWebGLRendererInfo() } });
     this.props.onError?.();
   }
 

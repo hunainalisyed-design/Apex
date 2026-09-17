@@ -38,6 +38,7 @@ function makeOption(overrides: Partial<CustomizationOption> = {}): Customization
     swatchColor: "#0a0a0c",
     applyMode: "MATERIAL_SWAP",
     isDefault: true,
+    isActive: true,
     sortOrder: 0,
     createdAt: new Date(),
     updatedAt: new Date(),
