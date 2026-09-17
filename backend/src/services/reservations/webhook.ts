@@ -1,4 +1,5 @@
 import type Stripe from "stripe";
+import { logger } from "../../lib/logger.js";
 import { prisma } from "../../lib/prisma.js";
 
 type TerminalStatus = "PAID" | "FAILED";
@@ -30,8 +31,9 @@ async function applyTerminalStatus(
 
   const reservationId = session.metadata?.reservationId;
   if (!reservationId) {
-    console.error(
-      `[reservations] ${eventType} for unknown session ${session.id} with no reservationId metadata to fall back on`,
+    logger.error(
+      { eventType, sessionId: session.id },
+      "[reservations] Webhook event for unknown session with no reservationId metadata to fall back on",
     );
     return;
   }
@@ -42,8 +44,9 @@ async function applyTerminalStatus(
   });
 
   if (byMetadata.count === 0) {
-    console.error(
-      `[reservations] ${eventType} for session ${session.id} — no ${fromStatus} Reservation row matched by session id or metadata.reservationId (${reservationId})`,
+    logger.error(
+      { eventType, sessionId: session.id, reservationId, fromStatus },
+      "[reservations] Webhook event — no Reservation row matched by session id or metadata.reservationId",
     );
   }
 }

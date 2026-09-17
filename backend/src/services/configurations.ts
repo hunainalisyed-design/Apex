@@ -1,11 +1,12 @@
 import { Prisma, type CustomizationOption, type Vehicle } from "@prisma/client";
+import { logger } from "../lib/logger.js";
 import { prisma } from "../lib/prisma.js";
 import { MULTI_SELECT_CATEGORIES, SINGLE_SELECT_CATEGORIES } from "../types/catalog.js";
 import type { OptionCategory } from "../types/catalog.js";
 import type { SaveConfigurationRequest, SavedConfigurationDto } from "../types/configuration.js";
 import type { MultiSelectCategory, SingleSelectCategory } from "../types/pricing.js";
 import { mapOptionToDto } from "./catalog.js";
-import { calculatePrice } from "./pricing.js";
+import { calculatePrice, PricingError } from "./pricing.js";
 import { generatePublicId } from "./publicId.js";
 
 const EXPIRES_IN_MS = 90 * 24 * 60 * 60 * 1000;
@@ -73,16 +74,37 @@ function mapConfigurationToDto(configuration: ConfigurationWithRelations): Saved
  * uncaught to the route's existing status-map catch block.
  */
 export async function createConfiguration(input: CreateConfigurationInput): Promise<SavedConfigurationDto> {
-  const breakdown = calculatePrice({
-    vehicle: {
-      slug: input.vehicle.slug,
-      basePriceCents: input.vehicle.basePriceCents,
-      currency: input.vehicle.currency,
-    },
-    options: input.options.map(mapOptionToDto),
-    singleSelections: input.singleSelections,
-    multiSelections: input.multiSelections,
-  });
+  // Spec 22 AC-4: structured log for this pricing calculation too — every configuration save
+  // recomputes and persists a total, so it's as much "a pricing calculation" as the dedicated
+  // POST /api/pricing/calculate endpoint.
+  const pricingStartedAt = Date.now();
+  let breakdown;
+  try {
+    breakdown = calculatePrice({
+      vehicle: {
+        slug: input.vehicle.slug,
+        basePriceCents: input.vehicle.basePriceCents,
+        currency: input.vehicle.currency,
+      },
+      options: input.options.map(mapOptionToDto),
+      singleSelections: input.singleSelections,
+      multiSelections: input.multiSelections,
+    });
+  } catch (err) {
+    logger.info(
+      {
+        vehicleSlug: input.vehicle.slug,
+        latencyMs: Date.now() - pricingStartedAt,
+        outcome: err instanceof PricingError ? "validation-rejected" : "error",
+      },
+      "pricing.calculate",
+    );
+    throw err;
+  }
+  logger.info(
+    { vehicleSlug: input.vehicle.slug, latencyMs: Date.now() - pricingStartedAt, outcome: "success" },
+    "pricing.calculate",
+  );
 
   const optionIds = [...Object.values(input.singleSelections), ...Object.values(input.multiSelections).flat()];
   const configuration = await createWithFreshPublicId(

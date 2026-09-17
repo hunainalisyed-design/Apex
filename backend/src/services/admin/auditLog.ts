@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+import { logger } from "../../lib/logger.js";
 import { prisma } from "../../lib/prisma.js";
 
 export interface AuditLogInput {
@@ -29,6 +30,9 @@ export async function recordAuditLog(input: AuditLogInput): Promise<void> {
       },
     });
   } catch (err) {
-    console.error("[admin] Failed to write audit log entry:", err);
+    logger.error(
+      { err: err instanceof Error ? err.message : err, action: input.action, targetType: input.targetType },
+      "[admin] Failed to write audit log entry",
+    );
   }
 }

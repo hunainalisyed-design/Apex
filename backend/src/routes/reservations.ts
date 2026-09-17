@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import Stripe from "stripe";
 import { sendApiError } from "../lib/apiError.js";
+import { logger } from "../lib/logger.js";
 import { getStripeClient } from "../lib/stripe.js";
 import { optionalAuth } from "../middleware/auth.js";
 import { reservationRateLimit } from "../middleware/rateLimit.js";
@@ -65,7 +66,7 @@ export async function reservationsWebhookHandler(req: Request, res: Response): P
   const stripe = getStripeClient();
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!stripe || !webhookSecret) {
-    console.error("[reservations] Webhook received but Stripe isn't configured.");
+    logger.error("[reservations] Webhook received but Stripe isn't configured");
     res.status(503).end();
     return;
   }
@@ -75,12 +76,15 @@ export async function reservationsWebhookHandler(req: Request, res: Response): P
   try {
     event = stripe.webhooks.constructEvent(req.body as Buffer, signature as string, webhookSecret);
   } catch (err) {
-    console.error("[reservations] Webhook signature verification failed:", err instanceof Error ? err.message : err);
+    logger.error(
+      { err: err instanceof Error ? err.message : err },
+      "[reservations] Webhook signature verification failed",
+    );
     res.status(400).end();
     return;
   }
 
-  console.log(`[reservations] Received webhook event: ${event.type}`);
+  logger.info({ eventType: event.type }, "[reservations] Received webhook event");
 
   if (event.type === "checkout.session.completed") {
     await handleCheckoutSessionCompleted(event.data.object);

@@ -1,7 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { CustomizationOption, Vehicle } from "@prisma/client";
+import { logger } from "../../lib/logger.js";
 import { mapOptionToDto, mapVehicleToDetailDto } from "../catalog.js";
-import { calculatePrice } from "../pricing.js";
+import { calculatePrice, PricingError } from "../pricing.js";
+import type { PriceBreakdownDto } from "../../types/pricing.js";
 import { MULTI_SELECT_CATEGORIES } from "../../types/catalog.js";
 import type { AiConfigureRequest, AiConfigureResponseDto } from "../../types/ai.js";
 import type { MultiSelectCategory, SingleSelectCategory } from "../../types/pricing.js";
@@ -39,6 +41,11 @@ export async function configureVehicleWithAi(input: ConfigureVehicleWithAiInput)
   const tool = buildConfigureToolSchema(vehicleDetail);
   const messages = buildConversationMessages(vehicleDetail, input.request);
 
+  // Spec 22 AC-4: every AI call gets one structured log line with latency, outcome, and the
+  // vehicle slug (never the user's message text or any other PII) — this is the first place
+  // in the product a "hard-to-reproduce" AI-provider issue becomes visible outside a
+  // terminal someone happened to be watching.
+  const startedAt = Date.now();
   let response: Anthropic.Message;
   try {
     response = await createConfigureMessage({ system: buildSystemPrompt(), messages, tool });
@@ -50,12 +57,24 @@ export async function configureVehicleWithAi(input: ConfigureVehicleWithAiInput)
     // function. AC-6 treats every one of these identically, so there's no need to
     // distinguish by type here.
     const message = err instanceof Error ? err.message : "unknown error";
+    logger.info(
+      { vehicleSlug: vehicleDetail.slug, latencyMs: Date.now() - startedAt, outcome: "error" },
+      "ai.configure call",
+    );
     throw new AiProviderError(`CarAI request failed: ${message}`);
   }
 
   if (response.stop_reason !== "tool_use") {
+    logger.info(
+      { vehicleSlug: vehicleDetail.slug, latencyMs: Date.now() - startedAt, outcome: "error" },
+      "ai.configure call",
+    );
     throw new AiProviderError(`CarAI did not return a usable recommendation (stop_reason: ${response.stop_reason}).`);
   }
+  logger.info(
+    { vehicleSlug: vehicleDetail.slug, latencyMs: Date.now() - startedAt, outcome: "success" },
+    "ai.configure call",
+  );
 
   const toolUseBlock = response.content.find(
     (block): block is Anthropic.ToolUseBlock => block.type === "tool_use" && block.name === CONFIGURE_TOOL_NAME,
@@ -87,12 +106,30 @@ export async function configureVehicleWithAi(input: ConfigureVehicleWithAiInput)
     mergedMulti[category] = Array.from(new Set([...(mergedMulti[category] ?? []), ...recommended]));
   }
 
-  const breakdown = calculatePrice({
-    vehicle: { slug: vehicleDetail.slug, basePriceCents: vehicleDetail.basePriceCents, currency: vehicleDetail.currency },
-    options: optionDtos,
-    singleSelections: mergedSingle,
-    multiSelections: mergedMulti,
-  });
+  const pricingStartedAt = Date.now();
+  let breakdown: PriceBreakdownDto;
+  try {
+    breakdown = calculatePrice({
+      vehicle: { slug: vehicleDetail.slug, basePriceCents: vehicleDetail.basePriceCents, currency: vehicleDetail.currency },
+      options: optionDtos,
+      singleSelections: mergedSingle,
+      multiSelections: mergedMulti,
+    });
+  } catch (err) {
+    logger.info(
+      {
+        vehicleSlug: vehicleDetail.slug,
+        latencyMs: Date.now() - pricingStartedAt,
+        outcome: err instanceof PricingError ? "validation-rejected" : "error",
+      },
+      "pricing.calculate",
+    );
+    throw err;
+  }
+  logger.info(
+    { vehicleSlug: vehicleDetail.slug, latencyMs: Date.now() - pricingStartedAt, outcome: "success" },
+    "pricing.calculate",
+  );
 
   return { assistantMessage, recommendation: validated, breakdown };
 }

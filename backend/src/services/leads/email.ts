@@ -1,5 +1,6 @@
 import type { Lead } from "@prisma/client";
 import { getResendClient, RESEND_FROM_ADDRESS } from "../../lib/email.js";
+import { logger } from "../../lib/logger.js";
 
 const DEALER_INBOX_EMAIL = process.env.DEALER_INBOX_EMAIL ?? "dealer@apex.example";
 
@@ -20,8 +21,9 @@ export async function sendDealerNotificationEmail(lead: Lead, configurationUrl: 
   const contactLine = `${lead.email}${lead.phone ? ` / ${lead.phone}` : ""} (prefers ${lead.preferredContact.toLowerCase()})`;
 
   if (!resend) {
-    console.log(
-      `[dev] Dealer notification: new ${label} request from ${lead.name} <${contactLine}>. Build: ${configurationUrl}`,
+    logger.info(
+      { leadName: lead.name, contactLine, configurationUrl, requestType: label },
+      "[dev] Dealer notification (no RESEND_API_KEY configured)",
     );
     return;
   }
@@ -36,7 +38,10 @@ export async function sendDealerNotificationEmail(lead: Lead, configurationUrl: 
       }<p><a href="${configurationUrl}">View the exact configuration</a></p>`,
     });
   } catch (err) {
-    console.error("[leads] Failed to send dealer notification email:", err instanceof Error ? err.message : err);
+    logger.error(
+      { err: err instanceof Error ? err.message : err },
+      "[leads] Failed to send dealer notification email",
+    );
   }
 }
 
@@ -46,7 +51,7 @@ export async function sendRequesterConfirmationEmail(lead: Lead): Promise<void> 
   const label = REQUEST_LABEL[lead.requestType];
 
   if (!resend) {
-    console.log(`[dev] Confirmation email for ${lead.email}: we've received your ${label} request.`);
+    logger.info({ requestType: label }, "[dev] Requester confirmation email (no RESEND_API_KEY configured)");
     return;
   }
 
@@ -58,6 +63,9 @@ export async function sendRequesterConfirmationEmail(lead: Lead): Promise<void> 
       html: `<p>Hi ${lead.name},</p><p>Thanks for your ${label} request — we'll be in touch shortly.</p>`,
     });
   } catch (err) {
-    console.error("[leads] Failed to send requester confirmation email:", err instanceof Error ? err.message : err);
+    logger.error(
+      { err: err instanceof Error ? err.message : err },
+      "[leads] Failed to send requester confirmation email",
+    );
   }
 }

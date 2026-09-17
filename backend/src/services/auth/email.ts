@@ -1,4 +1,5 @@
 import { getResendClient, RESEND_FROM_ADDRESS } from "../../lib/email.js";
+import { logger } from "../../lib/logger.js";
 
 /**
  * Sends the password-reset email (Spec 16 AC-6/AC-7). Deliberately self-catching — never
@@ -12,7 +13,7 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string): Prom
   const resend = getResendClient();
 
   if (!resend) {
-    console.log(`[dev] Password reset link for ${to}: ${resetUrl}`);
+    logger.info({ to, resetUrl }, "[dev] Password reset link (no RESEND_API_KEY configured)");
     return;
   }
 
@@ -24,6 +25,6 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string): Prom
       html: `<p>Someone requested a password reset for this email address.</p><p><a href="${resetUrl}">Reset your password</a></p><p>This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>`,
     });
   } catch (err) {
-    console.error("[auth] Failed to send password reset email:", err instanceof Error ? err.message : err);
+    logger.error({ err: err instanceof Error ? err.message : err }, "[auth] Failed to send password reset email");
   }
 }

@@ -1,3 +1,4 @@
+import { logger } from "../../lib/logger.js";
 import { getStripeClient } from "../../lib/stripe.js";
 import { prisma } from "../../lib/prisma.js";
 import type { CreateCheckoutSessionRequest } from "../../types/reservations.js";
@@ -78,7 +79,10 @@ export async function createCheckoutSession(
     }
     return { ok: true, checkoutUrl: session.url };
   } catch (err) {
-    console.error("[reservations] Failed to create Stripe checkout session:", err instanceof Error ? err.message : err);
+    logger.error(
+      { err: err instanceof Error ? err.message : err },
+      "[reservations] Failed to create Stripe checkout session",
+    );
     // The Reservation row is left as-is — an abandoned-checkout-shaped PENDING state, the
     // same as a user who never completes Stripe's hosted page. Not worth special-casing.
     return { ok: false, reason: "PROVIDER_ERROR" };
