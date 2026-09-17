@@ -1,4 +1,13 @@
+import type { Metadata } from "next";
 import { CompareView } from "@/components/compare/CompareView";
+
+const DESCRIPTION = "Compare two Apex models side by side — specs, options, and price.";
+
+export const metadata: Metadata = {
+  title: "Compare Vehicles",
+  description: DESCRIPTION,
+  openGraph: { title: "Compare Vehicles | APEX", description: DESCRIPTION },
+};
 
 export default async function ComparePage({
   searchParams,

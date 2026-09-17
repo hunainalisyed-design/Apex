@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import { ReservationConfirmation } from "@/components/reservations/ReservationConfirmation";
+
+/** Spec 23, AC-1/AC-3: a single user's own reservation — never indexed or listed in
+ * sitemap.xml (see robots.ts's matching disallow). */
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function ReservationConfirmationPage({
   params,

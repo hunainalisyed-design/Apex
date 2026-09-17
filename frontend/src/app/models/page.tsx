@@ -1,8 +1,17 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getVehicles } from "@/lib/api/vehicles";
 import { formatPriceCents } from "@/lib/format/currency";
 import { VehicleModelPreview } from "@/components/models/VehicleModelPreview";
 import { getRealGlbVehicleConfig, SHOWCASE_TARGET_LENGTH_RATIO } from "@/lib/showroom/realGlbVehicles";
+
+const DESCRIPTION = "Explore the full Apex lineup and open any model in the 3D configurator.";
+
+export const metadata: Metadata = {
+  title: "Explore Models",
+  description: DESCRIPTION,
+  openGraph: { title: "Explore Models | APEX", description: DESCRIPTION },
+};
 
 export default async function ModelsPage() {
   const vehicles = await getVehicles();

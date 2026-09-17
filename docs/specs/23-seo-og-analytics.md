@@ -89,3 +89,53 @@ Not applicable in the usual sense — this spec's "UI" is metadata and generated
 - **Migration order:** N/A.
 - **Rollback:** remove metadata generation and OG image routes; pages fall back to Next.js defaults.
 - **Observability:** track OG-image generation failures (should never silently 500 for a crawler).
+
+---
+
+## 10. Implementation notes
+
+- **AC-1 through AC-4 are implemented; AC-5/AC-6 (analytics) are deliberately not.** Both
+  explicitly gate on Spec 24's cookie-consent mechanism ("Given a user's cookie-consent
+  choice (Spec 24) allows analytics..."), and Spec 24 is still an unimplemented Draft — no
+  consent UI or state exists in the codebase yet. Building analytics now would mean either
+  shipping tracking ungated (violating AC-6 outright) or building a throwaway consent stub.
+  Analytics ships once Spec 24 lands.
+- **AC-2's per-build OG image does not use Next's `opengraph-image.tsx` file convention**,
+  despite this spec's own §5 naming that directory. That convention's exported function only
+  receives a route's `params`, not its query string — and the shared-build URL shape is fixed
+  by Spec 10 as `/configure/{slug}?build={publicId}` (a query param, not a path segment,
+  which this spec doesn't touch). Instead, `frontend/src/app/api/og/route.tsx` is a plain
+  Route Handler using the same `next/og` `ImageResponse` API, reading `?slug=&build=`
+  directly and wired in manually via `configure/[slug]/page.tsx`'s `generateMetadata`
+  (`openGraph.images` / `twitter.images`). Functionally equivalent; not the auto-wired
+  convention. `frontend/src/app/opengraph-image.tsx` (the real file-convention route) still
+  covers every other page's default image, where there's no query string to worry about.
+- **The OG image is a generated text/graphic card (vehicle name, up to 3 build-summary
+  lines, price, brand mark), not a vehicle photo.** Checked the seed catalog: 4 of 6 vehicles
+  (Porsche 992 GT3 R, Pagani Huayra, Lamborghini Revuelto, 1965 Mustang) have `thumbnailUrl`s
+  pointing at `/models/{slug}/thumbnail.jpg` files that don't exist under `public/` — only
+  Apex GT/RS have real thumbnails. A photo-based card would silently break for most of the
+  catalog; fixing those missing thumbnail assets is a separate, out-of-scope gap.
+- **AC-4's structured data uses schema.org `Product`**, with `image` pointing at this
+  vehicle's own OG route (`${SITE_URL}/api/og?slug=...`) rather than `thumbnailUrl`, for the
+  same reason — it always resolves to a real image for every vehicle.
+- **`(auth)/layout.tsx` and `admin/layout.tsx` were split** into a thin Server Component
+  `layout.tsx` (holding only the `noindex` `metadata` export) plus a sibling
+  `AuthLayoutClient.tsx` / `AdminGate.tsx` carrying the pre-existing Client Component logic
+  unchanged — a Client Component can't export `metadata` itself. `garage/page.tsx` (also a
+  Client Component, with no layout before this spec) gained a new `garage/layout.tsx` for the
+  same reason.
+- **`deriveOgImageContent` (`frontend/src/lib/seo/ogImageContent.ts`) degrades rather than
+  throws** if a saved build's selections no longer resolve against the vehicle's current live
+  catalog (e.g. an option deactivated since, Spec 21 AC-3) — this route must never 500 for a
+  crawler over a stale build (this spec's own Rollout note), so it falls back to the build's
+  stored total price with no line items rather than erroring.
+- Verification: all frontend unit tests pass (256, 7 new), typecheck/lint clean, production
+  build succeeds with `/api/og`, `/opengraph-image`, `/sitemap.xml`, and `/robots.txt` all
+  registered as routes, and all 3 new `og-image.spec.ts` e2e cases pass. Manually verified
+  against a running dev server: `/api/og` returns a real 1200×630 PNG for both a vehicle's
+  default state and an actual saved build (confirmed build-specific price/description differ
+  from the default), `/sitemap.xml` lists all 6 active vehicles plus the 4 static pages,
+  `/robots.txt` disallows every private route, `/garage`/`/login`/`/admin` all carry
+  `<meta name="robots" content="noindex, nofollow">`, and the JSON-LD `Product` block renders
+  correctly on `/configure/apex-gt`.
