@@ -21,7 +21,10 @@ function resolveDefaultAppearance(vehicle: VehicleDetailDto): CompareVehicleAppe
   const appearance = resolveExteriorAppearance(vehicle, defaults.singleSelections, null);
   const interior = resolveInteriorAppearance(vehicle, defaults.singleSelections);
   const accessories = resolveAccessoryAppearance(vehicle, defaults.multiSelections, appearance.paintColor);
-  return { appearance, interior, accessories };
+  // The slug travels with the appearance it was resolved from, rather than CompareScene
+  // reading leftSlug/rightSlug separately: that makes it structurally impossible for a slot
+  // to render one vehicle's model wearing another vehicle's resolved paint/interior.
+  return { slug: vehicle.slug, appearance, interior, accessories };
 }
 
 export interface CompareState {
