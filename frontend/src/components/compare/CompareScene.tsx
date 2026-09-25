@@ -1,14 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { PlaceholderShowroomRig } from "@/components/showroom/PlaceholderShowroomRig";
+import { RealGlbShowroomRig } from "@/components/showroom/RealGlbShowroomRig";
+import { getRealGlbVehicleConfig } from "@/lib/showroom/realGlbVehicles";
 import type { AccessoryAppearance } from "@/lib/showroom/accessoryAppearance";
 import type { ExteriorAppearance } from "@/lib/showroom/exteriorAppearance";
 import type { InteriorAppearance } from "@/lib/showroom/interiorAppearance";
 
 export interface CompareVehicleAppearance {
+  /** Which catalog vehicle this slot is showing — drives the same realGlbVehicles.ts rig
+   * dispatch ShowroomScene.tsx uses, so a vehicle with a real GLB renders that GLB here
+   * too instead of the procedural stand-in. */
+  slug: string;
   appearance: ExteriorAppearance;
   interior: InteriorAppearance;
   accessories: AccessoryAppearance;
@@ -25,7 +31,48 @@ export interface CompareSceneProps {
 // ~2.6-unit gap between the nearest edges rather than the cars touching or overlapping.
 const OFFSET_X = 2.6;
 
+// PlaceholderShowroomRig draws itself inside a root <group position={[0,-0.3,0]}> with its
+// wheels centred at that group's y=0 and a 0.32 radius, so its tyres meet the ground at
+// y=-0.62. RealGlbShowroomRig instead zeroes its own box.min.y, i.e. its ground is y=0.
+// Dropping a real-GLB slot by this much puts both kinds of slot on one shared ground plane
+// (otherwise a real car would hover ~0.6 units above a placeholder one beside it), and
+// leaves the existing placeholder framing/camera untouched.
+const PLACEHOLDER_GROUND_Y = -0.62;
+
 const noop = () => {};
+
+/**
+ * One comparison slot. Dispatches on the slot's own slug exactly the way ShowroomScene.tsx
+ * does — a vehicle backed by a real GLB renders that GLB, and the procedural rig stays only
+ * for the vehicles that genuinely have no asset yet (docs/CLAUDE.md's "Known open blocker"),
+ * never as a fallback masking a failed load: a missing/broken GLB throws past this to
+ * CompareSceneErrorBoundary, which surfaces it rather than hiding it behind a stand-in.
+ */
+function CompareVehicleRig({ vehicle }: { vehicle: CompareVehicleAppearance }) {
+  const realGlbConfig = getRealGlbVehicleConfig(vehicle.slug);
+
+  if (realGlbConfig) {
+    return (
+      <group position={[0, PLACEHOLDER_GROUND_Y, 0]}>
+        <Suspense fallback={null}>
+          <RealGlbShowroomRig config={realGlbConfig} appearance={vehicle.appearance} />
+        </Suspense>
+      </group>
+    );
+  }
+
+  return (
+    <PlaceholderShowroomRig
+      doorOpenAmount={0}
+      headlightsOn={false}
+      brakePulsing={false}
+      onHoverMesh={noop}
+      interior={vehicle.interior}
+      accessories={vehicle.accessories}
+      {...vehicle.appearance}
+    />
+  );
+}
 
 /**
  * Both compared vehicles' default (non-customized) configurations, side by side under one
@@ -57,27 +104,14 @@ export function CompareScene({ left, right, reducedMotion }: CompareSceneProps) 
         <directionalLight position={[4, 6, 5]} intensity={1.8} />
         <directionalLight position={[-4, 2, -5]} intensity={0.5} color="#3d6fe0" />
 
+        {/* key={slug} so changing one slot's vehicle remounts that slot alone — the new
+            car's GLB loads from scratch and the previous one's cloned scene/materials are
+            dropped, with the other slot left completely untouched. */}
         <group position={[-OFFSET_X, 0, 0]}>
-          <PlaceholderShowroomRig
-            doorOpenAmount={0}
-            headlightsOn={false}
-            brakePulsing={false}
-            onHoverMesh={noop}
-            interior={left.interior}
-            accessories={left.accessories}
-            {...left.appearance}
-          />
+          <CompareVehicleRig key={left.slug} vehicle={left} />
         </group>
         <group position={[OFFSET_X, 0, 0]}>
-          <PlaceholderShowroomRig
-            doorOpenAmount={0}
-            headlightsOn={false}
-            brakePulsing={false}
-            onHoverMesh={noop}
-            interior={right.interior}
-            accessories={right.accessories}
-            {...right.appearance}
-          />
+          <CompareVehicleRig key={right.slug} vehicle={right} />
         </group>
 
         <OrbitControls
