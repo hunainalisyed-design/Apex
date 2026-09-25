@@ -15,7 +15,7 @@ import {
   revokeSession,
   setSessionCookie,
 } from "../services/auth/session.js";
-import { mapUserToDto, normalizeEmail } from "../services/auth/user.js";
+import { isValidEmailFormat, mapUserToDto, normalizeEmail } from "../services/auth/user.js";
 import type { ApiResponse } from "../types/api.js";
 import type {
   ForgotPasswordRequest,
@@ -43,6 +43,12 @@ authRouter.post(
     }
     if (typeof body.email !== "string" || !body.email.trim()) {
       sendApiError(res, 400, "VALIDATION_ERROR", "email is required.", { email: ["Email is required."] });
+      return;
+    }
+    if (!isValidEmailFormat(body.email)) {
+      sendApiError(res, 400, "VALIDATION_ERROR", "Enter a valid email address.", {
+        email: ["Enter a valid email address."],
+      });
       return;
     }
     if (typeof body.password !== "string") {

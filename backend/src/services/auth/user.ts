@@ -22,6 +22,15 @@ export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
+const EMAIL_FORMAT = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Mirrors frontend/src/lib/auth/validation.ts's isValidEmail exactly (Spec 16 §"all
+ * re-validated server-side as the authority") — client-side is for immediate feedback only,
+ * this is the actual authority sign-up's route must enforce. */
+export function isValidEmailFormat(email: string): boolean {
+  return EMAIL_FORMAT.test(email.trim());
+}
+
 /** Updates the display name (Spec 17, AC-9). Email/password are untouched here — those
  * have their own dedicated flows (sign-up, change-password, reset-password). */
 export async function updateProfileName(userId: string, name: string): Promise<UserDto> {
