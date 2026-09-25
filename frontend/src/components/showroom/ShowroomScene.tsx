@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { ContactShadows, GradientTexture, GradientType, MeshReflectorMaterial, OrbitControls } from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { Camera } from "three";
 import { PlaceholderShowroomRig, type HoveredMesh } from "./PlaceholderShowroomRig";
@@ -100,8 +100,32 @@ function ShowroomRig({
   const defaultPreset = getCameraPreset("default");
   const realGlbConfig = getRealGlbVehicleConfig(vehicleSlug);
 
+  // Where the showroom floor sits, in world units — not a car position/scale change: each
+  // rig already places its own geometry differently (RealGlbShowroomRig explicitly zeros
+  // its box.min.y so the car's lowest point sits at world y=0; PlaceholderShowroomRig's
+  // wheels are modeled with their *center* at y=0 and a 0.32 radius, so their bottom sits
+  // at y=-0.32). The floor just needs to sit at whichever of those two ground levels the
+  // active rig already uses so it meets the wheels instead of clipping through them or
+  // floating below.
+  const floorY = realGlbConfig ? 0 : -0.32;
+
   return (
     <>
+      {/* Replaces the WebGL default black clear color with a cool silver/gray studio
+       * gradient plus a soft blue glow centered behind the vehicle (a real scene.background,
+       * so it's captured by CaptureBuild's gl.domElement.toDataURL too, unlike a CSS-only
+       * backdrop) — visual polish only, no effect on lighting, camera, or the model itself.
+       * Deliberately light (not the dark-navy/black tried previously): a light backdrop is
+       * what actually gives dark-painted cars contrast, which a dark backdrop cannot. */}
+      <GradientTexture
+        attach="background"
+        type={GradientType.Radial}
+        innerCircleRadius={0}
+        outerCircleRadius="auto"
+        stops={[0, 1]}
+        colors={["#dcebf8", "#c7ccd2"]}
+        size={512}
+      />
       <ambientLight intensity={0.55} />
       <directionalLight position={[4, 6, 5]} intensity={1.3} />
       <directionalLight position={[-4, 2, -5]} intensity={0.35} color="#3d6fe0" />
@@ -118,6 +142,34 @@ function ShowroomRig({
           {...appearance}
         />
       )}
+      {/* Studio floor: a very subtle mirror-like reflector (low `mirror`/`mixStrength`, per
+       * the brief's "very subtle floor reflection") plus drei's ContactShadows for a soft,
+       * realistic shadow blob under the vehicle — both purely environment, not part of any
+       * vehicle rig, so they apply uniformly regardless of which rig is active above. */}
+      <mesh position={[0, floorY, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[40, 40]} />
+        <MeshReflectorMaterial
+          blur={[300, 100]}
+          resolution={1024}
+          mixBlur={1}
+          mixStrength={8}
+          depthScale={1}
+          minDepthThreshold={0.85}
+          color="#9aa3ab"
+          metalness={0.4}
+          roughness={1}
+          mirror={0.15}
+        />
+      </mesh>
+      <ContactShadows
+        position={[0, floorY + 0.001, 0]}
+        opacity={0.55}
+        scale={12}
+        blur={2.4}
+        far={4}
+        resolution={512}
+        color="#0a0e14"
+      />
       <OrbitControls
         ref={controlsRef}
         enablePan={false}
