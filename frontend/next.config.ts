@@ -13,6 +13,21 @@ const nextConfig: NextConfig = {
   // disabling it here made the crash disappear outright. Dev-only — production builds never
   // double-invoke effects, so this has no effect on deployed behavior.
   reactStrictMode: false,
+
+  // Spec 25, AC-3: public/ files default to `max-age=0` (Next can't know they won't change),
+  // but a content-addressed asset (`name.<8 hex>.glb`) never changes in place — a new version
+  // always gets a new URL — so it's safe to cache for a year and mark immutable. Unversioned
+  // files (anything not matching this pattern) keep Next's default. Lowercase-only on purpose —
+  // it must agree with backend/src/services/assets/versioning.ts's isVersionedAssetUrl. Assumes
+  // at least one directory level (every asset lives under /assets/ or /models/).
+  async headers() {
+    return [
+      {
+        source: "/:path*/:file([^/]+\\.[0-9a-f]{8}\\.(?:glb|gltf|jpg|jpeg|png|webp|avif))",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

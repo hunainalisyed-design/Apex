@@ -14,6 +14,8 @@ function makeVehicle(slug: string, overrides: Partial<VehicleSummaryDto> = {}): 
     zeroToHundredSec: 3.5,
     thumbnailUrl: "",
     fallbackImageUrl: "",
+    heroModelUrl: "",
+    showroomModelUrl: "",
     ...overrides,
   };
 }

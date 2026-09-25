@@ -37,7 +37,7 @@ export default async function ModelsPage() {
               {glbConfig ? (
                 <VehicleModelPreview
                   vehicle={vehicle}
-                  modelUrl={glbConfig.modelUrl}
+                  modelUrl={vehicle.heroModelUrl}
                   targetLength={glbConfig.targetLength * SHOWCASE_TARGET_LENGTH_RATIO}
                 />
               ) : (

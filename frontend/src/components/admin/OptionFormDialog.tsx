@@ -3,9 +3,13 @@
 import { useId, useRef, useState, type FormEvent } from "react";
 import { FormField } from "@/components/auth/FormField";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { saveErrorBanner } from "@/lib/admin/saveErrorBanner";
 import { useAdminOptionsStore } from "@/state/adminOptionsStore";
 import { ALL_CATEGORIES, type ApplyMode, type OptionCategory } from "@/types/catalog";
 import type { OptionAdminDto } from "@/types/admin";
+
+// Fields whose save errors render inline on their own FormField (see saveErrorBanner).
+const INLINE_ERROR_FIELDS = ["assetRef"] as const;
 
 export interface OptionFormDialogProps {
   /** Absent = create; present = edit (category becomes read-only — see UpdateOptionRequest's
@@ -40,6 +44,7 @@ export function OptionFormDialog({ option, onClose }: OptionFormDialogProps) {
   const update = useAdminOptionsStore((s) => s.update);
   const isSaving = useAdminOptionsStore((s) => s.isSaving);
   const saveError = useAdminOptionsStore((s) => s.saveError);
+  const saveErrorDetails = useAdminOptionsStore((s) => s.saveErrorDetails);
 
   const [fields, setFields] = useState(fieldsFrom(option));
   const [localError, setLocalError] = useState<string | null>(null);
@@ -100,7 +105,7 @@ export function OptionFormDialog({ option, onClose }: OptionFormDialogProps) {
 
         {(localError || saveError) && (
           <p role="alert" className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300">
-            {localError ?? saveError}
+            {localError ?? saveErrorBanner(saveError, saveErrorDetails, INLINE_ERROR_FIELDS)}
           </p>
         )}
 
@@ -160,6 +165,7 @@ export function OptionFormDialog({ option, onClose }: OptionFormDialogProps) {
           <FormField
             label="Asset ref"
             name="assetRef"
+            errors={saveErrorDetails?.assetRef}
             value={fields.assetRef}
             onChange={(e) => set("assetRef", e.target.value)}
             required

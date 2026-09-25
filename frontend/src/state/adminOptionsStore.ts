@@ -13,6 +13,9 @@ export interface AdminOptionsState {
   error: string | null;
   isSaving: boolean;
   saveError: string | null;
+  /** Field-specific validation messages from the last failed save (e.g. Spec 25's
+   * unversioned asset URL), shown inline on the matching FormField — authStore's pattern. */
+  saveErrorDetails: Record<string, string[]> | null;
   loadForVehicle: (vehicleId: string) => Promise<void>;
   create: (request: CreateOptionRequest) => Promise<boolean>;
   update: (id: string, request: UpdateOptionRequest) => Promise<boolean>;
@@ -32,6 +35,7 @@ export const useAdminOptionsStore = create<AdminOptionsState>((set, get) => ({
   error: null,
   isSaving: false,
   saveError: null,
+  saveErrorDetails: null,
 
   loadForVehicle: async (vehicleId) => {
     set({ vehicleId, status: "loading", error: null });
@@ -49,14 +53,18 @@ export const useAdminOptionsStore = create<AdminOptionsState>((set, get) => ({
   create: async (request) => {
     const { vehicleId } = get();
     if (!vehicleId) return false;
-    set({ isSaving: true, saveError: null });
+    set({ isSaving: true, saveError: null, saveErrorDetails: null });
     try {
       await createOption(vehicleId, request);
       await get().loadForVehicle(vehicleId);
       set({ isSaving: false });
       return true;
     } catch (err) {
-      set({ isSaving: false, saveError: getErrorMessage(err instanceof ApiRequestError ? err.code : undefined) });
+      set({
+        isSaving: false,
+        saveError: getErrorMessage(err instanceof ApiRequestError ? err.code : undefined),
+        saveErrorDetails: err instanceof ApiRequestError ? (err.details ?? null) : null,
+      });
       return false;
     }
   },
@@ -64,14 +72,18 @@ export const useAdminOptionsStore = create<AdminOptionsState>((set, get) => ({
   update: async (id, request) => {
     const { vehicleId } = get();
     if (!vehicleId) return false;
-    set({ isSaving: true, saveError: null });
+    set({ isSaving: true, saveError: null, saveErrorDetails: null });
     try {
       await updateOption(id, request);
       await get().loadForVehicle(vehicleId);
       set({ isSaving: false });
       return true;
     } catch (err) {
-      set({ isSaving: false, saveError: getErrorMessage(err instanceof ApiRequestError ? err.code : undefined) });
+      set({
+        isSaving: false,
+        saveError: getErrorMessage(err instanceof ApiRequestError ? err.code : undefined),
+        saveErrorDetails: err instanceof ApiRequestError ? (err.details ?? null) : null,
+      });
       return false;
     }
   },
@@ -79,14 +91,18 @@ export const useAdminOptionsStore = create<AdminOptionsState>((set, get) => ({
   deactivate: async (id) => {
     const { vehicleId } = get();
     if (!vehicleId) return false;
-    set({ isSaving: true, saveError: null });
+    set({ isSaving: true, saveError: null, saveErrorDetails: null });
     try {
       await deactivateOption(id);
       await get().loadForVehicle(vehicleId);
       set({ isSaving: false });
       return true;
     } catch (err) {
-      set({ isSaving: false, saveError: getErrorMessage(err instanceof ApiRequestError ? err.code : undefined) });
+      set({
+        isSaving: false,
+        saveError: getErrorMessage(err instanceof ApiRequestError ? err.code : undefined),
+        saveErrorDetails: err instanceof ApiRequestError ? (err.details ?? null) : null,
+      });
       return false;
     }
   },

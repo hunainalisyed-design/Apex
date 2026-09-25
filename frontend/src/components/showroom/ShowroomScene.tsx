@@ -40,6 +40,7 @@ export interface ShowroomControls {
 
 interface ShowroomRigProps {
   vehicleSlug: string;
+  modelUrl: string;
   headlightsOn: boolean;
   brakePulsing: boolean;
   reducedMotion: boolean;
@@ -53,6 +54,7 @@ interface ShowroomRigProps {
 
 function ShowroomRig({
   vehicleSlug,
+  modelUrl,
   headlightsOn,
   brakePulsing,
   reducedMotion,
@@ -130,7 +132,7 @@ function ShowroomRig({
       <directionalLight position={[4, 6, 5]} intensity={1.3} />
       <directionalLight position={[-4, 2, -5]} intensity={0.35} color="#3d6fe0" />
       {realGlbConfig ? (
-        <RealGlbShowroomRig config={realGlbConfig} appearance={appearance} />
+        <RealGlbShowroomRig config={realGlbConfig} modelUrl={modelUrl} appearance={appearance} />
       ) : (
         <PlaceholderShowroomRig
           doorOpenAmount={doorOpenAmount}
@@ -185,6 +187,9 @@ function ShowroomRig({
 
 export interface ShowroomSceneProps {
   vehicleSlug: string;
+  /** The vehicle's content-addressed showroomModelUrl (Spec 25) — loaded for real-GLB
+   * vehicles; ignored by the placeholder rig. */
+  modelUrl: string;
   headlightsOn: boolean;
   brakePulsing: boolean;
   reducedMotion: boolean;

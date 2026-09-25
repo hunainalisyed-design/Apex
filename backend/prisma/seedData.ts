@@ -164,7 +164,7 @@ export const seedVehicles: SeedVehicle[] = [
     zeroToHundredSec: 4.2,
     heroModelUrl: "/models/apex-gt/hero.glb",
     showroomModelUrl: "/models/apex-gt/showroom.glb",
-    thumbnailUrl: "/models/apex-gt/thumbnail.jpg",
+    thumbnailUrl: "/models/apex-gt/thumbnail.e8f2cc4d.jpg",
     fallbackImageUrl: "/models/apex-gt/fallback.jpg",
     options: buildOptionCatalog(),
   },
@@ -179,17 +179,17 @@ export const seedVehicles: SeedVehicle[] = [
     zeroToHundredSec: 3.8,
     heroModelUrl: "/models/apex-rs/hero.glb",
     showroomModelUrl: "/models/apex-rs/showroom.glb",
-    thumbnailUrl: "/models/apex-rs/thumbnail.jpg",
+    thumbnailUrl: "/models/apex-rs/thumbnail.c5be7a7f.jpg",
     fallbackImageUrl: "/models/apex-rs/fallback.jpg",
     options: buildOptionCatalog(),
   },
   {
-    // The one vehicle in this catalog with a real GLB behind it (see
-    // frontend/src/components/landing/HeroVehicleModel.tsx) — heroModelUrl points at that
-    // actual asset rather than a placeholder path, unlike the two Apex entries above.
-    // showroomModelUrl/options still reuse the shared procedural-rig catalog: the showroom's
-    // customization dispatch is keyed to that rig's mesh/material names (Spec 6/8), not to
-    // this GLB, which isn't wired into it yet (docs/CLAUDE.md's "Known open blocker").
+    // Real GLB #1 (see frontend/src/lib/showroom/realGlbVehicles.ts). heroModelUrl and
+    // showroomModelUrl both point at the one real, content-addressed asset (Spec 25) — the
+    // showroom/compare/models views load whatever URL is stored here, so an admin publishing
+    // a new version and saving its URL is what changes the rendered model. Options still
+    // reuse the shared procedural-rig catalog. The two Apex entries above keep pre-Spec-25
+    // placeholder paths (no file exists to version yet); fallback.jpg paths likewise.
     slug: "porsche-992-gt3-r",
     name: "Porsche 992 GT3 R",
     tagline: "GT3 racing homologation car.",
@@ -198,17 +198,16 @@ export const seedVehicles: SeedVehicle[] = [
     horsepower: 510,
     topSpeedKph: 296,
     zeroToHundredSec: 3.2,
-    heroModelUrl: "/assets/models/porsche-992-gt3-r.glb",
-    showroomModelUrl: "/models/porsche-992-gt3-r/showroom.glb",
-    thumbnailUrl: "/models/porsche-992-gt3-r/thumbnail.jpg",
+    heroModelUrl: "/assets/models/porsche-992-gt3-r.93062210.glb",
+    showroomModelUrl: "/assets/models/porsche-992-gt3-r.93062210.glb",
+    thumbnailUrl: "/models/porsche-992-gt3-r/thumbnail.311a7f95.jpg",
     fallbackImageUrl: "/models/porsche-992-gt3-r/fallback.jpg",
     options: buildOptionCatalog(),
   },
   {
     // Real GLB #2 (see frontend/src/lib/showroom/realGlbVehicles.ts) — same pattern as the
-    // Porsche entry above: heroModelUrl/showroomModelUrl both point at the one real asset
-    // (RealGlbShowroomRig ignores showroomModelUrl for every slug in that registry, same as
-    // it always has for Porsche), options still reuse the shared procedural-rig catalog.
+    // Porsche entry above: heroModelUrl/showroomModelUrl both point at the one real
+    // versioned asset, options still reuse the shared procedural-rig catalog.
     slug: "pagani-huayra-codalunga-speedster",
     name: "Pagani Huayra Codalunga Speedster",
     tagline: "Open-top carbon-titanium hypercar.",
@@ -217,9 +216,9 @@ export const seedVehicles: SeedVehicle[] = [
     horsepower: 838,
     topSpeedKph: 322,
     zeroToHundredSec: 3.3,
-    heroModelUrl: "/assets/models/pagani-huayra-codalunga-speedster.glb",
-    showroomModelUrl: "/models/pagani-huayra-codalunga-speedster/showroom.glb",
-    thumbnailUrl: "/models/pagani-huayra-codalunga-speedster/thumbnail.jpg",
+    heroModelUrl: "/assets/models/pagani-huayra-codalunga-speedster.8612ea2d.glb",
+    showroomModelUrl: "/assets/models/pagani-huayra-codalunga-speedster.8612ea2d.glb",
+    thumbnailUrl: "/models/pagani-huayra-codalunga-speedster/thumbnail.b73e04d0.jpg",
     fallbackImageUrl: "/models/pagani-huayra-codalunga-speedster/fallback.jpg",
     options: buildOptionCatalog(),
   },
@@ -233,9 +232,9 @@ export const seedVehicles: SeedVehicle[] = [
     horsepower: 1015,
     topSpeedKph: 350,
     zeroToHundredSec: 2.5,
-    heroModelUrl: "/assets/models/lamborghini-revuelto.glb",
-    showroomModelUrl: "/models/lamborghini-revuelto/showroom.glb",
-    thumbnailUrl: "/models/lamborghini-revuelto/thumbnail.jpg",
+    heroModelUrl: "/assets/models/lamborghini-revuelto.a6657f10.glb",
+    showroomModelUrl: "/assets/models/lamborghini-revuelto.a6657f10.glb",
+    thumbnailUrl: "/models/lamborghini-revuelto/thumbnail.766013ab.jpg",
     fallbackImageUrl: "/models/lamborghini-revuelto/fallback.jpg",
     options: buildOptionCatalog(),
   },
@@ -251,9 +250,9 @@ export const seedVehicles: SeedVehicle[] = [
     horsepower: 271,
     topSpeedKph: 190,
     zeroToHundredSec: 8.0,
-    heroModelUrl: "/assets/models/mustang-1965.glb",
-    showroomModelUrl: "/models/mustang-1965/showroom.glb",
-    thumbnailUrl: "/models/mustang-1965/thumbnail.jpg",
+    heroModelUrl: "/assets/models/mustang-1965.41520fd5.glb",
+    showroomModelUrl: "/assets/models/mustang-1965.41520fd5.glb",
+    thumbnailUrl: "/models/mustang-1965/thumbnail.6b464e8d.jpg",
     fallbackImageUrl: "/models/mustang-1965/fallback.jpg",
     options: buildOptionCatalog(),
   },

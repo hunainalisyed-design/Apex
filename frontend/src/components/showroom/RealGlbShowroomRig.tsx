@@ -8,6 +8,8 @@ import type { ExteriorAppearance } from "@/lib/showroom/exteriorAppearance";
 
 export interface RealGlbShowroomRigProps {
   config: RealGlbVehicleConfig;
+  /** The vehicle's own content-addressed showroomModelUrl from the API (Spec 25). */
+  modelUrl: string;
   appearance: ExteriorAppearance;
 }
 
@@ -16,8 +18,8 @@ export interface RealGlbShowroomRigProps {
  * PlaceholderShowroomRig — dispatched per-vehicle by ShowroomScene.tsx for every slug listed
  * in realGlbVehicles.ts. Generalized from the original Porsche-only PorscheShowroomRig (see
  * git history) once a second real-GLB vehicle needed the identical load/auto-fit/tint logic,
- * parameterized only by config (model URL, paint material name(s), auto-fit target length)
- * rather than duplicated per car.
+ * parameterized only by config (paint material name(s), auto-fit target length) plus the
+ * vehicle's own model URL, rather than duplicated per car.
  *
  * Customization scope is deliberately honest, not exhaustive: each of these is a downloaded
  * asset with its own real (but placeholder-rig-unrelated) mesh/material names — none has an
@@ -31,8 +33,8 @@ export interface RealGlbShowroomRigProps {
  * rig's own unmapped options (Spec 8 AC-6) rather than inventing geometry that isn't in the
  * file.
  */
-export function RealGlbShowroomRig({ config, appearance }: RealGlbShowroomRigProps) {
-  const { scene } = useGLTF(config.modelUrl);
+export function RealGlbShowroomRig({ config, modelUrl, appearance }: RealGlbShowroomRigProps) {
+  const { scene } = useGLTF(modelUrl);
 
   const { object, scale, bodyMaterials } = useMemo(() => {
     const clone = scene.clone(true);

@@ -1,8 +1,9 @@
-import { Router } from "express";
+import { Router, type Response } from "express";
 import { sendApiError } from "../lib/apiError.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { requireAdmin } from "../middleware/requireAdmin.js";
 import { recordAuditLog } from "../services/admin/auditLog.js";
+import { recordAssetVersionChanges } from "../services/assets/changes.js";
 import { listLeads, updateLeadStatus } from "../services/admin/leads.js";
 import { createOption, deactivateOption, listOptions, updateOption } from "../services/admin/options.js";
 import { listReservations } from "../services/admin/reservations.js";
@@ -26,6 +27,12 @@ function isNonEmptyString(value: unknown): value is string {
 }
 function isInt(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value);
+}
+
+/** Spec 25, AC-1/AC-2 — an asset URL an admin set isn't content-addressed. Reuses the
+ * existing VALIDATION_ERROR code; the per-field details say exactly which URL and why. */
+function sendUnversionedAssetError(res: Response, errors: Record<string, string[]>) {
+  sendApiError(res, 400, "VALIDATION_ERROR", "Asset URLs must be versioned.", errors);
 }
 
 // ---------------------------------------------------------------------------------------
@@ -75,6 +82,10 @@ adminRouter.post(
     }
 
     const result = await createVehicle(validated.value);
+    if (!result.ok && result.reason === "UNVERSIONED_ASSET") {
+      sendUnversionedAssetError(res, result.errors);
+      return;
+    }
     if (!result.ok) {
       sendApiError(res, 400, "VALIDATION_ERROR", "A vehicle with this slug already exists.", {
         slug: ["A vehicle with this slug already exists."],
@@ -162,6 +173,10 @@ adminRouter.put(
 
     const result = await updateVehicle(req.params.id, validated.value);
     if (!result.ok) {
+      if (result.reason === "UNVERSIONED_ASSET") {
+        sendUnversionedAssetError(res, result.errors);
+        return;
+      }
       sendApiError(res, 404, "VEHICLE_NOT_FOUND", "No vehicle matches this ID.");
       return;
     }
@@ -173,6 +188,7 @@ adminRouter.put(
       targetId: req.params.id,
       metadata: { ...validated.value } as Record<string, unknown>,
     });
+    await recordAssetVersionChanges(req.user!.id, "Vehicle", req.params.id, result.assetChanges);
     res.status(200).json({ data: result.vehicle } satisfies ApiResponse<unknown>);
   }),
 );
@@ -238,6 +254,10 @@ adminRouter.post(
     if (!result.ok) {
       if (result.reason === "VEHICLE_NOT_FOUND") {
         sendApiError(res, 404, "VEHICLE_NOT_FOUND", "No vehicle matches this ID.");
+        return;
+      }
+      if (result.reason === "UNVERSIONED_ASSET") {
+        sendUnversionedAssetError(res, result.errors);
         return;
       }
       sendApiError(res, 400, "VALIDATION_ERROR", result.message, { isDefault: [result.message] });
@@ -316,6 +336,10 @@ adminRouter.put(
         sendApiError(res, 404, "OPTION_NOT_FOUND", "No option matches this ID.");
         return;
       }
+      if (result.reason === "UNVERSIONED_ASSET") {
+        sendUnversionedAssetError(res, result.errors);
+        return;
+      }
       sendApiError(res, 400, "VALIDATION_ERROR", result.message, { isDefault: [result.message] });
       return;
     }
@@ -327,6 +351,7 @@ adminRouter.put(
       targetId: req.params.id,
       metadata: { ...validated.value } as Record<string, unknown>,
     });
+    await recordAssetVersionChanges(req.user!.id, "CustomizationOption", req.params.id, result.assetChanges);
     res.status(200).json({ data: result.option } satisfies ApiResponse<unknown>);
   }),
 );
@@ -339,6 +364,11 @@ adminRouter.delete(
     if (!result.ok) {
       if (result.reason === "NOT_FOUND") {
         sendApiError(res, 404, "OPTION_NOT_FOUND", "No option matches this ID.");
+        return;
+      }
+      // Unreachable in practice (deactivation never sets assetRef) — narrows the union.
+      if (result.reason === "UNVERSIONED_ASSET") {
+        sendUnversionedAssetError(res, result.errors);
         return;
       }
       sendApiError(res, 400, "VALIDATION_ERROR", result.message, { isDefault: [result.message] });

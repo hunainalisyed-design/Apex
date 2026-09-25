@@ -15,6 +15,8 @@ export interface CompareVehicleAppearance {
    * dispatch ShowroomScene.tsx uses, so a vehicle with a real GLB renders that GLB here
    * too instead of the procedural stand-in. */
   slug: string;
+  /** That vehicle's content-addressed showroomModelUrl (Spec 25), resolved alongside its slug. */
+  modelUrl: string;
   appearance: ExteriorAppearance;
   interior: InteriorAppearance;
   accessories: AccessoryAppearance;
@@ -55,7 +57,7 @@ function CompareVehicleRig({ vehicle }: { vehicle: CompareVehicleAppearance }) {
     return (
       <group position={[0, PLACEHOLDER_GROUND_Y, 0]}>
         <Suspense fallback={null}>
-          <RealGlbShowroomRig config={realGlbConfig} appearance={vehicle.appearance} />
+          <RealGlbShowroomRig config={realGlbConfig} modelUrl={vehicle.modelUrl} appearance={vehicle.appearance} />
         </Suspense>
       </group>
     );

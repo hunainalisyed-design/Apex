@@ -83,11 +83,13 @@ export interface VehicleSummaryDto {
   zeroToHundredSec: number;
   thumbnailUrl: string;
   fallbackImageUrl: string; // shown by <Static3DFallback> when WebGL is unavailable (Spec 12)
+  // Content-addressed GLB URLs (Spec 25) — on the summary, not just the detail, so list views
+  // (e.g. /models previews) render the admin-set asset rather than a hardcoded path.
+  heroModelUrl: string; // GLB used on the landing page hero and /models previews
+  showroomModelUrl: string; // GLB used in the 3D showroom and compare view
 }
 
 export interface VehicleDetailDto extends VehicleSummaryDto {
-  heroModelUrl: string; // GLB used on the landing page hero
-  showroomModelUrl: string; // GLB used in the 3D showroom
   options: Record<OptionCategory, CustomizationOptionDto[]>;
 }
 

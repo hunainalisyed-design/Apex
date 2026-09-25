@@ -65,13 +65,10 @@ export interface OptionAdminDto extends CustomizationOptionDto {
 }
 
 /** Also carries `id` (the public API only ever addresses a vehicle by its slug, but the
- * admin write endpoints require it) and heroModelUrl/showroomModelUrl (present on
- * VehicleDetailDto but not VehicleSummaryDto — the edit form needs to show and default
- * them). */
+ * admin write endpoints require it) and `isActive`. heroModelUrl/showroomModelUrl come from
+ * VehicleSummaryDto itself (Spec 25 moved them there). */
 export interface VehicleAdminDto extends VehicleSummaryDto {
   id: string;
-  heroModelUrl: string;
-  showroomModelUrl: string;
   isActive: boolean;
 }
 

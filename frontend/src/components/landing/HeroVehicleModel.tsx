@@ -4,7 +4,11 @@ import { useEffect, useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
 import { Box3, Vector3 } from "three";
 
-const DEFAULT_MODEL_URL = "/assets/models/porsche-992-gt3-r.glb";
+// The one hardcoded model URL left after Spec 25: the landing hero is a brand visual, not a
+// catalog row, and it must be preloadable at module load (below) before any API data exists.
+// Keep it equal to the Porsche's seeded heroModelUrl — when a new Porsche version is
+// published, update this too (the old file stays on disk, so nothing breaks in between).
+const DEFAULT_MODEL_URL = "/assets/models/porsche-992-gt3-r.93062210.glb";
 
 // The placeholder box this replaces was 2.4 units long, but at that scale the real (much more
 // detailed) model reads as small and distant against HeroScene's existing camera (position z

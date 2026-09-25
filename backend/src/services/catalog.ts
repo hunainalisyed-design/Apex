@@ -59,6 +59,8 @@ export function mapVehicleToSummaryDto(vehicle: Vehicle): VehicleSummaryDto {
     zeroToHundredSec: Number(vehicle.zeroToHundredSec),
     thumbnailUrl: vehicle.thumbnailUrl,
     fallbackImageUrl: vehicle.fallbackImageUrl,
+    heroModelUrl: vehicle.heroModelUrl,
+    showroomModelUrl: vehicle.showroomModelUrl,
   };
 }
 
@@ -76,8 +78,6 @@ export function mapVehicleToDetailDto(
 
   return {
     ...mapVehicleToSummaryDto(vehicle),
-    heroModelUrl: vehicle.heroModelUrl,
-    showroomModelUrl: vehicle.showroomModelUrl,
     options: grouped,
   };
 }

@@ -179,6 +179,7 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null }: Config
               <Canvas3DErrorBoundary vehicle={vehicle} onError={() => setSceneError(true)}>
                 <ShowroomScene
                   vehicleSlug={vehicle.slug}
+                  modelUrl={vehicle.showroomModelUrl}
                   headlightsOn={headlightsOn}
                   brakePulsing={brakePulsing}
                   reducedMotion={reducedMotion}

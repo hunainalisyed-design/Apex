@@ -1,5 +1,7 @@
 import type { CustomizationOption } from "@prisma/client";
 import { prisma } from "../../lib/prisma.js";
+import { diffAssetUrls, type AssetUrlChange } from "../assets/changes.js";
+import { isAssetFileUrl, validateAssetRef } from "../assets/versioning.js";
 import { mapOptionToDto } from "../catalog.js";
 import { SINGLE_SELECT_CATEGORIES, type OptionCategory } from "../../types/catalog.js";
 import type { CreateOptionRequest, OptionAdminDto, UpdateOptionRequest } from "../../types/admin.js";
@@ -65,11 +67,15 @@ export async function listOptions(vehicleId: string): Promise<OptionAdminDto[]> 
 export type CreateOptionResult =
   | { ok: true; option: OptionAdminDto }
   | { ok: false; reason: "VEHICLE_NOT_FOUND" }
-  | { ok: false; reason: "VALIDATION_ERROR"; message: string };
+  | { ok: false; reason: "VALIDATION_ERROR"; message: string }
+  | { ok: false; reason: "UNVERSIONED_ASSET"; errors: Record<string, string[]> };
 
 export async function createOption(vehicleId: string, input: CreateOptionRequest): Promise<CreateOptionResult> {
   const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } });
   if (!vehicle) return { ok: false, reason: "VEHICLE_NOT_FOUND" };
+
+  const assetErrors = validateAssetRef(input.assetRef, null);
+  if (Object.keys(assetErrors).length > 0) return { ok: false, reason: "UNVERSIONED_ASSET", errors: assetErrors };
 
   if (await wouldViolateDefaultInvariant(vehicleId, input.category, { isDefault: input.isDefault, isActive: true }, null)) {
     return {
@@ -97,15 +103,19 @@ export async function createOption(vehicleId: string, input: CreateOptionRequest
 }
 
 export type UpdateOptionResult =
-  | { ok: true; option: OptionAdminDto }
+  | { ok: true; option: OptionAdminDto; assetChanges: AssetUrlChange[] }
   | { ok: false; reason: "NOT_FOUND" }
-  | { ok: false; reason: "VALIDATION_ERROR"; message: string };
+  | { ok: false; reason: "VALIDATION_ERROR"; message: string }
+  | { ok: false; reason: "UNVERSIONED_ASSET"; errors: Record<string, string[]> };
 
 /** Handles both AC-3's "edit" and "remove" (removal is `{isActive: false}` here — there's no
  * separate DELETE-as-hard-delete path; the DELETE route below calls this with that body). */
 export async function updateOption(id: string, input: UpdateOptionRequest): Promise<UpdateOptionResult> {
   const existing = await prisma.customizationOption.findUnique({ where: { id } });
   if (!existing) return { ok: false, reason: "NOT_FOUND" };
+
+  const assetErrors = validateAssetRef(input.assetRef, existing.assetRef);
+  if (Object.keys(assetErrors).length > 0) return { ok: false, reason: "UNVERSIONED_ASSET", errors: assetErrors };
 
   const hypothetical = {
     isDefault: input.isDefault ?? existing.isDefault,
@@ -123,7 +133,12 @@ export async function updateOption(id: string, input: UpdateOptionRequest): Prom
   }
 
   const option = await prisma.customizationOption.update({ where: { id }, data: input });
-  return { ok: true, option: mapOptionToAdminDto(option) };
+  // Only file-URL assetRefs count as asset versions; a key-style ref change (e.g.
+  // "wheel-sport-20" → "wheel-sport-21") isn't an asset file being replaced.
+  const assetChanges = diffAssetUrls(existing, input, ["assetRef"] as const).filter(
+    (c) => isAssetFileUrl(c.oldUrl) || isAssetFileUrl(c.newUrl),
+  );
+  return { ok: true, option: mapOptionToAdminDto(option), assetChanges };
 }
 
 export type DeactivateOptionResult = { ok: true; option: OptionAdminDto } | UpdateOptionResult;

@@ -15,6 +15,8 @@
     "test": "vitest run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "promote-admin": "tsx scripts/promoteAdmin.ts",
+    "assets:version": "tsx scripts/versionAsset.ts",
+    "assets:gc": "tsx scripts/gcAssets.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

@@ -31,6 +31,8 @@ const vehicle = {
   zeroToHundredSec: 2.9,
   thumbnailUrl: "/models/apex-gt/thumbnail.jpg",
   fallbackImageUrl: "/models/apex-gt/fallback.jpg",
+  heroModelUrl: "",
+  showroomModelUrl: "",
 };
 
 describe("ScrollShowcaseClient (Spec 13, AC-8 through AC-12)", () => {

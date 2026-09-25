@@ -12,6 +12,9 @@ export interface AdminVehiclesState {
   error: string | null;
   isSaving: boolean;
   saveError: string | null;
+  /** Field-specific validation messages from the last failed save (e.g. Spec 25's
+   * unversioned asset URL), shown inline on the matching FormField — authStore's pattern. */
+  saveErrorDetails: Record<string, string[]> | null;
   load: () => Promise<void>;
   create: (request: CreateVehicleRequest) => Promise<boolean>;
   update: (id: string, request: UpdateVehicleRequest) => Promise<boolean>;
@@ -25,6 +28,7 @@ export const useAdminVehiclesStore = create<AdminVehiclesState>((set, get) => ({
   error: null,
   isSaving: false,
   saveError: null,
+  saveErrorDetails: null,
 
   load: async () => {
     set({ status: "loading", error: null });
@@ -37,25 +41,33 @@ export const useAdminVehiclesStore = create<AdminVehiclesState>((set, get) => ({
   },
 
   create: async (request) => {
-    set({ isSaving: true, saveError: null });
+    set({ isSaving: true, saveError: null, saveErrorDetails: null });
     try {
       const vehicle = await createVehicle(request);
       set({ vehicles: [...get().vehicles, vehicle], isSaving: false });
       return true;
     } catch (err) {
-      set({ isSaving: false, saveError: getErrorMessage(err instanceof ApiRequestError ? err.code : undefined) });
+      set({
+        isSaving: false,
+        saveError: getErrorMessage(err instanceof ApiRequestError ? err.code : undefined),
+        saveErrorDetails: err instanceof ApiRequestError ? (err.details ?? null) : null,
+      });
       return false;
     }
   },
 
   update: async (id, request) => {
-    set({ isSaving: true, saveError: null });
+    set({ isSaving: true, saveError: null, saveErrorDetails: null });
     try {
       const vehicle = await updateVehicle(id, request);
       set({ vehicles: get().vehicles.map((v) => (v.id === vehicle.id ? vehicle : v)), isSaving: false });
       return true;
     } catch (err) {
-      set({ isSaving: false, saveError: getErrorMessage(err instanceof ApiRequestError ? err.code : undefined) });
+      set({
+        isSaving: false,
+        saveError: getErrorMessage(err instanceof ApiRequestError ? err.code : undefined),
+        saveErrorDetails: err instanceof ApiRequestError ? (err.details ?? null) : null,
+      });
       return false;
     }
   },

@@ -1,6 +1,8 @@
 import { Prisma, type Vehicle } from "@prisma/client";
 import { prisma } from "../../lib/prisma.js";
 import { mapVehicleToSummaryDto } from "../catalog.js";
+import { diffAssetUrls, type AssetUrlChange } from "../assets/changes.js";
+import { VEHICLE_ASSET_FIELDS, validateVehicleAssetUrls } from "../assets/versioning.js";
 import { parsePagination } from "./pagination.js";
 import type { CreateVehicleRequest, PaginationQuery, UpdateVehicleRequest, VehicleAdminDto } from "../../types/admin.js";
 
@@ -8,8 +10,6 @@ function mapVehicleToAdminDto(vehicle: Vehicle): VehicleAdminDto {
   return {
     ...mapVehicleToSummaryDto(vehicle),
     id: vehicle.id,
-    heroModelUrl: vehicle.heroModelUrl,
-    showroomModelUrl: vehicle.showroomModelUrl,
     isActive: vehicle.isActive,
   };
 }
@@ -24,9 +24,14 @@ export async function listVehicles(pagination: PaginationQuery): Promise<Vehicle
 
 export type CreateVehicleResult =
   | { ok: true; vehicle: VehicleAdminDto }
-  | { ok: false; reason: "SLUG_TAKEN" };
+  | { ok: false; reason: "SLUG_TAKEN" }
+  | { ok: false; reason: "UNVERSIONED_ASSET"; errors: Record<string, string[]> };
 
 export async function createVehicle(input: CreateVehicleRequest): Promise<CreateVehicleResult> {
+  // Spec 25, AC-1: every asset URL on a new vehicle must be content-addressed.
+  const assetErrors = validateVehicleAssetUrls(input, null);
+  if (Object.keys(assetErrors).length > 0) return { ok: false, reason: "UNVERSIONED_ASSET", errors: assetErrors };
+
   try {
     const vehicle = await prisma.vehicle.create({ data: input });
     return { ok: true, vehicle: mapVehicleToAdminDto(vehicle) };
@@ -40,7 +45,10 @@ export async function createVehicle(input: CreateVehicleRequest): Promise<Create
   }
 }
 
-export type UpdateVehicleResult = { ok: true; vehicle: VehicleAdminDto } | { ok: false; reason: "NOT_FOUND" };
+export type UpdateVehicleResult =
+  | { ok: true; vehicle: VehicleAdminDto; assetChanges: AssetUrlChange[] }
+  | { ok: false; reason: "NOT_FOUND" }
+  | { ok: false; reason: "UNVERSIONED_ASSET"; errors: Record<string, string[]> };
 
 /** `input.isActive: false` is this app's only "deactivate a vehicle" action (AC-2) — there's
  * no separate deactivate endpoint, matching CustomizationOption's own soft-delete shape. */
@@ -48,6 +56,15 @@ export async function updateVehicle(id: string, input: UpdateVehicleRequest): Pr
   const existing = await prisma.vehicle.findUnique({ where: { id } });
   if (!existing) return { ok: false, reason: "NOT_FOUND" };
 
+  // Spec 25, AC-2: a changed asset URL must be a new versioned URL. Only the row's pointer
+  // is rewritten here — the old file is never touched, so the old URL stays resolvable.
+  const assetErrors = validateVehicleAssetUrls(input, existing);
+  if (Object.keys(assetErrors).length > 0) return { ok: false, reason: "UNVERSIONED_ASSET", errors: assetErrors };
+
   const vehicle = await prisma.vehicle.update({ where: { id }, data: input });
-  return { ok: true, vehicle: mapVehicleToAdminDto(vehicle) };
+  return {
+    ok: true,
+    vehicle: mapVehicleToAdminDto(vehicle),
+    assetChanges: diffAssetUrls(existing, input, VEHICLE_ASSET_FIELDS),
+  };
 }

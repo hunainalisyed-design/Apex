@@ -17,6 +17,8 @@ const vehicle: VehicleSummaryDto = {
   zeroToHundredSec: 2.9,
   thumbnailUrl: "/models/apex-gt/thumbnail.jpg",
   fallbackImageUrl: "/models/apex-gt/fallback.jpg",
+  heroModelUrl: "",
+  showroomModelUrl: "",
 };
 
 describe("Static3DFallback", () => {

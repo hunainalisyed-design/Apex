@@ -19,6 +19,8 @@ const FALLBACK_VEHICLE: VehicleSummaryDto = {
   zeroToHundredSec: 0,
   thumbnailUrl: "",
   fallbackImageUrl: "",
+  heroModelUrl: "",
+  showroomModelUrl: "",
 };
 
 async function getFeaturedVehicle(): Promise<VehicleSummaryDto> {

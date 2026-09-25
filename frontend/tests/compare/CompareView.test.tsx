@@ -41,6 +41,8 @@ function makeVehicle(slug: string, name: string): VehicleSummaryDto {
     zeroToHundredSec: 2.9,
     thumbnailUrl: "",
     fallbackImageUrl: "",
+    heroModelUrl: "",
+    showroomModelUrl: "",
   };
 }
 

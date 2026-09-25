@@ -3,8 +3,12 @@
 import { useId, useRef, useState, type FormEvent } from "react";
 import { FormField } from "@/components/auth/FormField";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { saveErrorBanner } from "@/lib/admin/saveErrorBanner";
 import { useAdminVehiclesStore } from "@/state/adminVehiclesStore";
 import type { VehicleAdminDto } from "@/types/admin";
+
+// Fields whose save errors render inline on their own FormField (see saveErrorBanner).
+const INLINE_ERROR_FIELDS = ["slug", "heroModelUrl", "showroomModelUrl", "thumbnailUrl", "fallbackImageUrl"] as const;
 
 export interface VehicleFormDialogProps {
   /** Absent = create; present = edit (slug becomes read-only, matching UpdateVehicleRequest
@@ -43,6 +47,7 @@ export function VehicleFormDialog({ vehicle, onClose }: VehicleFormDialogProps) 
   const update = useAdminVehiclesStore((s) => s.update);
   const isSaving = useAdminVehiclesStore((s) => s.isSaving);
   const saveError = useAdminVehiclesStore((s) => s.saveError);
+  const saveErrorDetails = useAdminVehiclesStore((s) => s.saveErrorDetails);
 
   const [fields, setFields] = useState(fieldsFrom(vehicle));
   const [localError, setLocalError] = useState<string | null>(null);
@@ -120,7 +125,7 @@ export function VehicleFormDialog({ vehicle, onClose }: VehicleFormDialogProps) 
 
         {(localError || saveError) && (
           <p role="alert" className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300">
-            {localError ?? saveError}
+            {localError ?? saveErrorBanner(saveError, saveErrorDetails, INLINE_ERROR_FIELDS)}
           </p>
         )}
 
@@ -128,6 +133,7 @@ export function VehicleFormDialog({ vehicle, onClose }: VehicleFormDialogProps) 
           <FormField
             label="Slug"
             name="slug"
+            errors={saveErrorDetails?.slug}
             value={fields.slug}
             onChange={(e) => set("slug", e.target.value)}
             disabled={isEdit}
@@ -188,6 +194,7 @@ export function VehicleFormDialog({ vehicle, onClose }: VehicleFormDialogProps) 
           <FormField
             label="Hero model URL"
             name="heroModelUrl"
+            errors={saveErrorDetails?.heroModelUrl}
             value={fields.heroModelUrl}
             onChange={(e) => set("heroModelUrl", e.target.value)}
             required
@@ -195,6 +202,7 @@ export function VehicleFormDialog({ vehicle, onClose }: VehicleFormDialogProps) 
           <FormField
             label={isEdit ? "Showroom model URL" : "Showroom model URL (blank = same as hero)"}
             name="showroomModelUrl"
+            errors={saveErrorDetails?.showroomModelUrl}
             value={fields.showroomModelUrl}
             onChange={(e) => set("showroomModelUrl", e.target.value)}
             required={isEdit}
@@ -202,6 +210,7 @@ export function VehicleFormDialog({ vehicle, onClose }: VehicleFormDialogProps) 
           <FormField
             label="Thumbnail URL"
             name="thumbnailUrl"
+            errors={saveErrorDetails?.thumbnailUrl}
             value={fields.thumbnailUrl}
             onChange={(e) => set("thumbnailUrl", e.target.value)}
             required
@@ -209,6 +218,7 @@ export function VehicleFormDialog({ vehicle, onClose }: VehicleFormDialogProps) 
           <FormField
             label="Fallback image URL"
             name="fallbackImageUrl"
+            errors={saveErrorDetails?.fallbackImageUrl}
             value={fields.fallbackImageUrl}
             onChange={(e) => set("fallbackImageUrl", e.target.value)}
             required

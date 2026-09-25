@@ -92,10 +92,10 @@ describe("Admin endpoints (integration, Spec 21)", () => {
         horsepower: 400,
         topSpeedKph: 260,
         zeroToHundredSec: 4.5,
-        heroModelUrl: "/models/apex-concept/hero.glb",
-        showroomModelUrl: "/models/apex-concept/showroom.glb",
-        thumbnailUrl: "/models/apex-concept/thumbnail.jpg",
-        fallbackImageUrl: "/models/apex-concept/fallback.jpg",
+        heroModelUrl: "/models/apex-concept/hero.0a1b2c3d.glb",
+        showroomModelUrl: "/models/apex-concept/showroom.0a1b2c3d.glb",
+        thumbnailUrl: "/models/apex-concept/thumbnail.0a1b2c3d.jpg",
+        fallbackImageUrl: "/models/apex-concept/fallback.0a1b2c3d.jpg",
       });
 
       expect(res.status).toBe(201);
@@ -129,10 +129,10 @@ describe("Admin endpoints (integration, Spec 21)", () => {
         horsepower: 300,
         topSpeedKph: 220,
         zeroToHundredSec: 5.0,
-        heroModelUrl: "/x/hero.glb",
-        showroomModelUrl: "/x/showroom.glb",
-        thumbnailUrl: "/x/thumbnail.jpg",
-        fallbackImageUrl: "/x/fallback.jpg",
+        heroModelUrl: "/x/hero.0a1b2c3d.glb",
+        showroomModelUrl: "/x/showroom.0a1b2c3d.glb",
+        thumbnailUrl: "/x/thumbnail.0a1b2c3d.jpg",
+        fallbackImageUrl: "/x/fallback.0a1b2c3d.jpg",
       });
       const vehicleId = (await prisma.vehicle.findUniqueOrThrow({ where: { slug: "apex-to-deactivate" } })).id;
       expect(create.status).toBe(201);
@@ -203,10 +203,10 @@ describe("Admin endpoints (integration, Spec 21)", () => {
         horsepower: 200,
         topSpeedKph: 200,
         zeroToHundredSec: 6.0,
-        heroModelUrl: "/x/hero.glb",
-        showroomModelUrl: "/x/showroom.glb",
-        thumbnailUrl: "/x/thumbnail.jpg",
-        fallbackImageUrl: "/x/fallback.jpg",
+        heroModelUrl: "/x/hero.0a1b2c3d.glb",
+        showroomModelUrl: "/x/showroom.0a1b2c3d.glb",
+        thumbnailUrl: "/x/thumbnail.0a1b2c3d.jpg",
+        fallbackImageUrl: "/x/fallback.0a1b2c3d.jpg",
       });
       expect(createVehicle.status).toBe(201);
       const vehicleId = createVehicle.body.data.id as string;

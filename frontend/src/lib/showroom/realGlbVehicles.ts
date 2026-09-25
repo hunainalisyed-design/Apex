@@ -6,10 +6,14 @@
 // Not a "use client" module, so both the server-rendered /models page and client-only
 // showroom/preview components can import it without crossing the server/client boundary just
 // to read these constants.
+//
+// The model URL itself is deliberately NOT here (Spec 25): it comes from the vehicle's own
+// `showroomModelUrl`/`heroModelUrl` in the API, a content-addressed path an admin can point at
+// a newly published version. This registry only holds what's specific to one GLB's internals
+// (its paint material names and auto-fit length) — a newly published version of the same car
+// is expected to keep those, so it needs no code change here.
 export interface RealGlbVehicleConfig {
   slug: string;
-  /** Served from frontend/public — see that path for the optimized (Meshopt + WebP) asset. */
-  modelUrl: string;
   /** Body-paint material name(s) inside this specific GLB, tinted live when the PAINT option
    * changes (Spec 6/8's MATERIAL_SWAP dispatch is keyed to PlaceholderShowroomRig's own mesh
    * names; a real GLB instead keys directly to its own material name(s), each confirmed by
@@ -35,13 +39,11 @@ export const SHOWCASE_TARGET_LENGTH_RATIO = 1.6 / 4.2;
 export const REAL_GLB_VEHICLES: Record<string, RealGlbVehicleConfig> = {
   "porsche-992-gt3-r": {
     slug: "porsche-992-gt3-r",
-    modelUrl: "/assets/models/porsche-992-gt3-r.glb",
     paintMaterialNames: ["EXT_Carpaint_Inst"],
     targetLength: 4.2,
   },
   "pagani-huayra-codalunga-speedster": {
     slug: "pagani-huayra-codalunga-speedster",
-    modelUrl: "/assets/models/pagani-huayra-codalunga-speedster.glb",
     // Confirmed via @gltf-transform/core inspection: material "Paint" is the sole
     // textureless, vertex-color-driven material used by the "Paint_Geo_lodA.*" body meshes.
     paintMaterialNames: ["Paint"],
@@ -49,7 +51,6 @@ export const REAL_GLB_VEHICLES: Record<string, RealGlbVehicleConfig> = {
   },
   "lamborghini-revuelto": {
     slug: "lamborghini-revuelto",
-    modelUrl: "/assets/models/lamborghini-revuelto.glb",
     // Confirmed via world-space bounding-box analysis of the raw source GLB: "car_paint_v3_03"
     // covers the full-length body panels (doors, bumpers, gas cap — bbox length 4.89 of the
     // car's ~4.91 total), and "M_CarPaint" covers the body-colored door jambs/sills (a much
@@ -62,7 +63,6 @@ export const REAL_GLB_VEHICLES: Record<string, RealGlbVehicleConfig> = {
   },
   "mustang-1965": {
     slug: "mustang-1965",
-    modelUrl: "/assets/models/mustang-1965.glb",
     // Confirmed via world-space bounding-box analysis: "CarPrimaryColor" spans the full body
     // length. "Car Secondary" was deliberately excluded — its bbox is much narrower
     // (0.39 vs. 1.33 units wide) at the same length, i.e. a two-tone accent stripe, not the
