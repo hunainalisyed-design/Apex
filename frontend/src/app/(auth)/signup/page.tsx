@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { FormField } from "@/components/auth/FormField";
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
@@ -9,6 +10,7 @@ import { isValidEmail, validatePassword } from "@/lib/auth/validation";
 import { useAuthStore } from "@/state/authStore";
 
 export default function SignupPage() {
+  const t = useTranslations("auth");
   const signup = useAuthStore((s) => s.signup);
   const isLoading = useAuthStore((s) => s.isLoading);
   const details = useAuthStore((s) => s.details);
@@ -33,11 +35,11 @@ export default function SignupPage() {
     e.preventDefault();
 
     const nextErrors: Record<string, string[]> = {};
-    if (!name.trim()) nextErrors.name = ["Name is required."];
-    if (!isValidEmail(email)) nextErrors.email = ["Enter a valid email address."];
+    if (!name.trim()) nextErrors.name = [t("nameRequired")];
+    if (!isValidEmail(email)) nextErrors.email = [t("invalidEmail")];
     const passwordViolation = validatePassword(password);
     if (passwordViolation) nextErrors.password = [passwordViolation];
-    if (!acceptedTerms) nextErrors.acceptedTerms = ["You must accept the terms to sign up."];
+    if (!acceptedTerms) nextErrors.acceptedTerms = [t("signup.termsRequired")];
 
     setClientErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
@@ -48,8 +50,8 @@ export default function SignupPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1 text-center">
-        <h1 className="text-xl font-bold tracking-tight text-white">Create your account</h1>
-        <p className="text-sm text-white/60">Save builds and pick up where you left off.</p>
+        <h1 className="text-xl font-bold tracking-tight text-white">{t("signup.title")}</h1>
+        <p className="text-sm text-white/60">{t("signup.subtitle")}</p>
       </div>
 
       {bannerMessage && (
@@ -60,7 +62,7 @@ export default function SignupPage() {
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
         <FormField
-          label="Name"
+          label={t("name")}
           name="name"
           autoComplete="name"
           value={name}
@@ -68,7 +70,7 @@ export default function SignupPage() {
           errors={nameErrors}
         />
         <FormField
-          label="Email"
+          label={t("email")}
           type="email"
           name="email"
           autoComplete="email"
@@ -78,7 +80,7 @@ export default function SignupPage() {
         />
         <div className="flex flex-col gap-1.5">
           <FormField
-            label="Password"
+            label={t("password")}
             type="password"
             name="password"
             autoComplete="new-password"
@@ -97,7 +99,7 @@ export default function SignupPage() {
               onChange={(e) => setAcceptedTerms(e.target.checked)}
               className="focus-ring mt-0.5"
             />
-            I accept the terms of service.
+            {t("signup.acceptTerms")}
           </label>
           {termsErrors && <p className="text-xs text-red-300">{termsErrors.join(" ")}</p>}
         </div>
@@ -107,15 +109,18 @@ export default function SignupPage() {
           disabled={isLoading}
           className="focus-ring rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wide text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isLoading ? "Creating account…" : "Sign Up"}
+          {isLoading ? t("signup.submitting") : t("signup.submit")}
         </button>
       </form>
 
       <p className="text-center text-xs text-white/50">
-        Already have an account?{" "}
-        <Link href="/login" className="focus-ring rounded text-white underline">
-          Log in
-        </Link>
+        {t.rich("signup.haveAccount", {
+          link: (chunks) => (
+            <Link href="/login" className="focus-ring rounded text-white underline">
+              {chunks}
+            </Link>
+          ),
+        })}
       </p>
     </div>
   );

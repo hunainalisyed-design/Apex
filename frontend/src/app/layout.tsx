@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { NextIntlClientProvider } from "next-intl";
+import { DEFAULT_LOCALE } from "@/i18n/config";
 import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import { AppErrorBoundary } from "@/components/shell/AppErrorBoundary";
 import { AuthHydrator } from "@/components/shell/AuthHydrator";
@@ -52,18 +54,22 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
-      lang="en"
+      lang={DEFAULT_LOCALE}
       className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <SkipLink />
-        <AuthHydrator />
-        <Nav />
-        <CookieConsentBanner />
-        <AppErrorBoundary>
-          <ToastProvider>{children}</ToastProvider>
-        </AppErrorBoundary>
-        <Footer />
+        {/* Spec 26: makes translations available to client components (it inherits the
+            locale and messages from src/i18n/request.ts when rendered on the server). */}
+        <NextIntlClientProvider>
+          <SkipLink />
+          <AuthHydrator />
+          <Nav />
+          <CookieConsentBanner />
+          <AppErrorBoundary>
+            <ToastProvider>{children}</ToastProvider>
+          </AppErrorBoundary>
+          <Footer />
+        </NextIntlClientProvider>
       </body>
     </html>
   );

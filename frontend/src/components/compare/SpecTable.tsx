@@ -1,4 +1,6 @@
+import { useTranslations } from "next-intl";
 import { formatPriceCents } from "@/lib/format/currency";
+import { formatNumber } from "@/lib/format/number";
 import type { VehicleSummaryDto } from "@/types/catalog";
 
 export interface SpecTableProps {
@@ -6,16 +8,18 @@ export interface SpecTableProps {
   right: VehicleSummaryDto;
 }
 
+type SpecsTranslator = ReturnType<typeof useTranslations<"specs">>;
+
 interface SpecRow {
-  label: string;
-  format: (vehicle: VehicleSummaryDto) => string;
+  labelKey: "power" | "zeroToHundredKph" | "topSpeed" | "startingPrice";
+  format: (vehicle: VehicleSummaryDto, t: SpecsTranslator) => string;
 }
 
 const SPEC_ROWS: SpecRow[] = [
-  { label: "Power", format: (v) => `${v.horsepower} hp` },
-  { label: "0–100 km/h", format: (v) => `${v.zeroToHundredSec}s` },
-  { label: "Top Speed", format: (v) => `${v.topSpeedKph} km/h` },
-  { label: "Starting Price", format: (v) => formatPriceCents(v.basePriceCents, v.currency) },
+  { labelKey: "power", format: (v, t) => t("hpValue", { value: formatNumber(v.horsepower) }) },
+  { labelKey: "zeroToHundredKph", format: (v, t) => t("secondsValue", { value: formatNumber(v.zeroToHundredSec) }) },
+  { labelKey: "topSpeed", format: (v, t) => t("kphValue", { value: formatNumber(v.topSpeedKph) }) },
+  { labelKey: "startingPrice", format: (v) => formatPriceCents(v.basePriceCents, v.currency) },
 ];
 
 /**
@@ -27,15 +31,16 @@ const SPEC_ROWS: SpecRow[] = [
  * narrow viewport rather than the page itself scrolling horizontally (AC-10).
  */
 export function SpecTable({ left, right }: SpecTableProps) {
+  const t = useTranslations("specs");
   return (
     <table className="w-full min-w-[28rem] border-collapse text-sm">
       <caption className="sr-only">
-        Comparing {left.name} and {right.name}
+        {t("comparing", { left: left.name, right: right.name })}
       </caption>
       <thead>
         <tr className="border-b border-white/10">
           <th scope="col" className="py-2 text-left text-xs uppercase tracking-wide text-white/50">
-            <span className="sr-only">Spec</span>
+            <span className="sr-only">{t("spec")}</span>
           </th>
           <th scope="col" className="py-2 text-left font-semibold text-white">
             {left.name}
@@ -47,12 +52,12 @@ export function SpecTable({ left, right }: SpecTableProps) {
       </thead>
       <tbody>
         {SPEC_ROWS.map((row) => (
-          <tr key={row.label} className="border-b border-white/5">
+          <tr key={row.labelKey} className="border-b border-white/5">
             <th scope="row" className="py-2 pr-4 text-left font-medium text-white/60">
-              {row.label}
+              {t(row.labelKey)}
             </th>
-            <td className="py-2 pr-4 text-white/90">{row.format(left)}</td>
-            <td className="py-2 text-white/90">{row.format(right)}</td>
+            <td className="py-2 pr-4 text-white/90">{row.format(left, t)}</td>
+            <td className="py-2 text-white/90">{row.format(right, t)}</td>
           </tr>
         ))}
       </tbody>

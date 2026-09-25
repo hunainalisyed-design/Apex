@@ -1,0 +1,1799 @@
+{
+  "AiConfigureRecommendation": {
+    "type": "object",
+    "properties": {
+      "singleSelections": {
+        "type": "object",
+        "properties": {
+          "PAINT": {
+            "type": "string"
+          },
+          "WHEELS": {
+            "type": "string"
+          },
+          "BRAKE_CALIPER": {
+            "type": "string"
+          },
+          "WINDOW_TINT": {
+            "type": "string"
+          },
+          "SPOILER": {
+            "type": "string"
+          },
+          "FRONT_ACCESSORY": {
+            "type": "string"
+          },
+          "REAR_ACCESSORY": {
+            "type": "string"
+          },
+          "BODY_PACKAGE": {
+            "type": "string"
+          },
+          "CARBON_COMPONENT": {
+            "type": "string"
+          },
+          "INTERIOR_MATERIAL": {
+            "type": "string"
+          },
+          "INTERIOR_LIGHTING": {
+            "type": "string"
+          },
+          "INTERIOR_SEATS": {
+            "type": "string"
+          },
+          "INTERIOR_DASHBOARD": {
+            "type": "string"
+          },
+          "INTERIOR_STEERING_WHEEL": {
+            "type": "string"
+          },
+          "INTERIOR_DOOR_PANELS": {
+            "type": "string"
+          },
+          "INTERIOR_FLOOR": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "multiSelections": {
+        "type": "object",
+        "properties": {
+          "ACCESSORY": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "PACKAGE": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "singleSelections",
+      "multiSelections"
+    ],
+    "additionalProperties": false
+  },
+  "AiConfigureRequest": {
+    "type": "object",
+    "properties": {
+      "vehicleSlug": {
+        "type": "string"
+      },
+      "message": {
+        "type": "string"
+      },
+      "history": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "role": {
+              "type": "string",
+              "enum": [
+                "user",
+                "assistant"
+              ]
+            },
+            "content": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "role",
+            "content"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "currentSelections": {
+        "type": "object",
+        "properties": {
+          "singleSelections": {
+            "type": "object",
+            "properties": {
+              "PAINT": {
+                "type": "string"
+              },
+              "WHEELS": {
+                "type": "string"
+              },
+              "BRAKE_CALIPER": {
+                "type": "string"
+              },
+              "WINDOW_TINT": {
+                "type": "string"
+              },
+              "SPOILER": {
+                "type": "string"
+              },
+              "FRONT_ACCESSORY": {
+                "type": "string"
+              },
+              "REAR_ACCESSORY": {
+                "type": "string"
+              },
+              "BODY_PACKAGE": {
+                "type": "string"
+              },
+              "CARBON_COMPONENT": {
+                "type": "string"
+              },
+              "INTERIOR_MATERIAL": {
+                "type": "string"
+              },
+              "INTERIOR_LIGHTING": {
+                "type": "string"
+              },
+              "INTERIOR_SEATS": {
+                "type": "string"
+              },
+              "INTERIOR_DASHBOARD": {
+                "type": "string"
+              },
+              "INTERIOR_STEERING_WHEEL": {
+                "type": "string"
+              },
+              "INTERIOR_DOOR_PANELS": {
+                "type": "string"
+              },
+              "INTERIOR_FLOOR": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "PAINT",
+              "WHEELS",
+              "BRAKE_CALIPER",
+              "WINDOW_TINT",
+              "SPOILER",
+              "FRONT_ACCESSORY",
+              "REAR_ACCESSORY",
+              "BODY_PACKAGE",
+              "CARBON_COMPONENT",
+              "INTERIOR_MATERIAL",
+              "INTERIOR_LIGHTING",
+              "INTERIOR_SEATS",
+              "INTERIOR_DASHBOARD",
+              "INTERIOR_STEERING_WHEEL",
+              "INTERIOR_DOOR_PANELS",
+              "INTERIOR_FLOOR"
+            ],
+            "additionalProperties": false
+          },
+          "multiSelections": {
+            "type": "object",
+            "properties": {
+              "ACCESSORY": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "PACKAGE": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "ACCESSORY",
+              "PACKAGE"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "singleSelections",
+          "multiSelections"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "vehicleSlug",
+      "message",
+      "currentSelections"
+    ],
+    "additionalProperties": false
+  },
+  "AiConfigureResponseDto": {
+    "type": "object",
+    "properties": {
+      "assistantMessage": {
+        "type": "string"
+      },
+      "recommendation": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/AiConfigureRecommendation"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "breakdown": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/PriceBreakdownDto"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    },
+    "required": [
+      "assistantMessage",
+      "recommendation",
+      "breakdown"
+    ],
+    "additionalProperties": false
+  },
+  "ApiError": {
+    "type": "object",
+    "properties": {
+      "code": {
+        "type": "string"
+      },
+      "message": {
+        "type": "string"
+      },
+      "details": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "required": [
+      "code",
+      "message"
+    ],
+    "additionalProperties": false
+  },
+  "ApplyMode": {
+    "type": "string",
+    "enum": [
+      "MATERIAL_SWAP",
+      "MESH_VARIANT_SWAP",
+      "MESH_VISIBILITY"
+    ]
+  },
+  "ChangePasswordRequest": {
+    "type": "object",
+    "properties": {
+      "currentPassword": {
+        "type": "string"
+      },
+      "newPassword": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "currentPassword",
+      "newPassword"
+    ],
+    "additionalProperties": false
+  },
+  "CheckoutSessionDto": {
+    "type": "object",
+    "properties": {
+      "checkoutUrl": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "checkoutUrl"
+    ],
+    "additionalProperties": false
+  },
+  "CreateCheckoutSessionRequest": {
+    "type": "object",
+    "properties": {
+      "configurationPublicId": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "configurationPublicId"
+    ],
+    "additionalProperties": false
+  },
+  "CreateLeadRequest": {
+    "type": "object",
+    "properties": {
+      "configurationPublicId": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "email": {
+        "type": "string"
+      },
+      "phone": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "preferredContact": {
+        "type": "string",
+        "enum": [
+          "EMAIL",
+          "PHONE"
+        ]
+      },
+      "message": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "requestType": {
+        "type": "string",
+        "enum": [
+          "QUOTE",
+          "TEST_DRIVE"
+        ]
+      }
+    },
+    "required": [
+      "configurationPublicId",
+      "name",
+      "email",
+      "phone",
+      "preferredContact",
+      "message",
+      "requestType"
+    ],
+    "additionalProperties": false
+  },
+  "CreateOptionRequest": {
+    "type": "object",
+    "properties": {
+      "category": {
+        "$ref": "#/components/schemas/OptionCategory"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "priceDeltaCents": {
+        "type": "number"
+      },
+      "assetRef": {
+        "type": "string"
+      },
+      "swatchColor": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "applyMode": {
+        "$ref": "#/components/schemas/ApplyMode"
+      },
+      "isDefault": {
+        "type": "boolean"
+      },
+      "sortOrder": {
+        "type": "number"
+      }
+    },
+    "required": [
+      "category",
+      "name",
+      "description",
+      "priceDeltaCents",
+      "assetRef",
+      "swatchColor",
+      "applyMode",
+      "isDefault"
+    ],
+    "additionalProperties": false
+  },
+  "CreateVehicleRequest": {
+    "type": "object",
+    "properties": {
+      "slug": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "tagline": {
+        "type": "string"
+      },
+      "basePriceCents": {
+        "type": "number"
+      },
+      "currency": {
+        "type": "string"
+      },
+      "horsepower": {
+        "type": "number"
+      },
+      "topSpeedKph": {
+        "type": "number"
+      },
+      "zeroToHundredSec": {
+        "type": "number"
+      },
+      "heroModelUrl": {
+        "type": "string"
+      },
+      "showroomModelUrl": {
+        "type": "string"
+      },
+      "thumbnailUrl": {
+        "type": "string"
+      },
+      "fallbackImageUrl": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "slug",
+      "name",
+      "tagline",
+      "basePriceCents",
+      "currency",
+      "horsepower",
+      "topSpeedKph",
+      "zeroToHundredSec",
+      "heroModelUrl",
+      "showroomModelUrl",
+      "thumbnailUrl",
+      "fallbackImageUrl"
+    ],
+    "additionalProperties": false
+  },
+  "CustomizationOptionDto": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "category": {
+        "$ref": "#/components/schemas/OptionCategory"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "priceDeltaCents": {
+        "type": "number"
+      },
+      "assetRef": {
+        "type": "string"
+      },
+      "swatchColor": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "applyMode": {
+        "$ref": "#/components/schemas/ApplyMode"
+      },
+      "isDefault": {
+        "type": "boolean"
+      },
+      "sortOrder": {
+        "type": "number"
+      }
+    },
+    "required": [
+      "id",
+      "category",
+      "name",
+      "description",
+      "priceDeltaCents",
+      "assetRef",
+      "swatchColor",
+      "applyMode",
+      "isDefault",
+      "sortOrder"
+    ],
+    "additionalProperties": false
+  },
+  "DeleteAccountRequest": {
+    "type": "object",
+    "properties": {
+      "confirmEmail": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "confirmEmail"
+    ],
+    "additionalProperties": false
+  },
+  "ForgotPasswordRequest": {
+    "type": "object",
+    "properties": {
+      "email": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "email"
+    ],
+    "additionalProperties": false
+  },
+  "HealthResponse": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string",
+        "enum": [
+          "ok",
+          "degraded"
+        ]
+      },
+      "database": {
+        "type": "string",
+        "enum": [
+          "connected",
+          "unreachable"
+        ]
+      },
+      "uptimeSeconds": {
+        "type": "number"
+      }
+    },
+    "required": [
+      "status",
+      "database",
+      "uptimeSeconds"
+    ],
+    "additionalProperties": false
+  },
+  "LeadDto": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "configurationPublicId": {
+        "type": "string"
+      },
+      "vehicleSlug": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "email": {
+        "type": "string"
+      },
+      "phone": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "preferredContact": {
+        "type": "string",
+        "enum": [
+          "EMAIL",
+          "PHONE"
+        ]
+      },
+      "message": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "requestType": {
+        "type": "string",
+        "enum": [
+          "QUOTE",
+          "TEST_DRIVE"
+        ]
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "NEW",
+          "CONTACTED",
+          "CLOSED"
+        ]
+      },
+      "createdAt": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "configurationPublicId",
+      "vehicleSlug",
+      "name",
+      "email",
+      "phone",
+      "preferredContact",
+      "message",
+      "requestType",
+      "status",
+      "createdAt"
+    ],
+    "additionalProperties": false
+  },
+  "LoginRequest": {
+    "type": "object",
+    "properties": {
+      "email": {
+        "type": "string"
+      },
+      "password": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "email",
+      "password"
+    ],
+    "additionalProperties": false
+  },
+  "MessageResponseDto": {
+    "type": "object",
+    "properties": {
+      "message": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "message"
+    ],
+    "additionalProperties": false
+  },
+  "MultiSelectCategory": {
+    "type": "string",
+    "enum": [
+      "ACCESSORY",
+      "PACKAGE"
+    ]
+  },
+  "OptionAdminDto": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "category": {
+        "$ref": "#/components/schemas/OptionCategory"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "priceDeltaCents": {
+        "type": "number"
+      },
+      "assetRef": {
+        "type": "string"
+      },
+      "swatchColor": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "applyMode": {
+        "$ref": "#/components/schemas/ApplyMode"
+      },
+      "isDefault": {
+        "type": "boolean"
+      },
+      "sortOrder": {
+        "type": "number"
+      },
+      "isActive": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "applyMode",
+      "assetRef",
+      "category",
+      "description",
+      "id",
+      "isActive",
+      "isDefault",
+      "name",
+      "priceDeltaCents",
+      "sortOrder",
+      "swatchColor"
+    ],
+    "additionalProperties": false
+  },
+  "OptionCategory": {
+    "type": "string",
+    "enum": [
+      "PAINT",
+      "WHEELS",
+      "BRAKE_CALIPER",
+      "WINDOW_TINT",
+      "SPOILER",
+      "FRONT_ACCESSORY",
+      "REAR_ACCESSORY",
+      "BODY_PACKAGE",
+      "CARBON_COMPONENT",
+      "INTERIOR_MATERIAL",
+      "INTERIOR_LIGHTING",
+      "INTERIOR_SEATS",
+      "INTERIOR_DASHBOARD",
+      "INTERIOR_STEERING_WHEEL",
+      "INTERIOR_DOOR_PANELS",
+      "INTERIOR_FLOOR",
+      "ACCESSORY",
+      "PACKAGE"
+    ]
+  },
+  "PaginationQuery": {
+    "type": "object",
+    "properties": {
+      "page": {},
+      "pageSize": {}
+    },
+    "additionalProperties": false
+  },
+  "PriceBreakdownDto": {
+    "type": "object",
+    "properties": {
+      "vehicleSlug": {
+        "type": "string"
+      },
+      "basePriceCents": {
+        "type": "number"
+      },
+      "lineItems": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/PriceLineItemDto"
+        }
+      },
+      "totalPriceCents": {
+        "type": "number"
+      },
+      "currency": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "vehicleSlug",
+      "basePriceCents",
+      "lineItems",
+      "totalPriceCents",
+      "currency"
+    ],
+    "additionalProperties": false
+  },
+  "PriceCalculationRequest": {
+    "type": "object",
+    "properties": {
+      "vehicleSlug": {
+        "type": "string"
+      },
+      "singleSelections": {
+        "type": "object",
+        "properties": {
+          "PAINT": {
+            "type": "string"
+          },
+          "WHEELS": {
+            "type": "string"
+          },
+          "BRAKE_CALIPER": {
+            "type": "string"
+          },
+          "WINDOW_TINT": {
+            "type": "string"
+          },
+          "SPOILER": {
+            "type": "string"
+          },
+          "FRONT_ACCESSORY": {
+            "type": "string"
+          },
+          "REAR_ACCESSORY": {
+            "type": "string"
+          },
+          "BODY_PACKAGE": {
+            "type": "string"
+          },
+          "CARBON_COMPONENT": {
+            "type": "string"
+          },
+          "INTERIOR_MATERIAL": {
+            "type": "string"
+          },
+          "INTERIOR_LIGHTING": {
+            "type": "string"
+          },
+          "INTERIOR_SEATS": {
+            "type": "string"
+          },
+          "INTERIOR_DASHBOARD": {
+            "type": "string"
+          },
+          "INTERIOR_STEERING_WHEEL": {
+            "type": "string"
+          },
+          "INTERIOR_DOOR_PANELS": {
+            "type": "string"
+          },
+          "INTERIOR_FLOOR": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "PAINT",
+          "WHEELS",
+          "BRAKE_CALIPER",
+          "WINDOW_TINT",
+          "SPOILER",
+          "FRONT_ACCESSORY",
+          "REAR_ACCESSORY",
+          "BODY_PACKAGE",
+          "CARBON_COMPONENT",
+          "INTERIOR_MATERIAL",
+          "INTERIOR_LIGHTING",
+          "INTERIOR_SEATS",
+          "INTERIOR_DASHBOARD",
+          "INTERIOR_STEERING_WHEEL",
+          "INTERIOR_DOOR_PANELS",
+          "INTERIOR_FLOOR"
+        ],
+        "additionalProperties": false
+      },
+      "multiSelections": {
+        "type": "object",
+        "properties": {
+          "ACCESSORY": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "PACKAGE": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "ACCESSORY",
+          "PACKAGE"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "vehicleSlug",
+      "singleSelections",
+      "multiSelections"
+    ],
+    "additionalProperties": false
+  },
+  "PriceLineItemDto": {
+    "type": "object",
+    "properties": {
+      "optionId": {
+        "type": "string"
+      },
+      "category": {
+        "$ref": "#/components/schemas/OptionCategory"
+      },
+      "name": {
+        "type": "string"
+      },
+      "priceDeltaCents": {
+        "type": "number"
+      }
+    },
+    "required": [
+      "optionId",
+      "category",
+      "name",
+      "priceDeltaCents"
+    ],
+    "additionalProperties": false
+  },
+  "ReservationDto": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "configurationPublicId": {
+        "type": "string"
+      },
+      "vehicleSlug": {
+        "type": "string"
+      },
+      "amountCents": {
+        "type": "number"
+      },
+      "currency": {
+        "type": "string"
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "PAID",
+          "FAILED",
+          "REFUNDED"
+        ]
+      },
+      "createdAt": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "configurationPublicId",
+      "vehicleSlug",
+      "amountCents",
+      "currency",
+      "status",
+      "createdAt"
+    ],
+    "additionalProperties": false
+  },
+  "ResetPasswordRequest": {
+    "type": "object",
+    "properties": {
+      "token": {
+        "type": "string"
+      },
+      "newPassword": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "token",
+      "newPassword"
+    ],
+    "additionalProperties": false
+  },
+  "SaveConfigurationRequest": {
+    "type": "object",
+    "properties": {
+      "vehicleSlug": {
+        "type": "string"
+      },
+      "singleSelections": {
+        "type": "object",
+        "properties": {
+          "PAINT": {
+            "type": "string"
+          },
+          "WHEELS": {
+            "type": "string"
+          },
+          "BRAKE_CALIPER": {
+            "type": "string"
+          },
+          "WINDOW_TINT": {
+            "type": "string"
+          },
+          "SPOILER": {
+            "type": "string"
+          },
+          "FRONT_ACCESSORY": {
+            "type": "string"
+          },
+          "REAR_ACCESSORY": {
+            "type": "string"
+          },
+          "BODY_PACKAGE": {
+            "type": "string"
+          },
+          "CARBON_COMPONENT": {
+            "type": "string"
+          },
+          "INTERIOR_MATERIAL": {
+            "type": "string"
+          },
+          "INTERIOR_LIGHTING": {
+            "type": "string"
+          },
+          "INTERIOR_SEATS": {
+            "type": "string"
+          },
+          "INTERIOR_DASHBOARD": {
+            "type": "string"
+          },
+          "INTERIOR_STEERING_WHEEL": {
+            "type": "string"
+          },
+          "INTERIOR_DOOR_PANELS": {
+            "type": "string"
+          },
+          "INTERIOR_FLOOR": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "PAINT",
+          "WHEELS",
+          "BRAKE_CALIPER",
+          "WINDOW_TINT",
+          "SPOILER",
+          "FRONT_ACCESSORY",
+          "REAR_ACCESSORY",
+          "BODY_PACKAGE",
+          "CARBON_COMPONENT",
+          "INTERIOR_MATERIAL",
+          "INTERIOR_LIGHTING",
+          "INTERIOR_SEATS",
+          "INTERIOR_DASHBOARD",
+          "INTERIOR_STEERING_WHEEL",
+          "INTERIOR_DOOR_PANELS",
+          "INTERIOR_FLOOR"
+        ],
+        "additionalProperties": false
+      },
+      "multiSelections": {
+        "type": "object",
+        "properties": {
+          "ACCESSORY": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "PACKAGE": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "ACCESSORY",
+          "PACKAGE"
+        ],
+        "additionalProperties": false
+      },
+      "customPaintHex": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "required": [
+      "vehicleSlug",
+      "singleSelections",
+      "multiSelections",
+      "customPaintHex"
+    ],
+    "additionalProperties": false
+  },
+  "SavedConfigurationDto": {
+    "type": "object",
+    "properties": {
+      "publicId": {
+        "type": "string"
+      },
+      "vehicleSlug": {
+        "type": "string"
+      },
+      "singleSelections": {
+        "type": "object",
+        "properties": {
+          "PAINT": {
+            "type": "string"
+          },
+          "WHEELS": {
+            "type": "string"
+          },
+          "BRAKE_CALIPER": {
+            "type": "string"
+          },
+          "WINDOW_TINT": {
+            "type": "string"
+          },
+          "SPOILER": {
+            "type": "string"
+          },
+          "FRONT_ACCESSORY": {
+            "type": "string"
+          },
+          "REAR_ACCESSORY": {
+            "type": "string"
+          },
+          "BODY_PACKAGE": {
+            "type": "string"
+          },
+          "CARBON_COMPONENT": {
+            "type": "string"
+          },
+          "INTERIOR_MATERIAL": {
+            "type": "string"
+          },
+          "INTERIOR_LIGHTING": {
+            "type": "string"
+          },
+          "INTERIOR_SEATS": {
+            "type": "string"
+          },
+          "INTERIOR_DASHBOARD": {
+            "type": "string"
+          },
+          "INTERIOR_STEERING_WHEEL": {
+            "type": "string"
+          },
+          "INTERIOR_DOOR_PANELS": {
+            "type": "string"
+          },
+          "INTERIOR_FLOOR": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "PAINT",
+          "WHEELS",
+          "BRAKE_CALIPER",
+          "WINDOW_TINT",
+          "SPOILER",
+          "FRONT_ACCESSORY",
+          "REAR_ACCESSORY",
+          "BODY_PACKAGE",
+          "CARBON_COMPONENT",
+          "INTERIOR_MATERIAL",
+          "INTERIOR_LIGHTING",
+          "INTERIOR_SEATS",
+          "INTERIOR_DASHBOARD",
+          "INTERIOR_STEERING_WHEEL",
+          "INTERIOR_DOOR_PANELS",
+          "INTERIOR_FLOOR"
+        ],
+        "additionalProperties": false
+      },
+      "multiSelections": {
+        "type": "object",
+        "properties": {
+          "ACCESSORY": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "PACKAGE": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "ACCESSORY",
+          "PACKAGE"
+        ],
+        "additionalProperties": false
+      },
+      "customPaintHex": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "breakdown": {
+        "$ref": "#/components/schemas/PriceBreakdownDto"
+      },
+      "createdAt": {
+        "type": "string"
+      },
+      "ownerId": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "required": [
+      "publicId",
+      "vehicleSlug",
+      "singleSelections",
+      "multiSelections",
+      "customPaintHex",
+      "breakdown",
+      "createdAt",
+      "ownerId"
+    ],
+    "additionalProperties": false
+  },
+  "SignupRequest": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "email": {
+        "type": "string"
+      },
+      "password": {
+        "type": "string"
+      },
+      "acceptedTerms": {
+        "type": "boolean",
+        "const": true
+      }
+    },
+    "required": [
+      "name",
+      "email",
+      "password",
+      "acceptedTerms"
+    ],
+    "additionalProperties": false
+  },
+  "SingleSelectCategory": {
+    "type": "string",
+    "enum": [
+      "PAINT",
+      "WHEELS",
+      "BRAKE_CALIPER",
+      "WINDOW_TINT",
+      "SPOILER",
+      "FRONT_ACCESSORY",
+      "REAR_ACCESSORY",
+      "BODY_PACKAGE",
+      "CARBON_COMPONENT",
+      "INTERIOR_MATERIAL",
+      "INTERIOR_LIGHTING",
+      "INTERIOR_SEATS",
+      "INTERIOR_DASHBOARD",
+      "INTERIOR_STEERING_WHEEL",
+      "INTERIOR_DOOR_PANELS",
+      "INTERIOR_FLOOR"
+    ]
+  },
+  "UpdateLeadStatusRequest": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string",
+        "enum": [
+          "CONTACTED",
+          "CLOSED"
+        ]
+      }
+    },
+    "required": [
+      "status"
+    ],
+    "additionalProperties": false
+  },
+  "UpdateOptionRequest": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "priceDeltaCents": {
+        "type": "number"
+      },
+      "assetRef": {
+        "type": "string"
+      },
+      "swatchColor": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "applyMode": {
+        "$ref": "#/components/schemas/ApplyMode"
+      },
+      "isDefault": {
+        "type": "boolean"
+      },
+      "sortOrder": {
+        "type": "number"
+      },
+      "isActive": {
+        "type": "boolean"
+      }
+    },
+    "additionalProperties": false
+  },
+  "UpdateProfileRequest": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "name"
+    ],
+    "additionalProperties": false
+  },
+  "UpdateVehicleRequest": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "tagline": {
+        "type": "string"
+      },
+      "basePriceCents": {
+        "type": "number"
+      },
+      "currency": {
+        "type": "string"
+      },
+      "horsepower": {
+        "type": "number"
+      },
+      "topSpeedKph": {
+        "type": "number"
+      },
+      "zeroToHundredSec": {
+        "type": "number"
+      },
+      "heroModelUrl": {
+        "type": "string"
+      },
+      "showroomModelUrl": {
+        "type": "string"
+      },
+      "thumbnailUrl": {
+        "type": "string"
+      },
+      "fallbackImageUrl": {
+        "type": "string"
+      },
+      "isActive": {
+        "type": "boolean"
+      }
+    },
+    "additionalProperties": false
+  },
+  "UserDataExportDto": {
+    "type": "object",
+    "properties": {
+      "exportedAt": {
+        "type": "string"
+      },
+      "user": {
+        "$ref": "#/components/schemas/UserDto"
+      },
+      "configurations": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/SavedConfigurationDto"
+        }
+      },
+      "leads": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/LeadDto"
+        }
+      },
+      "reservations": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ReservationDto"
+        }
+      }
+    },
+    "required": [
+      "exportedAt",
+      "user",
+      "configurations",
+      "leads",
+      "reservations"
+    ],
+    "additionalProperties": false
+  },
+  "UserDto": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "email": {
+        "type": "string"
+      },
+      "role": {
+        "$ref": "#/components/schemas/UserRole"
+      },
+      "createdAt": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "email",
+      "role",
+      "createdAt"
+    ],
+    "additionalProperties": false
+  },
+  "UserRole": {
+    "type": "string",
+    "enum": [
+      "USER",
+      "ADMIN"
+    ]
+  },
+  "VehicleAdminDto": {
+    "type": "object",
+    "properties": {
+      "slug": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "tagline": {
+        "type": "string"
+      },
+      "basePriceCents": {
+        "type": "number"
+      },
+      "currency": {
+        "type": "string"
+      },
+      "horsepower": {
+        "type": "number"
+      },
+      "topSpeedKph": {
+        "type": "number"
+      },
+      "zeroToHundredSec": {
+        "type": "number"
+      },
+      "thumbnailUrl": {
+        "type": "string"
+      },
+      "fallbackImageUrl": {
+        "type": "string"
+      },
+      "heroModelUrl": {
+        "type": "string"
+      },
+      "showroomModelUrl": {
+        "type": "string"
+      },
+      "id": {
+        "type": "string"
+      },
+      "isActive": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "basePriceCents",
+      "currency",
+      "fallbackImageUrl",
+      "heroModelUrl",
+      "horsepower",
+      "id",
+      "isActive",
+      "name",
+      "showroomModelUrl",
+      "slug",
+      "tagline",
+      "thumbnailUrl",
+      "topSpeedKph",
+      "zeroToHundredSec"
+    ],
+    "additionalProperties": false
+  },
+  "VehicleDetailDto": {
+    "type": "object",
+    "properties": {
+      "slug": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "tagline": {
+        "type": "string"
+      },
+      "basePriceCents": {
+        "type": "number"
+      },
+      "currency": {
+        "type": "string"
+      },
+      "horsepower": {
+        "type": "number"
+      },
+      "topSpeedKph": {
+        "type": "number"
+      },
+      "zeroToHundredSec": {
+        "type": "number"
+      },
+      "thumbnailUrl": {
+        "type": "string"
+      },
+      "fallbackImageUrl": {
+        "type": "string"
+      },
+      "heroModelUrl": {
+        "type": "string"
+      },
+      "showroomModelUrl": {
+        "type": "string"
+      },
+      "options": {
+        "type": "object",
+        "properties": {
+          "PAINT": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomizationOptionDto"
+            }
+          },
+          "WHEELS": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomizationOptionDto"
+            }
+          },
+          "BRAKE_CALIPER": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomizationOptionDto"
+            }
+          },
+          "WINDOW_TINT": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomizationOptionDto"
+            }
+          },
+          "SPOILER": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomizationOptionDto"
+            }
+          },
+          "FRONT_ACCESSORY": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomizationOptionDto"
+            }
+          },
+          "REAR_ACCESSORY": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomizationOptionDto"
+            }
+          },
+          "BODY_PACKAGE": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomizationOptionDto"
+            }
+          },
+          "CARBON_COMPONENT": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomizationOptionDto"
+            }
+          },
+          "INTERIOR_MATERIAL": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomizationOptionDto"
+            }
+          },
+          "INTERIOR_LIGHTING": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomizationOptionDto"
+            }
+          },
+          "INTERIOR_SEATS": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomizationOptionDto"
+            }
+          },
+          "INTERIOR_DASHBOARD": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomizationOptionDto"
+            }
+          },
+          "INTERIOR_STEERING_WHEEL": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomizationOptionDto"
+            }
+          },
+          "INTERIOR_DOOR_PANELS": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomizationOptionDto"
+            }
+          },
+          "INTERIOR_FLOOR": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomizationOptionDto"
+            }
+          },
+          "ACCESSORY": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomizationOptionDto"
+            }
+          },
+          "PACKAGE": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomizationOptionDto"
+            }
+          }
+        },
+        "required": [
+          "PAINT",
+          "WHEELS",
+          "BRAKE_CALIPER",
+          "WINDOW_TINT",
+          "SPOILER",
+          "FRONT_ACCESSORY",
+          "REAR_ACCESSORY",
+          "BODY_PACKAGE",
+          "CARBON_COMPONENT",
+          "INTERIOR_MATERIAL",
+          "INTERIOR_LIGHTING",
+          "INTERIOR_SEATS",
+          "INTERIOR_DASHBOARD",
+          "INTERIOR_STEERING_WHEEL",
+          "INTERIOR_DOOR_PANELS",
+          "INTERIOR_FLOOR",
+          "ACCESSORY",
+          "PACKAGE"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "basePriceCents",
+      "currency",
+      "fallbackImageUrl",
+      "heroModelUrl",
+      "horsepower",
+      "name",
+      "options",
+      "showroomModelUrl",
+      "slug",
+      "tagline",
+      "thumbnailUrl",
+      "topSpeedKph",
+      "zeroToHundredSec"
+    ],
+    "additionalProperties": false
+  },
+  "VehicleSummaryDto": {
+    "type": "object",
+    "properties": {
+      "slug": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "tagline": {
+        "type": "string"
+      },
+      "basePriceCents": {
+        "type": "number"
+      },
+      "currency": {
+        "type": "string"
+      },
+      "horsepower": {
+        "type": "number"
+      },
+      "topSpeedKph": {
+        "type": "number"
+      },
+      "zeroToHundredSec": {
+        "type": "number"
+      },
+      "thumbnailUrl": {
+        "type": "string"
+      },
+      "fallbackImageUrl": {
+        "type": "string"
+      },
+      "heroModelUrl": {
+        "type": "string"
+      },
+      "showroomModelUrl": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "slug",
+      "name",
+      "tagline",
+      "basePriceCents",
+      "currency",
+      "horsepower",
+      "topSpeedKph",
+      "zeroToHundredSec",
+      "thumbnailUrl",
+      "fallbackImageUrl",
+      "heroModelUrl",
+      "showroomModelUrl"
+    ],
+    "additionalProperties": false
+  }
+}

@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+import { formatNumber } from "@/lib/format/number";
 import type { VehicleSummaryDto } from "@/types/catalog";
 
 export interface Static3DFallbackProps {
@@ -10,6 +12,7 @@ export interface Static3DFallbackProps {
  * actually asks for: the vehicle's own fallbackImageUrl plus its name and spec sheet, not
  * just a generic "3D preview unavailable" label. */
 export function Static3DFallback({ vehicle }: Static3DFallbackProps) {
+  const t = useTranslations();
   return (
     <div
       className="glass-panel flex h-full w-full flex-col items-center justify-center gap-4 rounded-2xl p-6 text-center"
@@ -28,23 +31,23 @@ export function Static3DFallback({ vehicle }: Static3DFallbackProps) {
         <img src={vehicle.fallbackImageUrl} alt="" className="max-h-40 w-auto object-contain" />
       )}
       <div>
-        <p className="text-xs uppercase tracking-[0.3em] text-white/50">3D preview unavailable</p>
+        <p className="text-xs uppercase tracking-[0.3em] text-white/50">{t("shell.previewUnavailable")}</p>
         <h2 className="text-xl font-bold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
           {vehicle.name}
         </h2>
       </div>
       <dl className="flex gap-6 text-xs text-white/70">
         <div>
-          <dt className="uppercase tracking-wide text-white/40">Horsepower</dt>
-          <dd className="font-semibold text-white">{vehicle.horsepower} hp</dd>
+          <dt className="uppercase tracking-wide text-white/40">{t("specs.horsepower")}</dt>
+          <dd className="font-semibold text-white">{t("specs.hpValue", { value: formatNumber(vehicle.horsepower) })}</dd>
         </div>
         <div>
-          <dt className="uppercase tracking-wide text-white/40">Top Speed</dt>
-          <dd className="font-semibold text-white">{vehicle.topSpeedKph} km/h</dd>
+          <dt className="uppercase tracking-wide text-white/40">{t("specs.topSpeed")}</dt>
+          <dd className="font-semibold text-white">{t("specs.kphValue", { value: formatNumber(vehicle.topSpeedKph) })}</dd>
         </div>
         <div>
-          <dt className="uppercase tracking-wide text-white/40">0–100</dt>
-          <dd className="font-semibold text-white">{vehicle.zeroToHundredSec}s</dd>
+          <dt className="uppercase tracking-wide text-white/40">{t("specs.zeroToHundred")}</dt>
+          <dd className="font-semibold text-white">{t("specs.secondsValue", { value: formatNumber(vehicle.zeroToHundredSec) })}</dd>
         </div>
       </dl>
     </div>

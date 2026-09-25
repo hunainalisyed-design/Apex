@@ -58,7 +58,7 @@ All 19 specs below are written (Draft) and awaiting review/approval as a batch.
 | 23 | `23-seo-og-analytics.md` | §34.3 | Implemented |
 | 24 | `24-cookie-consent-gdpr.md` | §34.4 | Implemented |
 | 25 | `25-asset-versioning-cdn.md` | §34.5 | Implemented |
-| 26 | `26-i18n-api-docs.md` | §34.6 | Draft |
+| 26 | `26-i18n-api-docs.md` | §34.6 | Implemented |
 | 27 | `27-ar-view-in-driveway.md` | §35.1 | Draft |
 | 28 | `28-dynamic-environments.md` | §35.1 | Draft |
 | 29 | `29-sound-design.md` | §35.1 | Draft |

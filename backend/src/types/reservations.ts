@@ -11,3 +11,8 @@ export interface ReservationDto {
   status: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
   createdAt: string;
 }
+
+/** POST /reservations/checkout-session response — the Stripe-hosted checkout page to redirect to. */
+export interface CheckoutSessionDto {
+  checkoutUrl: string;
+}

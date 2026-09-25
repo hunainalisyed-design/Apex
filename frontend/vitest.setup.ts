@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
 // jsdom doesn't implement matchMedia. Every component using useReducedMotion needs this,
@@ -39,3 +40,17 @@ if (typeof HTMLCanvasElement !== "undefined") {
 if (typeof Element !== "undefined" && !Element.prototype.scrollTo) {
   Element.prototype.scrollTo = () => {};
 }
+
+// Every component that shows text reads it through next-intl (Spec 26), which needs the
+// provider the root layout supplies in the app. Making it RTL's default `wrapper` gives every
+// component test the same real provider + real English messages, with no per-test setup; a
+// test can still pass its own `wrapper` to override.
+vi.mock("@testing-library/react", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@testing-library/react")>();
+  const { IntlWrapper } = await import("./tests/utils/intl");
+  return {
+    ...actual,
+    render: ((ui: Parameters<typeof actual.render>[0], options?: Parameters<typeof actual.render>[1]) =>
+      actual.render(ui, { wrapper: IntlWrapper, ...options })) as typeof actual.render,
+  };
+});

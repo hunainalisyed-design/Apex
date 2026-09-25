@@ -1,33 +1,21 @@
-const ERROR_MESSAGES: Record<string, string> = {
-  VEHICLE_NOT_FOUND: "Unable to load vehicle. Please try again.",
-  VALIDATION_ERROR: "Something about this build isn't valid. Please try again.",
-  OPTION_VEHICLE_MISMATCH: "One of your selections doesn't belong to this vehicle. Please refresh and try again.",
-  DUPLICATE_OPTION_SELECTION: "A selection was submitted more than once. Please refresh and try again.",
-  CONFIGURATION_NOT_FOUND: "This build could not be found.",
-  RATE_LIMITED: "Too many requests. Please wait a moment and try again.",
-  AI_PROVIDER_ERROR: "CarAI is temporarily unavailable. You can continue configuring manually.",
-  AI_ASSISTANT_DISABLED: "CarAI is temporarily unavailable. You can continue configuring manually.",
-  EMAIL_ALREADY_REGISTERED: "An account with this email already exists.",
-  INVALID_CREDENTIALS: "Incorrect email or password.",
-  TOO_MANY_ATTEMPTS: "Too many attempts. Please wait a moment and try again.",
-  INVALID_OR_EXPIRED_TOKEN: "This reset link is invalid or has expired. Please request a new one.",
-  ALREADY_CLAIMED: "This build has already been claimed by another account.",
-  UNAUTHENTICATED: "Please sign in to continue.",
-  CONFIGURATION_IN_USE: "This build has an active request or reservation attached and can't be deleted.",
-  RESERVATIONS_DISABLED: "Reservations are temporarily unavailable. Please try again later.",
-  PAYMENT_PROVIDER_ERROR: "We couldn't start checkout. Please try again in a moment.",
-  OPTION_NOT_FOUND: "This option could not be found. Please refresh and try again.",
-  LEAD_NOT_FOUND: "This lead could not be found. Please refresh and try again.",
-};
+import { translate } from "@/i18n/translator";
+import messages from "../../../messages/en-US.json";
 
-const FALLBACK_MESSAGE = "Something went wrong. Please try again.";
+type ErrorMessageKey = Exclude<keyof typeof messages.errors, "fallback">;
+
+function isKnownErrorCode(code: string): code is ErrorMessageKey {
+  return code !== "fallback" && Object.hasOwn(messages.errors, code);
+}
 
 /**
  * Maps a backend ApiError `code` to a human-readable message (Spec 12, AC-4) — the raw
  * `code` or backend `message` string is never shown to the user. Any code without an
  * explicit mapping (including a missing/undefined code) falls back to a generic message.
+ * The messages live under `errors` in messages/<locale>.json (Spec 26, AC-2); this runs
+ * outside React (Zustand stores call it), hence the shared `translate` rather than a hook.
+ * English is the key catalog — every locale file carries the same `errors` keys.
  */
 export function getErrorMessage(code: string | undefined | null): string {
-  if (!code) return FALLBACK_MESSAGE;
-  return ERROR_MESSAGES[code] ?? FALLBACK_MESSAGE;
+  if (code && isKnownErrorCode(code)) return translate(`errors.${code}`);
+  return translate("errors.fallback");
 }

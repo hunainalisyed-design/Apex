@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { getVehicles } from "@/lib/api/vehicles";
 import { formatPriceCents } from "@/lib/format/currency";
+import { formatNumber } from "@/lib/format/number";
 import { VehicleModelPreview } from "@/components/models/VehicleModelPreview";
 import { getRealGlbVehicleConfig, SHOWCASE_TARGET_LENGTH_RATIO } from "@/lib/showroom/realGlbVehicles";
 
@@ -15,6 +17,7 @@ export const metadata: Metadata = {
 
 export default async function ModelsPage() {
   const vehicles = await getVehicles();
+  const t = await getTranslations("specs");
 
   return (
     <main id="main-content" tabIndex={-1} className="flex min-h-full flex-1 flex-col items-center gap-10 px-6 py-16">
@@ -59,20 +62,20 @@ export default async function ModelsPage() {
                 <p className="text-sm text-white/60">{vehicle.tagline}</p>
                 <dl className="mt-1 flex gap-4 text-xs text-white/50">
                   <div>
-                    <dt className="inline uppercase tracking-wide">HP </dt>
-                    <dd className="inline text-white/70">{vehicle.horsepower}</dd>
+                    <dt className="inline uppercase tracking-wide">{t("hpShort")} </dt>
+                    <dd className="inline text-white/70">{formatNumber(vehicle.horsepower)}</dd>
                   </div>
                   <div>
-                    <dt className="inline uppercase tracking-wide">Top </dt>
-                    <dd className="inline text-white/70">{vehicle.topSpeedKph} km/h</dd>
+                    <dt className="inline uppercase tracking-wide">{t("topShort")} </dt>
+                    <dd className="inline text-white/70">{t("kphValue", { value: formatNumber(vehicle.topSpeedKph) })}</dd>
                   </div>
                   <div>
-                    <dt className="inline uppercase tracking-wide">0–100 </dt>
-                    <dd className="inline text-white/70">{vehicle.zeroToHundredSec}s</dd>
+                    <dt className="inline uppercase tracking-wide">{t("zeroToHundred")} </dt>
+                    <dd className="inline text-white/70">{t("secondsValue", { value: formatNumber(vehicle.zeroToHundredSec) })}</dd>
                   </div>
                 </dl>
                 <p className="mt-2 text-sm font-semibold text-white/80">
-                  From {formatPriceCents(vehicle.basePriceCents, vehicle.currency)}
+                  {t("fromPrice", { price: formatPriceCents(vehicle.basePriceCents, vehicle.currency) })}
                 </p>
               </div>
             </Link>

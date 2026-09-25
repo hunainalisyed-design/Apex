@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useConsentStore } from "@/state/consentStore";
 
 /**
@@ -22,6 +23,7 @@ import { useConsentStore } from "@/state/consentStore";
  * construction, not by careful z-index/position tuning.
  */
 export function CookieConsentBanner() {
+  const t = useTranslations("consent");
   const hydrated = useConsentStore((s) => s.hydrated);
   const choice = useConsentStore((s) => s.choice);
   const hydrate = useConsentStore((s) => s.hydrate);
@@ -37,16 +39,17 @@ export function CookieConsentBanner() {
   return (
     <div
       role="region"
-      aria-label="Cookie consent"
+      aria-label={t("label")}
       className="flex flex-col items-center gap-3 border-b border-white/10 bg-black/60 px-6 py-3 text-center sm:flex-row sm:justify-between sm:text-left"
     >
       <p className="text-sm text-white/80">
-        We use a strictly-necessary session cookie to keep you signed in, and — only with your
-        consent — analytics to understand how the configurator is used.{" "}
-        <Link href="/privacy-policy" className="underline underline-offset-2 hover:text-white">
-          See details
-        </Link>
-        .
+        {t.rich("message", {
+          link: (chunks) => (
+            <Link href="/privacy-policy" className="underline underline-offset-2 hover:text-white">
+              {chunks}
+            </Link>
+          ),
+        })}
       </p>
       <div className="flex shrink-0 gap-2">
         <button
@@ -54,14 +57,14 @@ export function CookieConsentBanner() {
           onClick={reject}
           className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white/80 transition hover:border-white/50 hover:text-white focus-ring"
         >
-          Reject
+          {t("reject")}
         </button>
         <button
           type="button"
           onClick={accept}
           className="rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wide text-black transition hover:bg-white/90 focus-ring"
         >
-          Accept
+          {t("accept")}
         </button>
       </div>
     </div>

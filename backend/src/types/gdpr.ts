@@ -13,3 +13,8 @@ export interface UserDataExportDto {
   leads: LeadDto[];
   reservations: ReservationDto[];
 }
+
+/** Body of DELETE /me (Spec 24, AC-6) — the account's own email, typed back as confirmation. */
+export interface DeleteAccountRequest {
+  confirmEmail: string;
+}

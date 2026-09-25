@@ -1,0 +1,141 @@
+{
+  "errors": {
+    "VEHICLE_NOT_FOUND": "Unable to load vehicle. Please try again.",
+    "VALIDATION_ERROR": "Something about this build isn't valid. Please try again.",
+    "OPTION_VEHICLE_MISMATCH": "One of your selections doesn't belong to this vehicle. Please refresh and try again.",
+    "DUPLICATE_OPTION_SELECTION": "A selection was submitted more than once. Please refresh and try again.",
+    "CONFIGURATION_NOT_FOUND": "This build could not be found.",
+    "RATE_LIMITED": "Too many requests. Please wait a moment and try again.",
+    "AI_PROVIDER_ERROR": "CarAI is temporarily unavailable. You can continue configuring manually.",
+    "AI_ASSISTANT_DISABLED": "CarAI is temporarily unavailable. You can continue configuring manually.",
+    "EMAIL_ALREADY_REGISTERED": "An account with this email already exists.",
+    "INVALID_CREDENTIALS": "Incorrect email or password.",
+    "TOO_MANY_ATTEMPTS": "Too many attempts. Please wait a moment and try again.",
+    "INVALID_OR_EXPIRED_TOKEN": "This reset link is invalid or has expired. Please request a new one.",
+    "ALREADY_CLAIMED": "This build has already been claimed by another account.",
+    "UNAUTHENTICATED": "Please sign in to continue.",
+    "CONFIGURATION_IN_USE": "This build has an active request or reservation attached and can't be deleted.",
+    "RESERVATIONS_DISABLED": "Reservations are temporarily unavailable. Please try again later.",
+    "PAYMENT_PROVIDER_ERROR": "We couldn't start checkout. Please try again in a moment.",
+    "OPTION_NOT_FOUND": "This option could not be found. Please refresh and try again.",
+    "LEAD_NOT_FOUND": "This lead could not be found. Please refresh and try again.",
+    "fallback": "Something went wrong. Please try again."
+  },
+  "nav": {
+    "label": "Primary",
+    "brand": "Apex",
+    "search": "Search",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "siteMenu": "Site menu",
+    "links": {
+      "home": "Home",
+      "models": "Models",
+      "configurator": "Configurator",
+      "about": "About",
+      "compare": "Compare"
+    },
+    "account": {
+      "admin": "Admin",
+      "logOut": "Log Out",
+      "logIn": "Log In",
+      "signUp": "Sign Up"
+    }
+  },
+  "footer": {
+    "copyright": "© {year} APEX. All rights reserved.",
+    "privacyPolicy": "Privacy Policy"
+  },
+  "shell": {
+    "skipToContent": "Skip to main content",
+    "loadingShowroom": "Initializing Showroom…",
+    "eyebrow": "Apex Showroom",
+    "appError": {
+      "title": "Something went wrong.",
+      "body": "An unexpected error occurred. Reloading the page usually fixes this.",
+      "reload": "Reload Page"
+    },
+    "previewUnavailable": "3D preview unavailable",
+    "vehicleNotFound": {
+      "title": "This vehicle isn't in our lineup.",
+      "backToModels": "Back to Models"
+    },
+    "pageNotFound": {
+      "eyebrow": "Apex",
+      "title": "Page not found.",
+      "backToHome": "Back to Home"
+    }
+  },
+  "specs": {
+    "horsepower": "Horsepower",
+    "power": "Power",
+    "topSpeed": "Top Speed",
+    "zeroToHundred": "0–100",
+    "zeroToHundredKph": "0–100 km/h",
+    "startingPrice": "Starting Price",
+    "hpShort": "HP",
+    "topShort": "Top",
+    "hpValue": "{value} hp",
+    "kphValue": "{value} km/h",
+    "secondsValue": "{value}s",
+    "comparing": "Comparing {left} and {right}",
+    "spec": "Spec",
+    "fromPrice": "From {price}",
+    "unitSeconds": "s",
+    "unitKph": "km/h",
+    "performanceLabel": "{name} performance"
+  },
+  "consent": {
+    "label": "Cookie consent",
+    "message": "We use a strictly-necessary session cookie to keep you signed in, and — only with your consent — analytics to understand how the configurator is used. <link>See details</link>.",
+    "reject": "Reject",
+    "accept": "Accept"
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "emailRequired": "Email is required.",
+    "passwordRequired": "Password is required.",
+    "nameRequired": "Name is required.",
+    "invalidEmail": "Enter a valid email address.",
+    "backToLogIn": "Back to log in",
+    "logInLink": "Log in",
+    "login": {
+      "title": "Log in",
+      "subtitle": "Welcome back.",
+      "submit": "Log In",
+      "submitting": "Logging in…",
+      "forgotPassword": "Forgot your password?",
+      "needAccount": "Need an account? <link>Sign up</link>"
+    },
+    "signup": {
+      "title": "Create your account",
+      "subtitle": "Save builds and pick up where you left off.",
+      "acceptTerms": "I accept the terms of service.",
+      "termsRequired": "You must accept the terms to sign up.",
+      "submit": "Sign Up",
+      "submitting": "Creating account…",
+      "haveAccount": "Already have an account? <link>Log in</link>"
+    },
+    "forgot": {
+      "title": "Reset your password",
+      "subtitle": "Enter your email and we'll send you a reset link.",
+      "submit": "Send reset link",
+      "submitting": "Sending…",
+      "sentTitle": "Check your email",
+      "sentBody": "If an account exists for that email, we've sent a link to reset your password."
+    },
+    "reset": {
+      "title": "Choose a new password",
+      "newPassword": "New password",
+      "submit": "Update password",
+      "submitting": "Updating…",
+      "invalidTitle": "Invalid reset link",
+      "invalidBody": "This link is missing its token. Request a new one.",
+      "requestNew": "Request a new link",
+      "successTitle": "Password updated",
+      "successBody": "Please log in again with your new password."
+    }
+  }
+}

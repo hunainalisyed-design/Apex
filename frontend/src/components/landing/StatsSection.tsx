@@ -1,7 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { formatNumber } from "@/lib/format/number";
 import { withReducedMotion } from "@/lib/motion/withReducedMotion";
 import type { VehicleSummaryDto } from "@/types/catalog";
 
@@ -21,17 +23,18 @@ interface Stat {
  * convention Static3DFallback.tsx already displays for these same fields.
  */
 export function StatsSection({ vehicle }: StatsSectionProps) {
+  const t = useTranslations("specs");
   const reducedMotion = useReducedMotion();
 
   const stats: Stat[] = [
-    { value: vehicle.zeroToHundredSec.toFixed(1), unit: "s", label: "0–100 km/h" },
-    { value: String(vehicle.horsepower), unit: "", label: "Horsepower" },
-    { value: String(vehicle.topSpeedKph), unit: "km/h", label: "Top Speed" },
+    { value: formatNumber(vehicle.zeroToHundredSec, { fractionDigits: 1 }), unit: t("unitSeconds"), label: t("zeroToHundredKph") },
+    { value: formatNumber(vehicle.horsepower), unit: "", label: t("horsepower") },
+    { value: formatNumber(vehicle.topSpeedKph), unit: t("unitKph"), label: t("topSpeed") },
   ];
 
   return (
     <section
-      aria-label={`${vehicle.name} performance`}
+      aria-label={t("performanceLabel", { name: vehicle.name })}
       className="relative overflow-hidden px-6 py-24 lg:px-16"
     >
       <div

@@ -9,7 +9,7 @@ import { createCheckoutSession } from "../services/reservations/createCheckoutSe
 import { getReservationById } from "../services/reservations/getReservation.js";
 import { handleCheckoutSessionCompleted, handleCheckoutSessionFailed } from "../services/reservations/webhook.js";
 import type { ApiResponse } from "../types/api.js";
-import type { CreateCheckoutSessionRequest, ReservationDto } from "../types/reservations.js";
+import type { CheckoutSessionDto, CreateCheckoutSessionRequest, ReservationDto } from "../types/reservations.js";
 
 export const reservationsRouter = Router();
 
@@ -39,7 +39,7 @@ reservationsRouter.post("/reservations/checkout-session", reservationRateLimit, 
     return;
   }
 
-  const responseBody: ApiResponse<{ checkoutUrl: string }> = { data: { checkoutUrl: result.checkoutUrl } };
+  const responseBody: ApiResponse<CheckoutSessionDto> = { data: { checkoutUrl: result.checkoutUrl } };
   res.status(200).json(responseBody);
 });
 

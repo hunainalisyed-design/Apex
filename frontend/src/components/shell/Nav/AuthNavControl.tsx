@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/state/authStore";
 
 const LINK_CLASS =
@@ -16,6 +17,7 @@ const LINK_CLASS =
  * reserved Compare's nav slot ahead of its own spec.
  */
 export function AuthNavControl() {
+  const t = useTranslations("nav.account");
   const user = useAuthStore((s) => s.user);
   const hydrated = useAuthStore((s) => s.hydrated);
   const logout = useAuthStore((s) => s.logout);
@@ -27,14 +29,14 @@ export function AuthNavControl() {
       <div className="flex items-center gap-1">
         {user.role === "ADMIN" && (
           <Link href="/admin" className={LINK_CLASS}>
-            Admin
+            {t("admin")}
           </Link>
         )}
         <Link href="/garage" className={LINK_CLASS}>
           {user.name}
         </Link>
         <button type="button" onClick={() => logout()} className={LINK_CLASS}>
-          Log Out
+          {t("logOut")}
         </button>
       </div>
     );
@@ -43,10 +45,10 @@ export function AuthNavControl() {
   return (
     <div className="flex items-center gap-1">
       <Link href="/login" className={LINK_CLASS}>
-        Log In
+        {t("logIn")}
       </Link>
       <Link href="/signup" className={LINK_CLASS}>
-        Sign Up
+        {t("signUp")}
       </Link>
     </div>
   );

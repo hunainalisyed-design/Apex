@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { FormField } from "@/components/auth/FormField";
@@ -14,6 +15,7 @@ import { useAuthStore } from "@/state/authStore";
  * useSearchParams() call suspends up to the nearest ancestor boundary regardless of how
  * many component layers sit in between. */
 export default function ResetPasswordPage() {
+  const t = useTranslations("auth");
   const token = useSearchParams().get("token");
   const resetPassword = useAuthStore((s) => s.resetPassword);
   const isLoading = useAuthStore((s) => s.isLoading);
@@ -30,10 +32,10 @@ export default function ResetPasswordPage() {
   if (!token) {
     return (
       <div className="flex flex-col gap-4 text-center">
-        <h1 className="text-xl font-bold tracking-tight text-white">Invalid reset link</h1>
-        <p className="text-sm text-white/60">This link is missing its token. Request a new one.</p>
+        <h1 className="text-xl font-bold tracking-tight text-white">{t("reset.invalidTitle")}</h1>
+        <p className="text-sm text-white/60">{t("reset.invalidBody")}</p>
         <Link href="/forgot-password" className="focus-ring rounded text-sm text-white underline">
-          Request a new link
+          {t("reset.requestNew")}
         </Link>
       </div>
     );
@@ -42,10 +44,10 @@ export default function ResetPasswordPage() {
   if (succeeded) {
     return (
       <div className="flex flex-col gap-4 text-center">
-        <h1 className="text-xl font-bold tracking-tight text-white">Password updated</h1>
-        <p className="text-sm text-white/60">Please log in again with your new password.</p>
+        <h1 className="text-xl font-bold tracking-tight text-white">{t("reset.successTitle")}</h1>
+        <p className="text-sm text-white/60">{t("reset.successBody")}</p>
         <Link href="/login" className="focus-ring rounded text-sm text-white underline">
-          Log in
+          {t("logInLink")}
         </Link>
       </div>
     );
@@ -66,7 +68,7 @@ export default function ResetPasswordPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1 text-center">
-        <h1 className="text-xl font-bold tracking-tight text-white">Choose a new password</h1>
+        <h1 className="text-xl font-bold tracking-tight text-white">{t("reset.title")}</h1>
       </div>
 
       {bannerMessage && (
@@ -78,7 +80,7 @@ export default function ResetPasswordPage() {
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <FormField
-            label="New password"
+            label={t("reset.newPassword")}
             type="password"
             name="newPassword"
             autoComplete="new-password"
@@ -94,7 +96,7 @@ export default function ResetPasswordPage() {
           disabled={isLoading}
           className="focus-ring rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wide text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isLoading ? "Updating…" : "Update password"}
+          {isLoading ? t("reset.submitting") : t("reset.submit")}
         </button>
       </form>
     </div>

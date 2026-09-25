@@ -2,6 +2,7 @@
 
 import { Component, type ReactNode } from "react";
 import * as Sentry from "@sentry/nextjs";
+import { useTranslations } from "next-intl";
 
 interface AppErrorBoundaryProps {
   children: ReactNode;
@@ -38,25 +39,30 @@ export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorB
 
   render() {
     if (this.state.hasError) {
-      return (
-        <main id="main-content" tabIndex={-1} className="flex min-h-full flex-1 flex-col items-center justify-center gap-4 px-6 py-24 text-center">
-          <div className="glass-panel flex max-w-xl flex-col items-center gap-4 rounded-2xl px-10 py-14">
-            <p className="text-xs uppercase tracking-[0.3em] text-white/50">Apex Showroom</p>
-            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Something went wrong.</h1>
-            <p className="text-sm text-white/60">
-              An unexpected error occurred. Reloading the page usually fixes this.
-            </p>
-            <button
-              type="button"
-              onClick={this.handleReload}
-              className="focus-ring rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90"
-            >
-              Reload Page
-            </button>
-          </div>
-        </main>
-      );
+      return <AppErrorFallback onReload={this.handleReload} />;
     }
     return this.props.children;
   }
+}
+
+/** The recovery screen itself — a function component so it can read translations
+ * (Spec 26); the class boundary above can't call hooks. */
+function AppErrorFallback({ onReload }: { onReload: () => void }) {
+  const t = useTranslations("shell");
+  return (
+    <main id="main-content" tabIndex={-1} className="flex min-h-full flex-1 flex-col items-center justify-center gap-4 px-6 py-24 text-center">
+      <div className="glass-panel flex max-w-xl flex-col items-center gap-4 rounded-2xl px-10 py-14">
+        <p className="text-xs uppercase tracking-[0.3em] text-white/50">{t("eyebrow")}</p>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{t("appError.title")}</h1>
+        <p className="text-sm text-white/60">{t("appError.body")}</p>
+        <button
+          type="button"
+          onClick={onReload}
+          className="focus-ring rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-white/90"
+        >
+          {t("appError.reload")}
+        </button>
+      </div>
+    </main>
+  );
 }

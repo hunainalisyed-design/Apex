@@ -1,4 +1,8 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
+
+// Spec 26, AC-2: finds src/i18n/request.ts by convention (no locale routing/middleware).
+const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
   // React 18/19 StrictMode's dev-only double-invoke of effects mounts every component
@@ -30,4 +34,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

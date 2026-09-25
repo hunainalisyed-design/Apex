@@ -6,9 +6,10 @@ import { changePassword, updateProfileName } from "../services/auth/user.js";
 import { getConfigurationsForUser } from "../services/configurations.js";
 import { deleteAccount, exportUserData } from "../services/gdpr.js";
 import type { ApiResponse } from "../types/api.js";
-import type { UserDto } from "../types/auth.js";
+import type { MessageResponseDto, UserDto } from "../types/auth.js";
 import type { SavedConfigurationDto } from "../types/configuration.js";
 import type { ChangePasswordRequest, UpdateProfileRequest } from "../types/garage.js";
+import type { DeleteAccountRequest } from "../types/gdpr.js";
 
 export const meRouter = Router();
 
@@ -54,7 +55,7 @@ meRouter.put("/me/password", requireAuth, async (req, res) => {
     return;
   }
 
-  const responseBody: ApiResponse<{ message: string }> = { data: { message: "Password updated." } };
+  const responseBody: ApiResponse<MessageResponseDto> = { data: { message: "Password updated." } };
   res.status(200).json(responseBody);
 });
 
@@ -68,7 +69,7 @@ meRouter.get("/me/export", requireAuth, async (req, res) => {
 });
 
 meRouter.delete("/me", requireAuth, async (req, res) => {
-  const body = req.body as { confirmEmail?: unknown } | undefined;
+  const body = req.body as Partial<Record<keyof DeleteAccountRequest, unknown>> | undefined;
 
   if (!body || typeof body.confirmEmail !== "string" || !body.confirmEmail.trim()) {
     sendApiError(res, 400, "VALIDATION_ERROR", "confirmEmail is required.", {
