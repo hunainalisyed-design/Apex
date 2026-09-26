@@ -61,10 +61,10 @@ test("admin creates a vehicle and edits an option's price, both reflected immedi
   await page.getByLabel("Horsepower").fill("450");
   await page.getByLabel("Top speed (km/h)").fill("280");
   await page.getByLabel("0-100 (s)").fill("4.0");
-  await page.getByLabel("Hero model URL").fill("/models/e2e-flow/hero.glb");
-  await page.getByLabel(/Showroom model URL/).fill("/models/e2e-flow/showroom.glb");
-  await page.getByLabel("Thumbnail URL").fill("/models/e2e-flow/thumb.jpg");
-  await page.getByLabel("Fallback image URL").fill("/models/e2e-flow/fallback.jpg");
+  await page.getByLabel("Hero model URL").fill("/assets/models/e2e-flow-hero.0a1b2c3d.glb");
+  await page.getByLabel(/Showroom model URL/).fill("/assets/models/e2e-flow-showroom.0a1b2c3d.glb");
+  await page.getByLabel("Thumbnail URL").fill("/assets/images/e2e-flow-thumb.0a1b2c3d.jpg");
+  await page.getByLabel("Fallback image URL").fill("/assets/images/e2e-flow-fallback.0a1b2c3d.jpg");
   await page.getByRole("button", { name: "Create vehicle" }).click();
 
   const vehicleRow = page.locator("tr", { hasText: name });
