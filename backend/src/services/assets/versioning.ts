@@ -10,8 +10,9 @@ import { createHash } from "node:crypto";
 
 export const HASH_LENGTH = 8;
 
-/** Extensions this policy governs: GLB/GLTF models and the catalog's image formats. */
-export const ASSET_EXTENSIONS = ["glb", "gltf", "jpg", "jpeg", "png", "webp", "avif"] as const;
+/** Extensions this policy governs: GLB/GLTF models, HDR environment maps (Spec 28) and the
+ * catalog's image formats. */
+export const ASSET_EXTENSIONS = ["glb", "gltf", "hdr", "jpg", "jpeg", "png", "webp", "avif"] as const;
 
 const EXTENSION_GROUP = ASSET_EXTENSIONS.join("|");
 const ASSET_EXTENSION_PATTERN = new RegExp(`\\.(?:${EXTENSION_GROUP})$`, "i");

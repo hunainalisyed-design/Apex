@@ -69,6 +69,7 @@ function makeConfiguration(overrides: Partial<SavedConfigurationDto> = {}): Save
     singleSelections: {} as SavedConfigurationDto["singleSelections"],
     multiSelections: { ACCESSORY: [], PACKAGE: [] },
     customPaintHex: null,
+    environmentId: null,
     breakdown: {
       vehicleSlug: "apex-gt",
       basePriceCents: 8_500_000,

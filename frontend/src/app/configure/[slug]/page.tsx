@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { ConfigureShowroom } from "@/components/showroom/ConfigureShowroom";
 import { fetchConfiguration } from "@/lib/api/configurations";
+import { getEnvironments } from "@/lib/api/environments";
 import { getVehicleDetail } from "@/lib/api/vehicles";
 import { formatPriceCents } from "@/lib/format/currency";
 import { SITE_URL } from "@/lib/seo/siteUrl";
@@ -65,7 +66,7 @@ export default async function ConfigurePage({ params, searchParams }: ConfigureP
     redirect(`/configure/${saved.vehicleSlug}?build=${buildId}`);
   }
 
-  const vehicle = await getVehicleDetail(canonicalSlug);
+  const [vehicle, environments] = await Promise.all([getVehicleDetail(canonicalSlug), getEnvironments()]);
 
   if (!vehicle) {
     notFound();
@@ -92,7 +93,7 @@ export default async function ConfigurePage({ params, searchParams }: ConfigureP
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <ConfigureShowroom vehicle={vehicle} savedConfiguration={saved ?? null} />
+      <ConfigureShowroom vehicle={vehicle} savedConfiguration={saved ?? null} environments={environments} />
     </>
   );
 }

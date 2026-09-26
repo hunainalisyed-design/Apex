@@ -123,21 +123,25 @@ model CustomizationOption {
 }
 
 model Configuration {
-  id              String   @id @default(cuid())
-  publicId        String   @unique // e.g. "APEX-7F82-K91X", generated in the save/share spec
+  id              String       @id @default(cuid())
+  publicId        String       @unique // e.g. "APEX-7F82-K91X", generated in the save/share spec
   vehicleId       String
-  vehicle         Vehicle  @relation(fields: [vehicleId], references: [id])
+  vehicle         Vehicle      @relation(fields: [vehicleId], references: [id])
   userId          String? // null = guest build
   // SetNull (not the Prisma default Restrict): a future account deletion (Phase 3 GDPR
   // erasure) must not fail just because the account owns a configuration — the shared
   // publicId link should keep resolving, reverting to a guest-owned-looking row, rather
   // than blocking the deletion (Spec 16 §4 gap, resolved here).
-  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user            User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
   totalPriceCents Int
   customPaintHex  String? // set only when the selected PAINT option is the reserved custom-color entry
+  // Spec 28: the scene the build was saved in. null = the default Studio. SetNull: removing an
+  // environment must never break a shared build link — it just reverts to Studio.
+  environmentId   String?
+  environment     Environment? @relation(fields: [environmentId], references: [id], onDelete: SetNull)
   expiresAt       DateTime? // null = never expires (reserved for future account-owned builds); guest builds get now+90d, refreshed on every load
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   selections   ConfigurationSelection[]
   leads        Lead[]
@@ -158,9 +162,9 @@ model ConfigurationSelection {
 
 /// The first spec to store real personal data (Spec 16 §4's own Retention & privacy note).
 model User {
-  id              String    @id @default(cuid())
+  id              String   @id @default(cuid())
   name            String
-  email           String    @unique
+  email           String   @unique
   passwordHash    String
   termsAcceptedAt DateTime
   /// "USER" | "ADMIN" (Spec 21) — a plain string, not an enum: the spec explicitly rules out
@@ -168,9 +172,9 @@ model User {
   /// super-admin"), so there's no near-term case list an enum would need to enumerate.
   /// There is deliberately no self-service path to ADMIN — see
   /// backend/scripts/promoteAdmin.ts.
-  role            String    @default("USER")
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  role            String   @default("USER")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   sessions            Session[]
   passwordResetTokens PasswordResetToken[]
@@ -282,4 +286,25 @@ model Reservation {
   @@index([configurationId])
   @@index([userId])
   @@index([status])
+}
+
+/// A scene preset the showroom can place any vehicle in (Spec 28) — global, not per-vehicle.
+/// Its HDRI provides both the backdrop and the image-based lighting, applied together.
+model Environment {
+  id             String          @id @default(cuid())
+  name           String
+  /// Full-resolution HDRI (desktop). Content-addressed per Spec 25.
+  hdriUrl        String
+  /// Lower-resolution variant for small screens (Spec 28 Risk #1); may equal hdriUrl.
+  hdriMobileUrl  String
+  thumbnailUrl   String
+  /// true = keep the studio gradient backdrop and reflective floor, using the HDRI only for
+  /// lighting/reflections; false = show the HDRI itself, projected onto the ground.
+  isStudio       Boolean         @default(false)
+  /// Ground projection (outdoor only): the HDRI camera's height above the ground and the
+  /// projected dome's radius, in scene units.
+  groundHeight   Float?
+  groundRadius   Float?
+  sortOrder      Int             @default(0)
+  configurations Configuration[]
 }

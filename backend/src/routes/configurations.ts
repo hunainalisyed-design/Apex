@@ -9,6 +9,7 @@ import {
   getConfigurationByPublicId,
 } from "../services/configurations.js";
 import { getVehicleWithOptions } from "../services/catalog.js";
+import { environmentExists } from "../services/environments.js";
 import { PricingError } from "../services/pricing.js";
 import type { ApiResponse } from "../types/api.js";
 import type { SaveConfigurationRequest, SavedConfigurationDto } from "../types/configuration.js";
@@ -31,6 +32,15 @@ configurationsRouter.post("/configurations", configurationRateLimit, optionalAut
     return;
   }
 
+  // Spec 28, AC-4: optional — omitted or null saves the default Studio.
+  const environmentId = body.environmentId ?? null;
+  if (environmentId !== null && (typeof environmentId !== "string" || !(await environmentExists(environmentId)))) {
+    sendApiError(res, 400, "VALIDATION_ERROR", "environmentId must be an existing environment or null.", {
+      environmentId: ["Unknown environment."],
+    });
+    return;
+  }
+
   const found = await getVehicleWithOptions(body.vehicleSlug);
   if (!found) {
     sendApiError(res, 404, "VEHICLE_NOT_FOUND", "No vehicle matches this slug.");
@@ -39,6 +49,7 @@ configurationsRouter.post("/configurations", configurationRateLimit, optionalAut
 
   try {
     const saved = await createConfiguration({
+      environmentId,
       vehicle: found.vehicle,
       options: found.options,
       singleSelections: body.singleSelections ?? ({} as never),

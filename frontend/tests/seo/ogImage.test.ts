@@ -71,6 +71,7 @@ function makeSaved(overrides: Partial<SavedConfigurationDto> = {}): SavedConfigu
     singleSelections: defaultSingleSelections(),
     multiSelections: emptyMulti(),
     customPaintHex: null,
+    environmentId: null,
     breakdown: {
       vehicleSlug: "apex-gt",
       basePriceCents: 8_500_000,

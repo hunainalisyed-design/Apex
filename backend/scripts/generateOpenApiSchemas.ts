@@ -22,6 +22,7 @@ const TYPE_FILES = [
   "auth",
   "catalog",
   "configuration",
+  "environments",
   "garage",
   "gdpr",
   "health",

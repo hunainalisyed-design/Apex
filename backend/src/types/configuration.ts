@@ -5,6 +5,8 @@ export interface SaveConfigurationRequest {
   singleSelections: Record<SingleSelectCategory, string>;
   multiSelections: Record<MultiSelectCategory, string[]>;
   customPaintHex: string | null;
+  /** Spec 28: the showroom environment to save with the build. Omitted/null = default Studio. */
+  environmentId?: string | null;
 }
 
 export interface SavedConfigurationDto {
@@ -13,6 +15,8 @@ export interface SavedConfigurationDto {
   singleSelections: Record<SingleSelectCategory, string>;
   multiSelections: Record<MultiSelectCategory, string[]>;
   customPaintHex: string | null;
+  /** Spec 28: null = the default Studio environment. */
+  environmentId: string | null;
   breakdown: PriceBreakdownDto; // computed via calculatePrice, never read verbatim from storage
   createdAt: string; // ISO 8601
   /** null = guest build, claimable (Spec 17 AC-7). Set = owned, never expires. */

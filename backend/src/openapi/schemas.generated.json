@@ -569,6 +569,52 @@
     ],
     "additionalProperties": false
   },
+  "EnvironmentDto": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "hdriUrl": {
+        "type": "string"
+      },
+      "hdriMobileUrl": {
+        "type": "string"
+      },
+      "thumbnailUrl": {
+        "type": "string"
+      },
+      "isStudio": {
+        "type": "boolean"
+      },
+      "groundHeight": {
+        "type": [
+          "number",
+          "null"
+        ]
+      },
+      "groundRadius": {
+        "type": [
+          "number",
+          "null"
+        ]
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "hdriUrl",
+      "hdriMobileUrl",
+      "thumbnailUrl",
+      "isStudio",
+      "groundHeight",
+      "groundRadius"
+    ],
+    "additionalProperties": false
+  },
   "ForgotPasswordRequest": {
     "type": "object",
     "properties": {
@@ -1130,6 +1176,12 @@
           "string",
           "null"
         ]
+      },
+      "environmentId": {
+        "type": [
+          "string",
+          "null"
+        ]
       }
     },
     "required": [
@@ -1249,6 +1301,12 @@
           "null"
         ]
       },
+      "environmentId": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
       "breakdown": {
         "$ref": "#/components/schemas/PriceBreakdownDto"
       },
@@ -1268,6 +1326,7 @@
       "singleSelections",
       "multiSelections",
       "customPaintHex",
+      "environmentId",
       "breakdown",
       "createdAt",
       "ownerId"

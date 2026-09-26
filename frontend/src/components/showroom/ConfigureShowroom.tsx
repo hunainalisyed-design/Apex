@@ -23,11 +23,14 @@ import { useCarAiChatStore } from "@/state/carAiChatStore";
 import { useConfigurationStore } from "@/state/configurationStore";
 import { SINGLE_SELECT_CATEGORIES, type OptionCategory, type VehicleDetailDto } from "@/types/catalog";
 import type { SavedConfigurationDto } from "@/types/configuration";
+import type { EnvironmentDto } from "@/types/environments";
 import type { SingleSelectCategory } from "@/types/pricing";
 import { Canvas3DErrorBoundary } from "@/components/shell/Canvas3DErrorBoundary";
 import { LoadingScreen } from "@/components/shell/LoadingScreen";
 import { ShowroomLayout } from "@/components/shell/ShowroomLayout";
 import { CameraPresetBar } from "./CameraPresetBar";
+import { EnvironmentSwitcher } from "./EnvironmentSwitcher/EnvironmentSwitcher";
+import { ENVIRONMENT_FADE_MS, useShowroomEnvironment } from "./useShowroomEnvironment";
 import { HotspotLabel } from "./HotspotLabel";
 import { LightingControls } from "./LightingControls";
 import type { HoverLabel, ShowroomControls } from "./ShowroomScene";
@@ -56,9 +59,12 @@ export interface ConfigureShowroomProps {
   /** A previously saved build to hydrate from instead of vehicle defaults (Spec 10, AC-4),
    * resolved server-side by the ?build= query param. */
   savedConfiguration?: SavedConfigurationDto | null;
+  /** The showroom's scene presets (Spec 28); empty when unavailable — the showroom then
+   * keeps its plain studio look and shows no switcher. */
+  environments?: EnvironmentDto[];
 }
 
-export function ConfigureShowroom({ vehicle, savedConfiguration = null }: ConfigureShowroomProps) {
+export function ConfigureShowroom({ vehicle, savedConfiguration = null, environments = [] }: ConfigureShowroomProps) {
   const reducedMotion = useReducedMotion();
   const [activeTab, setActiveTab] = useState<ConfiguratorTab>("exterior");
   const [currentPreset, setCurrentPreset] = useState<CameraPresetId>("default");
@@ -68,6 +74,7 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null }: Config
   const [sceneError, setSceneError] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
   const showroomControlsRef = useRef<ShowroomControls | null>(null);
+  const environment = useShowroomEnvironment(environments, showroomControlsRef, reducedMotion);
 
   const singleSelections = useConfigurationStore((s) => s.singleSelections);
   const multiSelections = useConfigurationStore((s) => s.multiSelections);
@@ -190,8 +197,23 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null }: Config
                   onReady={handleReady}
                   onPresetChange={setCurrentPreset}
                   onHover={setHover}
+                  environment={environment.settings}
+                  onEnvironmentReady={environment.onReady}
+                  onEnvironmentError={environment.onError}
                 />
               </Canvas3DErrorBoundary>
+              {/* Spec 28, AC-3: the previous environment's last frame, faded out over the new one. */}
+              {environment.overlay && (
+                // eslint-disable-next-line @next/next/no-img-element -- a transient data: URL frame, not a real image asset
+                <img
+                  src={environment.overlay.src}
+                  alt=""
+                  aria-hidden="true"
+                  data-testid="environment-crossfade"
+                  className="pointer-events-none absolute inset-0 h-full w-full object-cover transition-opacity ease-out"
+                  style={{ opacity: environment.overlay.fading ? 0 : 1, transitionDuration: `${ENVIRONMENT_FADE_MS}ms` }}
+                />
+              )}
               {hover && hoverLabelText && <HotspotLabel label={hoverLabelText} x={hover.x} y={hover.y} />}
             </div>
 
@@ -210,6 +232,14 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null }: Config
 
             {!sceneError && (
               <div className="flex flex-col gap-3">
+                {environment.selectedId && (
+                  <EnvironmentSwitcher
+                    environments={environments}
+                    selectedId={environment.selectedId}
+                    onSelect={environment.select}
+                    disabled={!sceneReady}
+                  />
+                )}
                 <CameraPresetBar
                   currentPreset={currentPreset}
                   onSelect={handleSelectPreset}

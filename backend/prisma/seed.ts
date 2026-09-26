@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { validateSingleSelectDefaults } from "../src/services/catalog.js";
-import { seedVehicles } from "./seedData.js";
+import { seedEnvironments, seedVehicles } from "./seedData.js";
 
 /** Wipes and re-inserts the catalog. Idempotent — safe to call against a fresh or
  * already-seeded database (used by both the CLI seed script and the integration tests). */
@@ -23,6 +23,9 @@ export async function seedDatabase(prisma: PrismaClient) {
   await prisma.configuration.deleteMany();
   await prisma.customizationOption.deleteMany();
   await prisma.vehicle.deleteMany();
+  // After configurations (which reference environments via a SetNull FK, Spec 28).
+  await prisma.environment.deleteMany();
+  await prisma.environment.createMany({ data: seedEnvironments });
 
   for (const vehicle of seedVehicles) {
     await prisma.vehicle.create({

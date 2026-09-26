@@ -142,5 +142,8 @@
     "button": "View in Your Driveway",
     "preparing": "Preparing AR…",
     "error": "AR preview unavailable right now. You can keep configuring as usual."
+  },
+  "environments": {
+    "label": "Environment"
   }
 }

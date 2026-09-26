@@ -257,3 +257,67 @@ export const seedVehicles: SeedVehicle[] = [
     options: buildOptionCatalog(),
   },
 ];
+
+export interface SeedEnvironment {
+  id: string;
+  name: string;
+  hdriUrl: string;
+  hdriMobileUrl: string;
+  thumbnailUrl: string;
+  isStudio: boolean;
+  groundHeight: number | null;
+  groundRadius: number | null;
+  sortOrder: number;
+}
+
+// Spec 28: CC0 HDRIs from Poly Haven (polyhaven.com), self-hosted and content-addressed per
+// Spec 25. Stable, human-readable ids so saved builds and tests can refer to them directly.
+// Studio uses its HDRI only for lighting/reflections (the gradient backdrop and reflective
+// floor stay), so it ships the 1k file only. Ground values are in scene units (the showroom
+// frames a car at ~4.2 units long, so ~1 unit ≈ 1.1 m) and were tuned visually.
+export const seedEnvironments: SeedEnvironment[] = [
+  {
+    id: "studio",
+    name: "Studio",
+    hdriUrl: "/assets/environments/studio-small-09-1k.e7cfda5f.hdr",
+    hdriMobileUrl: "/assets/environments/studio-small-09-1k.e7cfda5f.hdr",
+    thumbnailUrl: "/assets/environments/studio-thumb.ee493016.png",
+    isStudio: true,
+    groundHeight: null,
+    groundRadius: null,
+    sortOrder: 0,
+  },
+  {
+    id: "night-city",
+    name: "Night City",
+    hdriUrl: "/assets/environments/night-city-cobblestone-street-2k.e3c95d04.hdr",
+    hdriMobileUrl: "/assets/environments/night-city-cobblestone-street-1k.d12d245f.hdr",
+    thumbnailUrl: "/assets/environments/night-city-thumb.d93bb672.png",
+    isStudio: false,
+    groundHeight: 1.6,
+    groundRadius: 60,
+    sortOrder: 1,
+  },
+  {
+    id: "coastal-road",
+    name: "Coastal Road",
+    hdriUrl: "/assets/environments/coastal-road-victoria-sunset-2k.47344631.hdr",
+    hdriMobileUrl: "/assets/environments/coastal-road-victoria-sunset-1k.f2387eee.hdr",
+    thumbnailUrl: "/assets/environments/coastal-road-thumb.aeb36d5a.png",
+    isStudio: false,
+    groundHeight: 1.6,
+    groundRadius: 60,
+    sortOrder: 2,
+  },
+  {
+    id: "track",
+    name: "Track",
+    hdriUrl: "/assets/environments/track-zwartkops-straight-2k.9ca474ac.hdr",
+    hdriMobileUrl: "/assets/environments/track-zwartkops-straight-1k.d663ebb7.hdr",
+    thumbnailUrl: "/assets/environments/track-thumb.39845466.png",
+    isStudio: false,
+    groundHeight: 1.6,
+    groundRadius: 60,
+    sortOrder: 3,
+  },
+];

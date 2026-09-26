@@ -2,19 +2,45 @@
 
 import { useEffect, useRef } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { ContactShadows, GradientTexture, GradientType, MeshReflectorMaterial, OrbitControls } from "@react-three/drei";
+import {
+  ContactShadows,
+  GradientTexture,
+  GradientType,
+  MeshReflectorMaterial,
+  OrbitControls,
+} from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { Camera, Group } from "three";
-import { PlaceholderShowroomRig, type HoveredMesh } from "./PlaceholderShowroomRig";
+import {
+  PlaceholderShowroomRig,
+  type HoveredMesh,
+} from "./PlaceholderShowroomRig";
 import { RealGlbShowroomRig } from "./RealGlbShowroomRig";
+import { SceneEnvironment } from "./SceneEnvironment";
+import type { EnvironmentSceneSettings } from "@/lib/showroom/environment";
 import { getRealGlbVehicleConfig } from "@/lib/showroom/realGlbVehicles";
-import { useCameraTransition, type CameraTransitionControls } from "./useCameraTransition";
+import {
+  useCameraTransition,
+  type CameraTransitionControls,
+} from "./useCameraTransition";
 import { SHOWROOM_CAMERA_BOUNDS } from "@/lib/showroom/camera";
-import { getCameraPreset, type CameraPresetId } from "@/lib/showroom/cameraPresets";
+import {
+  getCameraPreset,
+  type CameraPresetId,
+} from "@/lib/showroom/cameraPresets";
 import { findHotspot } from "@/lib/showroom/hotspots";
-import { DEFAULT_ACCESSORY_APPEARANCE, type AccessoryAppearance } from "@/lib/showroom/accessoryAppearance";
-import { DEFAULT_EXTERIOR_APPEARANCE, type ExteriorAppearance } from "@/lib/showroom/exteriorAppearance";
-import { DEFAULT_INTERIOR_APPEARANCE, type InteriorAppearance } from "@/lib/showroom/interiorAppearance";
+import {
+  DEFAULT_ACCESSORY_APPEARANCE,
+  type AccessoryAppearance,
+} from "@/lib/showroom/accessoryAppearance";
+import {
+  DEFAULT_EXTERIOR_APPEARANCE,
+  type ExteriorAppearance,
+} from "@/lib/showroom/exteriorAppearance";
+import {
+  DEFAULT_INTERIOR_APPEARANCE,
+  type InteriorAppearance,
+} from "@/lib/showroom/interiorAppearance";
 import type { OptionCategory } from "@/types/catalog";
 
 export interface HoverLabel {
@@ -53,6 +79,9 @@ interface ShowroomRigProps {
   onReady: (controls: ShowroomControls) => void;
   onPresetChange: (id: CameraPresetId) => void;
   onHover: (hover: HoverLabel | null) => void;
+  environment: EnvironmentSceneSettings | null;
+  onEnvironmentReady: () => void;
+  onEnvironmentError: (error: unknown) => void;
 }
 
 function ShowroomRig({
@@ -67,6 +96,9 @@ function ShowroomRig({
   onReady,
   onPresetChange,
   onHover,
+  environment,
+  onEnvironmentReady,
+  onEnvironmentError,
 }: ShowroomRigProps) {
   const { camera, gl } = useThree();
   const cameraRef = useRef<Camera | null>(null);
@@ -77,8 +109,14 @@ function ShowroomRig({
     cameraRef.current = camera;
   }, [camera]);
 
-  const { currentPreset, doorOpenAmount, goToPreset, goToPresetAsync, goToRaw, getCurrentCameraState } =
-    useCameraTransition(cameraRef, controlsRef, reducedMotion);
+  const {
+    currentPreset,
+    doorOpenAmount,
+    goToPreset,
+    goToPresetAsync,
+    goToRaw,
+    getCurrentCameraState,
+  } = useCameraTransition(cameraRef, controlsRef, reducedMotion);
 
   useEffect(() => {
     onReady({
@@ -89,7 +127,14 @@ function ShowroomRig({
       captureFrame: () => gl.domElement.toDataURL("image/png"),
       getVehicleObject: () => vehicleRef.current,
     });
-  }, [goToPreset, goToPresetAsync, goToRaw, getCurrentCameraState, gl, onReady]);
+  }, [
+    goToPreset,
+    goToPresetAsync,
+    goToRaw,
+    getCurrentCameraState,
+    gl,
+    onReady,
+  ]);
 
   useEffect(() => {
     onPresetChange(currentPreset);
@@ -101,7 +146,9 @@ function ShowroomRig({
       return;
     }
     const hotspot = findHotspot(hover.meshName);
-    onHover(hotspot ? { category: hotspot.category, x: hover.x, y: hover.y } : null);
+    onHover(
+      hotspot ? { category: hotspot.category, x: hover.x, y: hover.y } : null,
+    );
   };
 
   const defaultPreset = getCameraPreset("default");
@@ -115,6 +162,10 @@ function ShowroomRig({
   // active rig already uses so it meets the wheels instead of clipping through them or
   // floating below.
   const floorY = realGlbConfig ? 0 : -0.32;
+  // Spec 28: the studio backdrop and reflective floor only belong to the Studio environment;
+  // outdoor scenes replace both with their own HDRI projected onto the ground. No environment
+  // at all (the API was unreachable) keeps today's studio look.
+  const studioBackdrop = !environment || environment.showStudioFloor;
 
   return (
     <>
@@ -124,21 +175,40 @@ function ShowroomRig({
        * backdrop) — visual polish only, no effect on lighting, camera, or the model itself.
        * Deliberately light (not the dark-navy/black tried previously): a light backdrop is
        * what actually gives dark-painted cars contrast, which a dark backdrop cannot. */}
-      <GradientTexture
-        attach="background"
-        type={GradientType.Radial}
-        innerCircleRadius={0}
-        outerCircleRadius="auto"
-        stops={[0, 1]}
-        colors={["#dcebf8", "#c7ccd2"]}
-        size={512}
-      />
+      {studioBackdrop && (
+        <GradientTexture
+          attach="background"
+          type={GradientType.Radial}
+          innerCircleRadius={0}
+          outerCircleRadius="auto"
+          stops={[0, 1]}
+          colors={["#dcebf8", "#c7ccd2"]}
+          size={512}
+        />
+      )}
+      {environment && (
+        <group position={[0, floorY, 0]}>
+          <SceneEnvironment
+            settings={environment}
+            onReady={onEnvironmentReady}
+            onError={onEnvironmentError}
+          />
+        </group>
+      )}
       <ambientLight intensity={0.55} />
       <directionalLight position={[4, 6, 5]} intensity={1.3} />
-      <directionalLight position={[-4, 2, -5]} intensity={0.35} color="#3d6fe0" />
+      <directionalLight
+        position={[-4, 2, -5]}
+        intensity={0.35}
+        color="#3d6fe0"
+      />
       {realGlbConfig ? (
         <group ref={vehicleRef}>
-          <RealGlbShowroomRig config={realGlbConfig} modelUrl={modelUrl} appearance={appearance} />
+          <RealGlbShowroomRig
+            config={realGlbConfig}
+            modelUrl={modelUrl}
+            appearance={appearance}
+          />
         </group>
       ) : (
         <PlaceholderShowroomRig
@@ -155,21 +225,27 @@ function ShowroomRig({
        * the brief's "very subtle floor reflection") plus drei's ContactShadows for a soft,
        * realistic shadow blob under the vehicle — both purely environment, not part of any
        * vehicle rig, so they apply uniformly regardless of which rig is active above. */}
-      <mesh position={[0, floorY, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[40, 40]} />
-        <MeshReflectorMaterial
-          blur={[300, 100]}
-          resolution={1024}
-          mixBlur={1}
-          mixStrength={8}
-          depthScale={1}
-          minDepthThreshold={0.85}
-          color="#9aa3ab"
-          metalness={0.4}
-          roughness={1}
-          mirror={0.15}
-        />
-      </mesh>
+      {studioBackdrop && (
+        <mesh
+          position={[0, floorY, 0]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          receiveShadow
+        >
+          <planeGeometry args={[40, 40]} />
+          <MeshReflectorMaterial
+            blur={[300, 100]}
+            resolution={1024}
+            mixBlur={1}
+            mixStrength={8}
+            depthScale={1}
+            minDepthThreshold={0.85}
+            color="#9aa3ab"
+            metalness={0.4}
+            roughness={1}
+            mirror={0.15}
+          />
+        </mesh>
+      )}
       <ContactShadows
         position={[0, floorY + 0.001, 0]}
         opacity={0.55}
@@ -184,13 +260,19 @@ function ShowroomRig({
         enablePan={false}
         minDistance={SHOWROOM_CAMERA_BOUNDS.minDistance}
         maxDistance={SHOWROOM_CAMERA_BOUNDS.maxDistance}
-        target={[defaultPreset.target.x, defaultPreset.target.y, defaultPreset.target.z]}
+        target={[
+          defaultPreset.target.x,
+          defaultPreset.target.y,
+          defaultPreset.target.z,
+        ]}
         autoRotate={!reducedMotion && currentPreset === "default"}
         autoRotateSpeed={0.6}
       />
     </>
   );
 }
+
+const noop = () => {};
 
 export interface ShowroomSceneProps {
   vehicleSlug: string;
@@ -206,12 +288,19 @@ export interface ShowroomSceneProps {
   onReady: (controls: ShowroomControls) => void;
   onPresetChange: (id: CameraPresetId) => void;
   onHover: (hover: HoverLabel | null) => void;
+  /** Spec 28: the active environment's scene settings; null = none available (studio look). */
+  environment?: EnvironmentSceneSettings | null;
+  onEnvironmentReady?: () => void;
+  onEnvironmentError?: (error: unknown) => void;
 }
 
 export function ShowroomScene({
   appearance = DEFAULT_EXTERIOR_APPEARANCE,
   interior = DEFAULT_INTERIOR_APPEARANCE,
   accessories = DEFAULT_ACCESSORY_APPEARANCE,
+  environment = null,
+  onEnvironmentReady = noop,
+  onEnvironmentError = noop,
   ...props
 }: ShowroomSceneProps) {
   const defaultPreset = getCameraPreset("default");
@@ -219,13 +308,25 @@ export function ShowroomScene({
   return (
     <Canvas
       camera={{
-        position: [defaultPreset.position.x, defaultPreset.position.y, defaultPreset.position.z],
+        position: [
+          defaultPreset.position.x,
+          defaultPreset.position.y,
+          defaultPreset.position.z,
+        ],
         fov: 40,
       }}
       dpr={[1, 2]}
       gl={{ antialias: true, preserveDrawingBuffer: true }}
     >
-      <ShowroomRig {...props} appearance={appearance} interior={interior} accessories={accessories} />
+      <ShowroomRig
+        {...props}
+        appearance={appearance}
+        interior={interior}
+        accessories={accessories}
+        environment={environment}
+        onEnvironmentReady={onEnvironmentReady}
+        onEnvironmentError={onEnvironmentError}
+      />
     </Canvas>
   );
 }

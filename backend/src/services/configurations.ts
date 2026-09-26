@@ -62,6 +62,7 @@ function mapConfigurationToDto(configuration: ConfigurationWithRelations): Saved
     singleSelections,
     multiSelections,
     customPaintHex: configuration.customPaintHex,
+    environmentId: configuration.environmentId,
     breakdown,
     createdAt: configuration.createdAt.toISOString(),
     ownerId: configuration.userId,
@@ -112,6 +113,7 @@ export async function createConfiguration(input: CreateConfigurationInput): Prom
     optionIds,
     breakdown.totalPriceCents,
     input.customPaintHex,
+    input.environmentId ?? null,
     input.userId ?? null,
   );
 
@@ -121,6 +123,7 @@ export async function createConfiguration(input: CreateConfigurationInput): Prom
     singleSelections: input.singleSelections,
     multiSelections: input.multiSelections,
     customPaintHex: input.customPaintHex,
+    environmentId: input.environmentId ?? null,
     breakdown,
     createdAt: configuration.createdAt.toISOString(),
     ownerId: configuration.userId,
@@ -139,6 +142,7 @@ async function createWithFreshPublicId(
   optionIds: string[],
   totalPriceCents: number,
   customPaintHex: string | null,
+  environmentId: string | null,
   userId: string | null,
 ) {
   for (let attempt = 0; attempt < MAX_CREATE_ATTEMPTS; attempt++) {
@@ -153,6 +157,7 @@ async function createWithFreshPublicId(
           vehicleId: vehicle.id,
           totalPriceCents,
           customPaintHex,
+          environmentId,
           userId,
           // A signed-in save (Spec 17, AC-6) never expires; a guest save gets the
           // existing 90-day retention window.

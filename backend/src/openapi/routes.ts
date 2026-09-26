@@ -93,6 +93,16 @@ export const DOCUMENTED_ROUTES: RouteDoc[] = [
     errors: { 404: ["VEHICLE_NOT_FOUND"] },
   },
 
+  // --- Environments (Spec 28) -----------------------------------------------------------
+  {
+    method: "get",
+    path: "/environments",
+    tag: "Catalog",
+    summary: "Showroom environments (scene presets) available to every vehicle",
+    auth: "none",
+    success: { status: 200, description: "The environments, in switcher order.", schema: "EnvironmentDto", array: true },
+  },
+
   // --- Pricing (Spec 3) -----------------------------------------------------------------
   {
     method: "post",

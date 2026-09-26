@@ -18,6 +18,7 @@ const SAVED: SavedConfigurationDto = {
   singleSelections: {} as SavedConfigurationDto["singleSelections"],
   multiSelections: { ACCESSORY: [], PACKAGE: [] },
   customPaintHex: null,
+  environmentId: null,
   breakdown: {
     vehicleSlug: "apex-gt",
     basePriceCents: 8500000,

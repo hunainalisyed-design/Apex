@@ -27,7 +27,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/:path*/:file([^/]+\\.[0-9a-f]{8}\\.(?:glb|gltf|jpg|jpeg|png|webp|avif))",
+        source: "/:path*/:file([^/]+\\.[0-9a-f]{8}\\.(?:glb|gltf|hdr|jpg|jpeg|png|webp|avif))",
         headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
       },
     ];

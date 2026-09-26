@@ -55,6 +55,10 @@ export interface ConfigurationState {
   customPaintHex: string | null;
   /** Zero or more CustomizationOption ids per multi-select category. */
   multiSelections: Record<MultiSelectCategory, string[]>;
+  /** The showroom environment (Spec 28). null = the default Studio. Saved with the build
+   * and restored on load (AC-4), but it carries no price and Reset leaves it alone: it's a
+   * viewing preference, not part of the car. */
+  environmentId: string | null;
 
   /** Save state (Spec 10), lifted here rather than kept local to SaveSharePanel (Spec 11):
    * both SaveSharePanel and CaptureBuild need to read/write the SAME "what was last saved"
@@ -68,6 +72,7 @@ export interface ConfigurationState {
   setSingleSelection: (category: SingleSelectCategory, optionId: string) => void;
   setCustomPaintHex: (hex: string) => void;
   toggleMultiSelection: (category: MultiSelectCategory, optionId: string) => void;
+  setEnvironmentId: (environmentId: string | null) => void;
   /** Hydrates every category from the vehicle's isDefault options — called on showroom
    * mount and on every reload (AC-10), never leaving a category empty/undefined. */
   hydrateDefaults: (vehicle: VehicleDetailDto) => void;
@@ -108,6 +113,7 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => {
     singleSelections: emptySingleSelections(),
     customPaintHex: null,
     multiSelections: emptyMultiSelections(),
+    environmentId: null,
     saveStatus: "idle",
     savedConfiguration: null,
     saveError: null,
@@ -121,6 +127,8 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => {
       })),
 
     setCustomPaintHex: (hex) => set({ customPaintHex: hex }),
+
+    setEnvironmentId: (environmentId) => set({ environmentId }),
 
     toggleMultiSelection: (category, optionId) =>
       set((state) => {
@@ -138,6 +146,7 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => {
         singleSelections: defaults.singleSelections,
         multiSelections: defaults.multiSelections,
         customPaintHex: null,
+        environmentId: null,
         // A freshly-loaded/defaulted vehicle has no save context of its own — any prior
         // savedConfiguration would belong to a different vehicle/session.
         saveStatus: "idle",
@@ -153,6 +162,7 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => {
         singleSelections: saved.singleSelections,
         multiSelections: saved.multiSelections,
         customPaintHex: saved.customPaintHex,
+        environmentId: saved.environmentId ?? null,
         // Loading a shared build means the current selections already match a real saved
         // row — record that immediately so isDirtySinceLastSave() is correct before the
         // user changes anything (Spec 11 AC-2).
@@ -183,6 +193,7 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => {
           singleSelections: state.singleSelections,
           multiSelections: state.multiSelections,
           customPaintHex: state.customPaintHex,
+          environmentId: state.environmentId,
         });
         set({ saveStatus: "success", savedConfiguration: saved, saveError: null });
         return saved;
@@ -200,7 +211,8 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => {
       return (
         JSON.stringify(state.singleSelections) !== JSON.stringify(saved.singleSelections) ||
         JSON.stringify(state.multiSelections) !== JSON.stringify(saved.multiSelections) ||
-        state.customPaintHex !== saved.customPaintHex
+        state.customPaintHex !== saved.customPaintHex ||
+        state.environmentId !== (saved.environmentId ?? null)
       );
     },
 
