@@ -145,5 +145,11 @@
   },
   "environments": {
     "label": "Environment"
+  },
+  "sound": {
+    "on": "Sound on",
+    "off": "Sound off",
+    "turnOn": "Turn showroom sound on",
+    "turnOff": "Turn showroom sound off"
   }
 }

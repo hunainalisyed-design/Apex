@@ -18,6 +18,7 @@ import {
 import { RealGlbShowroomRig } from "./RealGlbShowroomRig";
 import { SceneEnvironment } from "./SceneEnvironment";
 import type { EnvironmentSceneSettings } from "@/lib/showroom/environment";
+import { detectDoorEvent, type DoorEvent } from "@/lib/sound/cues";
 import { getRealGlbVehicleConfig } from "@/lib/showroom/realGlbVehicles";
 import {
   useCameraTransition,
@@ -82,6 +83,7 @@ interface ShowroomRigProps {
   environment: EnvironmentSceneSettings | null;
   onEnvironmentReady: () => void;
   onEnvironmentError: (error: unknown) => void;
+  onDoorEvent: (event: Exclude<DoorEvent, null>) => void;
 }
 
 function ShowroomRig({
@@ -99,6 +101,7 @@ function ShowroomRig({
   environment,
   onEnvironmentReady,
   onEnvironmentError,
+  onDoorEvent,
 }: ShowroomRigProps) {
   const { camera, gl } = useThree();
   const cameraRef = useRef<Camera | null>(null);
@@ -153,6 +156,15 @@ function ShowroomRig({
 
   const defaultPreset = getCameraPreset("default");
   const realGlbConfig = getRealGlbVehicleConfig(vehicleSlug);
+
+  // Spec 29: door latch/thud as the doors actually swing. Only the placeholder rig animates its
+  // doors — real-model cars never fire these (no sound for motion that isn't on screen).
+  const previousDoorAmount = useRef(doorOpenAmount);
+  useEffect(() => {
+    const event = detectDoorEvent(previousDoorAmount.current, doorOpenAmount);
+    previousDoorAmount.current = doorOpenAmount;
+    if (event && !realGlbConfig) onDoorEvent(event);
+  }, [doorOpenAmount, realGlbConfig, onDoorEvent]);
 
   // Where the showroom floor sits, in world units — not a car position/scale change: each
   // rig already places its own geometry differently (RealGlbShowroomRig explicitly zeros
@@ -292,6 +304,8 @@ export interface ShowroomSceneProps {
   environment?: EnvironmentSceneSettings | null;
   onEnvironmentReady?: () => void;
   onEnvironmentError?: (error: unknown) => void;
+  /** Spec 29: the placeholder rig's doors started opening / finished closing. */
+  onDoorEvent?: (event: Exclude<DoorEvent, null>) => void;
 }
 
 export function ShowroomScene({
@@ -301,6 +315,7 @@ export function ShowroomScene({
   environment = null,
   onEnvironmentReady = noop,
   onEnvironmentError = noop,
+  onDoorEvent = noop,
   ...props
 }: ShowroomSceneProps) {
   const defaultPreset = getCameraPreset("default");
@@ -326,6 +341,7 @@ export function ShowroomScene({
         environment={environment}
         onEnvironmentReady={onEnvironmentReady}
         onEnvironmentError={onEnvironmentError}
+        onDoorEvent={onDoorEvent}
       />
     </Canvas>
   );

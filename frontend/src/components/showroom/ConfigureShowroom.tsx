@@ -19,6 +19,7 @@ import { resolveAccessoryAppearance } from "@/lib/showroom/accessoryAppearance";
 import type { CameraPresetId } from "@/lib/showroom/cameraPresets";
 import { resolveExteriorAppearance } from "@/lib/showroom/exteriorAppearance";
 import { resolveInteriorAppearance } from "@/lib/showroom/interiorAppearance";
+import { isRealGlbVehicle } from "@/lib/showroom/realGlbVehicles";
 import { useCarAiChatStore } from "@/state/carAiChatStore";
 import { useConfigurationStore } from "@/state/configurationStore";
 import { SINGLE_SELECT_CATEGORIES, type OptionCategory, type VehicleDetailDto } from "@/types/catalog";
@@ -33,6 +34,8 @@ import { EnvironmentSwitcher } from "./EnvironmentSwitcher/EnvironmentSwitcher";
 import { ENVIRONMENT_FADE_MS, useShowroomEnvironment } from "./useShowroomEnvironment";
 import { HotspotLabel } from "./HotspotLabel";
 import { LightingControls } from "./LightingControls";
+import { SoundToggle } from "./SoundToggle";
+import { useShowroomSound } from "./useShowroomSound";
 import type { HoverLabel, ShowroomControls } from "./ShowroomScene";
 
 const ShowroomScene = dynamic(() => import("./ShowroomScene").then((m) => m.ShowroomScene), {
@@ -75,6 +78,11 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null, environm
   const [sceneReady, setSceneReady] = useState(false);
   const showroomControlsRef = useRef<ShowroomControls | null>(null);
   const environment = useShowroomEnvironment(environments, showroomControlsRef, reducedMotion);
+  const sound = useShowroomSound();
+  const playCue = sound.cue;
+  // Headlights, brake lights and doors only animate on the placeholder rig — real-model cars
+  // ignore them (see RealGlbShowroomRig), so their controls and sounds are offered only there.
+  const hasAnimatedLights = !isRealGlbVehicle(vehicle.slug);
 
   const singleSelections = useConfigurationStore((s) => s.singleSelections);
   const multiSelections = useConfigurationStore((s) => s.multiSelections);
@@ -128,9 +136,15 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null, environm
   );
 
   const handlePulseBrakeLights = useCallback(() => {
+    playCue("brakeClick");
     setBrakePulsing(true);
     setTimeout(() => setBrakePulsing(false), BRAKE_PULSE_MS);
-  }, []);
+  }, [playCue]);
+
+  const handleToggleHeadlights = useCallback(() => {
+    playCue("headlightSwitch");
+    setHeadlightsOn((on) => !on);
+  }, [playCue]);
 
   const appearance = useMemo(
     () => resolveExteriorAppearance(vehicle, singleSelections, customPaintHex),
@@ -200,6 +214,7 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null, environm
                   environment={environment.settings}
                   onEnvironmentReady={environment.onReady}
                   onEnvironmentError={environment.onError}
+                  onDoorEvent={sound.onDoorEvent}
                 />
               </Canvas3DErrorBoundary>
               {/* Spec 28, AC-3: the previous environment's last frame, faded out over the new one. */}
@@ -245,11 +260,16 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null, environm
                   onSelect={handleSelectPreset}
                   disabled={!sceneReady}
                 />
-                <LightingControls
-                  headlightsOn={headlightsOn}
-                  onToggleHeadlights={() => setHeadlightsOn((on) => !on)}
-                  onPulseBrakeLights={handlePulseBrakeLights}
-                />
+                <div className="flex flex-wrap items-center gap-3">
+                  {hasAnimatedLights && (
+                    <LightingControls
+                      headlightsOn={headlightsOn}
+                      onToggleHeadlights={handleToggleHeadlights}
+                      onPulseBrakeLights={handlePulseBrakeLights}
+                    />
+                  )}
+                  <SoundToggle enabled={sound.enabled} onToggle={sound.toggle} />
+                </div>
               </div>
             )}
           </>

@@ -23,11 +23,11 @@ const nextConfig: NextConfig = {
   // always gets a new URL — so it's safe to cache for a year and mark immutable. Unversioned
   // files (anything not matching this pattern) keep Next's default. Lowercase-only on purpose —
   // it must agree with backend/src/services/assets/versioning.ts's isVersionedAssetUrl. Assumes
-  // at least one directory level (every asset lives under /assets/ or /models/).
+  // at least one directory level (every asset lives under /assets/, /models/ or /audio/).
   async headers() {
     return [
       {
-        source: "/:path*/:file([^/]+\\.[0-9a-f]{8}\\.(?:glb|gltf|hdr|jpg|jpeg|png|webp|avif))",
+        source: "/:path*/:file([^/]+\\.[0-9a-f]{8}\\.(?:glb|gltf|hdr|jpg|jpeg|png|webp|avif|mp3))",
         headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
       },
     ];
