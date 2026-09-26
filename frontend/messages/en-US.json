@@ -151,5 +151,25 @@
     "off": "Sound off",
     "turnOn": "Turn showroom sound on",
     "turnOff": "Turn showroom sound off"
+  },
+  "capture": {
+    "captureImage": "Capture Build",
+    "capturingImage": "Capturing your build…",
+    "title": "Your Build",
+    "imageAlt": "{vehicle} build capture",
+    "saveImage": "Save Image",
+    "copyShareLink": "Copy Share Link",
+    "linkCopied": "Share link copied",
+    "linkCopyFailed": "Couldn't copy — try again",
+    "close": "Close",
+    "captureVideo": "Capture Video",
+    "recording": "Rendering your video… {percent}%",
+    "recordingLabel": "Recording your build video",
+    "preparingVideo": "Preparing video…",
+    "videoTitle": "Your Build Video",
+    "videoAlt": "{vehicle} build video",
+    "saveVideo": "Save Video",
+    "fallbackUnsupported": "Video capture isn’t supported in this browser — here’s an image of your build instead.",
+    "fallbackFailed": "The video couldn’t be recorded — here’s an image of your build instead."
   }
 }

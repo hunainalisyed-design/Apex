@@ -62,7 +62,7 @@ All 19 specs below are written (Draft) and awaiting review/approval as a batch.
 | 27 | `27-ar-view-in-driveway.md` | §35.1 | Implemented |
 | 28 | `28-dynamic-environments.md` | §35.1 | Implemented |
 | 29 | `29-sound-design.md` | §35.1 | Implemented |
-| 30 | `30-shareable-video-clip.md` | §35.1 | Draft |
+| 30 | `30-shareable-video-clip.md` | §35.1 | Implemented |
 | 31 | `31-public-gallery.md` | §35.2 | Draft |
 | 32 | `32-rarity-achievement-badges.md` | §35.2 | Draft |
 | 33 | `33-live-collaborative-build.md` | §35.2 | Draft |

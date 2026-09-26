@@ -6,6 +6,7 @@ import { AccessoriesPanel } from "@/components/configurator/AccessoriesPanel/Acc
 import { CarAIAssistant } from "@/components/ai/CarAIAssistant";
 import { BuildSummary } from "@/components/configurator/BuildSummary/BuildSummary";
 import { CaptureBuild } from "@/components/configurator/CaptureBuild/CaptureBuild";
+import { CaptureVideo, RecordingOverlay } from "@/components/configurator/CaptureVideo/CaptureVideo";
 import { ExteriorPanel } from "@/components/configurator/ExteriorPanel/ExteriorPanel";
 import { InteriorPanel } from "@/components/configurator/InteriorPanel/InteriorPanel";
 import { SaveSharePanel } from "@/components/configurator/SaveSharePanel/SaveSharePanel";
@@ -76,6 +77,13 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null, environm
   const [brakePulsing, setBrakePulsing] = useState(false);
   const [sceneError, setSceneError] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
+  // Spec 30: set while a video clip is recording — the scene is covered by a progress overlay
+  // (it renders portrait off-layout for the clip) and the other capture button waits.
+  const [videoProgress, setVideoProgress] = useState<number | null>(null);
+  // One capture at a time, and nothing may move the camera or change the scene mid-clip —
+  // both set the moment a capture is clicked, not when its rendering starts.
+  const [videoBusy, setVideoBusy] = useState(false);
+  const [imageBusy, setImageBusy] = useState(false);
   const showroomControlsRef = useRef<ShowroomControls | null>(null);
   const environment = useShowroomEnvironment(environments, showroomControlsRef, reducedMotion);
   const sound = useShowroomSound();
@@ -230,6 +238,7 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null, environm
                 />
               )}
               {hover && hoverLabelText && <HotspotLabel label={hoverLabelText} x={hover.x} y={hover.y} />}
+              {videoProgress !== null && <RecordingOverlay progress={videoProgress} />}
             </div>
 
             <div className="glass-panel flex flex-col gap-2 rounded-2xl px-6 py-6">
@@ -252,13 +261,13 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null, environm
                     environments={environments}
                     selectedId={environment.selectedId}
                     onSelect={environment.select}
-                    disabled={!sceneReady}
+                    disabled={!sceneReady || videoBusy || imageBusy}
                   />
                 )}
                 <CameraPresetBar
                   currentPreset={currentPreset}
                   onSelect={handleSelectPreset}
-                  disabled={!sceneReady}
+                  disabled={!sceneReady || videoBusy || imageBusy}
                 />
                 <div className="flex flex-wrap items-center gap-3">
                   {hasAnimatedLights && (
@@ -282,7 +291,17 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null, environm
               vehicle={vehicle}
               showroomControlsRef={showroomControlsRef}
               currentPreset={currentPreset}
-              sceneReady={sceneReady}
+              sceneReady={sceneReady && !videoBusy}
+              onBusyChange={setImageBusy}
+            />
+            <CaptureVideo
+              vehicle={vehicle}
+              showroomControlsRef={showroomControlsRef}
+              currentPreset={currentPreset}
+              sceneReady={sceneReady && !imageBusy}
+              reducedMotion={reducedMotion}
+              onRecordingProgress={setVideoProgress}
+              onBusyChange={setVideoBusy}
             />
             <LeadCaptureButtons />
             <ReserveDepositButton />

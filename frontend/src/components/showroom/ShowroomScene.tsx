@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { Canvas, useThree } from "@react-three/fiber";
+import { useCallback, useEffect, useRef } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   ContactShadows,
   GradientTexture,
@@ -10,7 +10,7 @@ import {
   OrbitControls,
 } from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import type { Camera, Group } from "three";
+import { PerspectiveCamera, type Camera, type Group } from "three";
 import {
   PlaceholderShowroomRig,
   type HoveredMesh,
@@ -19,6 +19,16 @@ import { RealGlbShowroomRig } from "./RealGlbShowroomRig";
 import { SceneEnvironment } from "./SceneEnvironment";
 import type { EnvironmentSceneSettings } from "@/lib/showroom/environment";
 import { detectDoorEvent, type DoorEvent } from "@/lib/sound/cues";
+import {
+  VIDEO_DURATION_MS,
+  VIDEO_FRAME_COUNT,
+  VIDEO_HEIGHT,
+  VIDEO_WIDTH,
+  encodeFramesToMp4,
+  orbitCameraPose,
+  recordCanvasClip,
+  type VideoStrategy,
+} from "@/lib/showroom/composeCaptureVideo";
 import { getRealGlbVehicleConfig } from "@/lib/showroom/realGlbVehicles";
 import {
   useCameraTransition,
@@ -66,6 +76,20 @@ export interface ShowroomControls {
   /** The real-GLB car currently in the scene, for AR export (Spec 27) — null for the
    * placeholder rig (AR is offered only for real models) or before the model has loaded. */
   getVehicleObject: () => Group | null;
+  /** Spec 30: records a vertical 9:16 clip of one scripted 360° orbit and resolves with the
+   * encoded video. The scene renders at 720×1280 with a portrait camera for the duration
+   * (the page layout doesn't change), then size, camera and controls are restored. */
+  recordOrbit: (options: RecordOrbitOptions) => Promise<Blob>;
+}
+
+export interface RecordOrbitOptions {
+  /** "frames" (WebCodecs, preferred) or "realtime" (MediaRecorder) — see pickVideoStrategy. */
+  strategy: Exclude<VideoStrategy, { unsupported: unknown }>;
+  /** Draws the title cards on top of each frame. */
+  drawOverlay: (ctx: CanvasRenderingContext2D, timeMs: number) => void;
+  onProgress?: (fraction: number) => void;
+  /** Cancels the capture (it rejects with an AbortError); state is still restored. */
+  signal?: AbortSignal;
 }
 
 interface ShowroomRigProps {
@@ -107,6 +131,87 @@ function ShowroomRig({
   const cameraRef = useRef<Camera | null>(null);
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const vehicleRef = useRef<Group>(null);
+  const getThree = useThree((state) => state.get);
+  // Spec 30: while set, the camera follows the scripted orbit instead of the user's controls —
+  // by wall-clock time (real-time recording) or at an exact point (frame-by-frame).
+  const orbitRef = useRef<{ start: number } | { progress: number } | null>(null);
+
+  useFrame((state) => {
+    const orbit = orbitRef.current;
+    if (!orbit) return;
+    const progress = "progress" in orbit ? orbit.progress : (performance.now() - orbit.start) / VIDEO_DURATION_MS;
+    const pose = orbitCameraPose(progress);
+    state.camera.position.set(...pose.position);
+    state.camera.lookAt(...pose.target);
+  });
+
+  const recordOrbit = useCallback(
+    async ({ strategy, drawOverlay, onProgress, signal }: RecordOrbitOptions): Promise<Blob> => {
+      // Read the live camera/renderer from the r3f store rather than render-time hook values:
+      // this runs long after render and has to mutate them.
+      const { camera, gl: renderer, advance, setFrameloop, frameloop } = getThree();
+      const controls = controlsRef.current;
+      if (!(camera instanceof PerspectiveCamera)) throw new Error("Video capture needs a perspective camera.");
+      const previous = {
+        position: camera.position.clone(),
+        target: controls?.target.clone(),
+        aspect: camera.aspect,
+        controlsEnabled: controls?.enabled ?? true,
+      };
+
+      // Render portrait for the clip. updateStyle=false keeps the canvas's on-page size, so
+      // the layout doesn't jump; the showroom covers the scene with a "Recording" overlay.
+      if (controls) controls.enabled = false; // a disabled OrbitControls doesn't update
+      renderer.setPixelRatio(1);
+      renderer.setSize(VIDEO_WIDTH, VIDEO_HEIGHT, false);
+      camera.aspect = VIDEO_WIDTH / VIDEO_HEIGHT;
+      camera.updateProjectionMatrix();
+
+      try {
+        if (strategy.kind === "frames") {
+          // Frame-by-frame: stop the render loop and render each frame on demand at its exact
+          // point in the orbit, so the clip is complete however slow this device renders.
+          setFrameloop("never");
+          return await encodeFramesToMp4({
+            codec: strategy.codec,
+            signal,
+            onProgress,
+            renderFrame: (ctx, index, timeMs) => {
+              orbitRef.current = { progress: index / VIDEO_FRAME_COUNT }; // frame N ≡ frame 0: seamless loop
+              advance(performance.now());
+              ctx.fillStyle = "#0a0a0c";
+              ctx.fillRect(0, 0, VIDEO_WIDTH, VIDEO_HEIGHT);
+              ctx.drawImage(renderer.domElement, 0, 0, VIDEO_WIDTH, VIDEO_HEIGHT);
+              drawOverlay(ctx, timeMs);
+            },
+          });
+        }
+        orbitRef.current = { start: performance.now() };
+        return await recordCanvasClip({ source: renderer.domElement, format: strategy.format, signal, drawOverlay, onProgress });
+      } finally {
+        orbitRef.current = null;
+        // Best-effort: if the showroom was torn down mid-capture (the reason it was cancelled),
+        // the renderer may already be disposed — never let restoring mask the real outcome.
+        try {
+          setFrameloop(frameloop);
+          const { size, viewport } = getThree();
+          renderer.setPixelRatio(viewport.dpr);
+          renderer.setSize(size.width, size.height, false);
+          camera.aspect = previous.aspect;
+          camera.updateProjectionMatrix();
+          camera.position.copy(previous.position);
+          if (controls) {
+            if (previous.target) controls.target.copy(previous.target);
+            controls.enabled = previous.controlsEnabled;
+            controls.update();
+          }
+        } catch (restoreError) {
+          console.warn("[video] Couldn't restore the showroom after capture.", restoreError);
+        }
+      }
+    },
+    [getThree],
+  );
 
   useEffect(() => {
     cameraRef.current = camera;
@@ -129,8 +234,10 @@ function ShowroomRig({
       getCurrentCameraState,
       captureFrame: () => gl.domElement.toDataURL("image/png"),
       getVehicleObject: () => vehicleRef.current,
+      recordOrbit,
     });
   }, [
+    recordOrbit,
     goToPreset,
     goToPresetAsync,
     goToRaw,
