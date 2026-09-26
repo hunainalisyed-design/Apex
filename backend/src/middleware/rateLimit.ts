@@ -106,3 +106,13 @@ export const reservationRateLimit = createRateLimit({
   code: "RATE_LIMITED",
   message: "Too many requests. Try again shortly.",
 });
+
+/** POST /api/ar/models (Spec 27) — unauthenticated and holds up to 30 MB in memory per
+ * request, so it's capped like the other side-effecting endpoints. A real user taps "View in
+ * Your Driveway" a handful of times at most. */
+export const arUploadRateLimit = createRateLimit({
+  windowMs: 60_000,
+  maxRequests: 5,
+  code: "RATE_LIMITED",
+  message: "Too many requests. Try again shortly.",
+});

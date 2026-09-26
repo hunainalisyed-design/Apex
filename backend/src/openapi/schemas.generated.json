@@ -292,6 +292,22 @@
       "MESH_VISIBILITY"
     ]
   },
+  "ArModelUploadDto": {
+    "type": "object",
+    "properties": {
+      "url": {
+        "type": "string"
+      },
+      "expiresAt": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "url",
+      "expiresAt"
+    ],
+    "additionalProperties": false
+  },
   "ChangePasswordRequest": {
     "type": "object",
     "properties": {

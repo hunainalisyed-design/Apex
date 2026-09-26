@@ -7,6 +7,7 @@ import { redact } from "./lib/redact.js";
 import { Sentry } from "./lib/sentry.js";
 import { adminRouter } from "./routes/admin.js";
 import { aiRouter } from "./routes/ai.js";
+import { arRouter } from "./routes/ar.js";
 import { authRouter } from "./routes/auth.js";
 import { configurationsRouter } from "./routes/configurations.js";
 import { docsRouter } from "./routes/docs.js";
@@ -48,6 +49,7 @@ export function createApp() {
   app.use("/api", pricingRouter);
   app.use("/api", configurationsRouter);
   app.use("/api", aiRouter);
+  app.use("/api", arRouter);
   app.use("/api", authRouter);
   app.use("/api", meRouter);
   app.use("/api", leadsRouter);

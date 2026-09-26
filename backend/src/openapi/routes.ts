@@ -17,11 +17,15 @@ export interface RouteDoc {
   /** "optional": a session cookie changes the result but isn't required. */
   auth: "none" | "optional" | "required";
   requestBody?: string;
+  /** A raw binary request body of this media type, instead of a JSON `requestBody`. */
+  binaryRequestBody?: string;
   success: {
     status: number;
     description: string;
     /** Omit for an empty body (e.g. 204). */
     schema?: string;
+    /** A raw binary response of this media type, instead of a JSON `schema`. */
+    binaryContentType?: string;
     array?: boolean;
     nullable?: boolean;
     /** false = the body is the schema itself, not wrapped in `{ data }`. Default true. */
@@ -277,6 +281,32 @@ export const DOCUMENTED_ROUTES: RouteDoc[] = [
     requestBody: "CreateLeadRequest",
     success: { status: 201, description: "The lead.", schema: "LeadDto" },
     errors: { 400: ["VALIDATION_ERROR"], 404: ["CONFIGURATION_NOT_FOUND"], 429: ["RATE_LIMITED"] },
+  },
+
+  // --- AR (Spec 27) ---------------------------------------------------------------------
+  {
+    method: "post",
+    path: "/ar/models",
+    tag: "AR",
+    summary: "Host an exported AR model briefly for Android Scene Viewer",
+    auth: "none",
+    binaryRequestBody: "model/gltf-binary",
+    success: { status: 201, description: "Where Scene Viewer can download the model, and when that URL expires.", schema: "ArModelUploadDto" },
+    errors: {
+      400: ["VALIDATION_ERROR"],
+      413: ["AR_MODEL_TOO_LARGE"],
+      429: ["RATE_LIMITED"],
+      503: ["AR_DISABLED"],
+    },
+  },
+  {
+    method: "get",
+    path: "/ar/models/:id.glb",
+    tag: "AR",
+    summary: "Download a hosted AR model (expires 10 minutes after upload)",
+    auth: "none",
+    success: { status: 200, description: "The GLB file.", binaryContentType: "model/gltf-binary" },
+    errors: { 404: ["AR_MODEL_NOT_FOUND"], 503: ["AR_DISABLED"] },
   },
 
   // --- Reservations (Spec 20, Stripe test mode) -----------------------------------------

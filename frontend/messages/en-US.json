@@ -137,5 +137,10 @@
       "successTitle": "Password updated",
       "successBody": "Please log in again with your new password."
     }
+  },
+  "ar": {
+    "button": "View in Your Driveway",
+    "preparing": "Preparing AR…",
+    "error": "AR preview unavailable right now. You can keep configuring as usual."
   }
 }

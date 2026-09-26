@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { ContactShadows, GradientTexture, GradientType, MeshReflectorMaterial, OrbitControls } from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import type { Camera } from "three";
+import type { Camera, Group } from "three";
 import { PlaceholderShowroomRig, type HoveredMesh } from "./PlaceholderShowroomRig";
 import { RealGlbShowroomRig } from "./RealGlbShowroomRig";
 import { getRealGlbVehicleConfig } from "@/lib/showroom/realGlbVehicles";
@@ -36,6 +36,9 @@ export interface ShowroomControls {
    * renderer (set below), otherwise the WebGL buffer may already be cleared by the time
    * this is called outside the render loop. */
   captureFrame: () => string;
+  /** The real-GLB car currently in the scene, for AR export (Spec 27) — null for the
+   * placeholder rig (AR is offered only for real models) or before the model has loaded. */
+  getVehicleObject: () => Group | null;
 }
 
 interface ShowroomRigProps {
@@ -68,6 +71,7 @@ function ShowroomRig({
   const { camera, gl } = useThree();
   const cameraRef = useRef<Camera | null>(null);
   const controlsRef = useRef<OrbitControlsImpl>(null);
+  const vehicleRef = useRef<Group>(null);
 
   useEffect(() => {
     cameraRef.current = camera;
@@ -83,6 +87,7 @@ function ShowroomRig({
       goToRaw,
       getCurrentCameraState,
       captureFrame: () => gl.domElement.toDataURL("image/png"),
+      getVehicleObject: () => vehicleRef.current,
     });
   }, [goToPreset, goToPresetAsync, goToRaw, getCurrentCameraState, gl, onReady]);
 
@@ -132,7 +137,9 @@ function ShowroomRig({
       <directionalLight position={[4, 6, 5]} intensity={1.3} />
       <directionalLight position={[-4, 2, -5]} intensity={0.35} color="#3d6fe0" />
       {realGlbConfig ? (
-        <RealGlbShowroomRig config={realGlbConfig} modelUrl={modelUrl} appearance={appearance} />
+        <group ref={vehicleRef}>
+          <RealGlbShowroomRig config={realGlbConfig} modelUrl={modelUrl} appearance={appearance} />
+        </group>
       ) : (
         <PlaceholderShowroomRig
           doorOpenAmount={doorOpenAmount}

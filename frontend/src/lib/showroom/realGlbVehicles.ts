@@ -29,6 +29,15 @@ export interface RealGlbVehicleConfig {
    * camera presets (cameraPresets.ts) still frame the car correctly without per-vehicle
    * camera tuning. */
   targetLength: number;
+  /** The real car's overall length in metres (approximate published figure), so AR places it
+   * life-size (Spec 27, AC-4) — the showroom's targetLength is a framing convention, not a
+   * real-world size. */
+  lengthMeters: number;
+  /** Fraction of triangles to keep in the iOS (USDZ) AR export. USDZExporter writes geometry
+   * as text, so the ~300k-triangle models otherwise produce 31–50 MB files that take ~30 s
+   * to build (Spec 27 Step 0 measurements); ~0.35 lands at ~20–26 MB in under a second.
+   * Omit for a model light enough to export as-is. Android's GLB always keeps full detail. */
+  usdzTriangleRatio?: number;
 }
 
 // Ratio between PorscheShowcaseScene's original hardcoded showcase targetLength (1.6) and
@@ -41,6 +50,8 @@ export const REAL_GLB_VEHICLES: Record<string, RealGlbVehicleConfig> = {
     slug: "porsche-992-gt3-r",
     paintMaterialNames: ["EXT_Carpaint_Inst"],
     targetLength: 4.2,
+    lengthMeters: 4.62,
+    usdzTriangleRatio: 0.35,
   },
   "pagani-huayra-codalunga-speedster": {
     slug: "pagani-huayra-codalunga-speedster",
@@ -48,6 +59,8 @@ export const REAL_GLB_VEHICLES: Record<string, RealGlbVehicleConfig> = {
     // textureless, vertex-color-driven material used by the "Paint_Geo_lodA.*" body meshes.
     paintMaterialNames: ["Paint"],
     targetLength: 4.35,
+    lengthMeters: 4.96,
+    usdzTriangleRatio: 0.35,
   },
   "lamborghini-revuelto": {
     slug: "lamborghini-revuelto",
@@ -60,6 +73,8 @@ export const REAL_GLB_VEHICLES: Record<string, RealGlbVehicleConfig> = {
     // paint.
     paintMaterialNames: ["car_paint_v3_03", "M_CarPaint"],
     targetLength: 4.45,
+    lengthMeters: 4.95,
+    usdzTriangleRatio: 0.3,
   },
   "mustang-1965": {
     slug: "mustang-1965",
@@ -70,6 +85,7 @@ export const REAL_GLB_VEHICLES: Record<string, RealGlbVehicleConfig> = {
     // intentional two-tone look instead of just recoloring the body.
     paintMaterialNames: ["CarPrimaryColor"],
     targetLength: 4.25,
+    lengthMeters: 4.61,
   },
 };
 

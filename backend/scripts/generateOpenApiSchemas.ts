@@ -18,6 +18,7 @@ const TYPE_FILES = [
   "admin",
   "ai",
   "api",
+  "ar",
   "auth",
   "catalog",
   "configuration",

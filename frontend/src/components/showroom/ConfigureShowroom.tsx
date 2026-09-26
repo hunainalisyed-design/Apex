@@ -11,6 +11,7 @@ import { InteriorPanel } from "@/components/configurator/InteriorPanel/InteriorP
 import { SaveSharePanel } from "@/components/configurator/SaveSharePanel/SaveSharePanel";
 import { LeadCaptureButtons } from "@/components/leads/LeadCaptureButtons";
 import { ReserveDepositButton } from "@/components/reservations/ReserveDepositButton";
+import { ArButton } from "@/components/ar/ArButton";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { formatPriceCents } from "@/lib/format/currency";
 import { calculatePrice } from "@/lib/pricing";
@@ -235,6 +236,7 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null }: Config
             />
             <LeadCaptureButtons />
             <ReserveDepositButton />
+            <ArButton vehicle={vehicle} showroomControlsRef={showroomControlsRef} sceneReady={sceneReady} />
 
             <div className="glass-panel flex gap-1 rounded-full p-1" role="tablist" aria-label="Customization panel">
               {(["exterior", "interior", "accessories"] as const).map((tab) => (

@@ -8,6 +8,9 @@ const SESSION_COOKIE = "sessionCookie";
 
 const ref = (name: string) => ({ $ref: `#/components/schemas/${name}` });
 
+/** OpenAPI 3.1 spelling of "raw bytes" (3.0's `format: binary`). */
+const BINARY = { type: "string", contentMediaType: "application/octet-stream" };
+
 /** "/vehicles/:slug" → "/vehicles/{slug}" (OpenAPI path templating). */
 export function toOpenApiPath(expressPath: string): string {
   return expressPath.replace(/:([A-Za-z0-9_]+)/g, "{$1}");
@@ -23,6 +26,9 @@ function pathParameters(expressPath: string) {
 }
 
 function successResponse(success: RouteDoc["success"]): JsonObject {
+  if (success.binaryContentType) {
+    return { description: success.description, content: { [success.binaryContentType]: { schema: BINARY } } };
+  }
   if (!success.schema) return { description: success.description };
 
   let body: JsonObject = success.array ? { type: "array", items: ref(success.schema) } : ref(success.schema);
@@ -49,6 +55,9 @@ function operation(route: RouteDoc): JsonObject {
   };
   const params = pathParameters(route.path);
   if (params.length > 0) op.parameters = params;
+  if (route.binaryRequestBody) {
+    op.requestBody = { required: true, content: { [route.binaryRequestBody]: { schema: BINARY } } };
+  }
   if (route.requestBody) {
     op.requestBody = { required: true, content: { "application/json": { schema: ref(route.requestBody) } } };
   }
