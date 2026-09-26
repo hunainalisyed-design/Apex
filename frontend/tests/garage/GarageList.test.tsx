@@ -36,6 +36,11 @@ vi.mock("../../src/lib/api/configurations", () => ({
   deleteConfiguration: (...args: unknown[]) => deleteConfigurationMock(...args),
 }));
 
+const unpublishBuildMock = vi.fn();
+vi.mock("../../src/lib/api/gallery", () => ({
+  unpublishBuild: (...args: unknown[]) => unpublishBuildMock(...args),
+}));
+
 const { GarageList } = await import("../../src/components/garage/GarageList/GarageList");
 const { useGarageStore } = await import("../../src/state/garageStore");
 
@@ -79,6 +84,8 @@ function makeConfiguration(overrides: Partial<SavedConfigurationDto> = {}): Save
     },
     createdAt: "2026-01-01T00:00:00.000Z",
     ownerId: "user-1",
+    isPublished: false,
+    publishedAt: null,
     ...overrides,
   };
 }
@@ -90,6 +97,8 @@ const RESET_STATE = {
   error: null,
   deletingPublicIds: {},
   deleteErrors: {},
+  unpublishingPublicIds: {},
+  unpublishErrors: {},
 };
 
 describe("GarageList (Spec 17)", () => {
@@ -97,6 +106,7 @@ describe("GarageList (Spec 17)", () => {
     getMyConfigurationsMock.mockReset();
     getVehicleDetailMock.mockReset();
     deleteConfigurationMock.mockReset();
+    unpublishBuildMock.mockReset();
     useGarageStore.setState(RESET_STATE);
   });
 
@@ -204,5 +214,49 @@ describe("GarageList (Spec 17)", () => {
 
     await waitFor(() => expect(screen.getByText("This build could not be found.")).toBeInTheDocument());
     expect(screen.getByText("Apex GT")).toBeInTheDocument();
+  });
+
+  it("an unpublished build links into the configurator to publish it (Spec 31)", async () => {
+    getMyConfigurationsMock.mockResolvedValueOnce([makeConfiguration()]);
+    getVehicleDetailMock.mockResolvedValueOnce(makeVehicle());
+    render(<GarageList />);
+    await screen.findByText("Apex GT");
+
+    expect(screen.queryByText("Published")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open this build in the configurator to publish it" })).toHaveAttribute(
+      "href",
+      "/configure/apex-gt?build=APEX-AAAA-BBBB",
+    );
+  });
+
+  it("a published build shows the badge and unpublishes in place (Spec 31, AC-6)", async () => {
+    getMyConfigurationsMock.mockResolvedValueOnce([
+      makeConfiguration({ isPublished: true, publishedAt: "2026-09-20T10:00:00.000Z" }),
+    ]);
+    getVehicleDetailMock.mockResolvedValueOnce(makeVehicle());
+    unpublishBuildMock.mockResolvedValueOnce({ publicId: "APEX-AAAA-BBBB", isPublished: false, publishedAt: null });
+    render(<GarageList />);
+    await screen.findByText("Apex GT");
+
+    expect(screen.getByText("Published")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Unpublish" }));
+
+    await waitFor(() => expect(screen.queryByText("Published")).not.toBeInTheDocument());
+    expect(unpublishBuildMock).toHaveBeenCalledWith("APEX-AAAA-BBBB");
+    expect(screen.getByRole("link", { name: "Open this build in the configurator to publish it" })).toBeInTheDocument();
+  });
+
+  it("a failed unpublish keeps the badge and shows the error", async () => {
+    getMyConfigurationsMock.mockResolvedValueOnce([
+      makeConfiguration({ isPublished: true, publishedAt: "2026-09-20T10:00:00.000Z" }),
+    ]);
+    getVehicleDetailMock.mockResolvedValueOnce(makeVehicle());
+    unpublishBuildMock.mockRejectedValueOnce(new MockApiRequestError("RATE_LIMITED", "raw"));
+    render(<GarageList />);
+    await screen.findByText("Apex GT");
+
+    fireEvent.click(screen.getByRole("button", { name: "Unpublish" }));
+    expect(await screen.findByText(/Too many requests/)).toBeInTheDocument();
+    expect(screen.getByText("Published")).toBeInTheDocument();
   });
 });

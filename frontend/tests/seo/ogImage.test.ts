@@ -81,6 +81,8 @@ function makeSaved(overrides: Partial<SavedConfigurationDto> = {}): SavedConfigu
     },
     createdAt: new Date().toISOString(),
     ownerId: null,
+    isPublished: false,
+    publishedAt: null,
     ...overrides,
   };
 }

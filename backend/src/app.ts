@@ -12,6 +12,7 @@ import { authRouter } from "./routes/auth.js";
 import { configurationsRouter } from "./routes/configurations.js";
 import { docsRouter } from "./routes/docs.js";
 import { environmentsRouter } from "./routes/environments.js";
+import { galleryRouter } from "./routes/gallery.js";
 import { healthRouter } from "./routes/health.js";
 import { leadsRouter } from "./routes/leads.js";
 import { meRouter } from "./routes/me.js";
@@ -48,6 +49,7 @@ export function createApp() {
   app.use("/api", docsRouter);
   app.use("/api", vehiclesRouter);
   app.use("/api", environmentsRouter);
+  app.use("/api", galleryRouter);
   app.use("/api", pricingRouter);
   app.use("/api", configurationsRouter);
   app.use("/api", aiRouter);

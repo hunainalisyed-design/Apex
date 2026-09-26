@@ -10,7 +10,7 @@ import type { ReservationDto } from "../types/reservations.js";
  * drift-prone shape, same convention as Spec 9's deriveBuildSummary being reused everywhere
  * a build needs describing. */
 export async function exportUserData(userId: string): Promise<UserDataExportDto> {
-  const [user, configurations, leads, reservations] = await Promise.all([
+  const [user, configurations, leads, reservations, likes] = await Promise.all([
     prisma.user.findUniqueOrThrow({ where: { id: userId } }),
     getConfigurationsForUser(userId),
     prisma.lead.findMany({
@@ -21,6 +21,11 @@ export async function exportUserData(userId: string): Promise<UserDataExportDto>
     prisma.reservation.findMany({
       where: { userId },
       include: { configuration: { include: { vehicle: true } } },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.like.findMany({
+      where: { userId },
+      include: { configuration: { select: { publicId: true } } },
       orderBy: { createdAt: "desc" },
     }),
   ]);
@@ -41,6 +46,7 @@ export async function exportUserData(userId: string): Promise<UserDataExportDto>
     configurations,
     leads: leads.map(mapLeadToDto),
     reservations: reservationDtos,
+    likes: likes.map((like) => ({ configurationPublicId: like.configuration.publicId, likedAt: like.createdAt.toISOString() })),
   };
 }
 
@@ -68,6 +74,12 @@ export async function deleteAccount(userId: string, confirmEmail: string): Promi
   if (user.role === "ADMIN") return { ok: false, reason: "ADMIN_ACCOUNT" };
   if (user.email.toLowerCase() !== confirmEmail.trim().toLowerCase()) return { ok: false, reason: "EMAIL_MISMATCH" };
 
-  await prisma.user.delete({ where: { id: userId } });
+  // Spec 31: the account's builds leave the public gallery first — otherwise SetNull on
+  // Configuration.userId would leave them published anonymously. Its likes cascade away with
+  // the user row (Like.user onDelete: Cascade).
+  await prisma.$transaction([
+    prisma.configuration.updateMany({ where: { userId, isPublished: true }, data: { isPublished: false } }),
+    prisma.user.delete({ where: { id: userId } }),
+  ]);
   return { ok: true };
 }

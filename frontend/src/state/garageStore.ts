@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { ApiRequestError, deleteConfiguration as deleteConfigurationApi } from "@/lib/api/configurations";
+import { unpublishBuild } from "@/lib/api/gallery";
 import { getMyConfigurations } from "@/lib/api/me";
 import { getVehicleDetail } from "@/lib/api/vehicles";
 import { getErrorMessage } from "@/lib/errors/getErrorMessage";
@@ -18,8 +19,13 @@ export interface GarageState {
    * removal" UI-states row). */
   deletingPublicIds: Record<string, boolean>;
   deleteErrors: Record<string, string>;
+  /** Spec 31 — per card, like the delete state above. */
+  unpublishingPublicIds: Record<string, boolean>;
+  unpublishErrors: Record<string, string>;
   load: () => Promise<void>;
   deleteConfiguration: (publicId: string) => Promise<boolean>;
+  /** Takes the build out of the public gallery (Spec 31, AC-6) and updates its card. */
+  unpublish: (publicId: string) => Promise<void>;
 }
 
 /**
@@ -35,6 +41,8 @@ export const useGarageStore = create<GarageState>((set) => ({
   error: null,
   deletingPublicIds: {},
   deleteErrors: {},
+  unpublishingPublicIds: {},
+  unpublishErrors: {},
 
   load: async () => {
     set({ status: "loading", error: null });
@@ -54,6 +62,28 @@ export const useGarageStore = create<GarageState>((set) => ({
     } catch (err) {
       const message = getErrorMessage(err instanceof ApiRequestError ? err.code : undefined);
       set({ status: "error", error: message });
+    }
+  },
+
+  unpublish: async (publicId) => {
+    set((state) => {
+      const { [publicId]: _cleared, ...remainingErrors } = state.unpublishErrors;
+      return { unpublishingPublicIds: { ...state.unpublishingPublicIds, [publicId]: true }, unpublishErrors: remainingErrors };
+    });
+    try {
+      const status = await unpublishBuild(publicId);
+      set((state) => ({
+        configurations: state.configurations.map((c) =>
+          c.publicId === publicId ? { ...c, isPublished: status.isPublished, publishedAt: status.publishedAt } : c,
+        ),
+        unpublishingPublicIds: { ...state.unpublishingPublicIds, [publicId]: false },
+      }));
+    } catch (err) {
+      const message = getErrorMessage(err instanceof ApiRequestError ? err.code : undefined);
+      set((state) => ({
+        unpublishingPublicIds: { ...state.unpublishingPublicIds, [publicId]: false },
+        unpublishErrors: { ...state.unpublishErrors, [publicId]: message },
+      }));
     }
   },
 

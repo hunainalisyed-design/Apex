@@ -48,6 +48,7 @@ export const UNDOCUMENTED_ROUTES: Array<{ method: HttpMethod; path: string; reas
   { method: "get", path: "/admin/leads", reason: "Internal admin API (Spec 21)." },
   { method: "put", path: "/admin/leads/:id", reason: "Internal admin API (Spec 21)." },
   { method: "get", path: "/admin/reservations", reason: "Internal admin API (Spec 21)." },
+  { method: "post", path: "/admin/gallery/:publicId/unpublish", reason: "Internal admin API (Spec 31 moderation)." },
   { method: "get", path: "/docs", reason: "This document itself." },
 ];
 
@@ -91,6 +92,54 @@ export const DOCUMENTED_ROUTES: RouteDoc[] = [
     auth: "none",
     success: { status: 200, description: "The options.", schema: "CustomizationOptionDto", array: true },
     errors: { 404: ["VEHICLE_NOT_FOUND"] },
+  },
+
+  // --- Gallery (Spec 31) ----------------------------------------------------------------
+  {
+    method: "get",
+    path: "/gallery",
+    tag: "Gallery",
+    summary: "Published builds — ?sort=recent|popular (likes in the last 7 days), ?page=N (24 per page)",
+    auth: "optional",
+    success: { status: 200, description: "A page of published builds; likedByMe is set when signed in.", schema: "GalleryPageDto" },
+    errors: { 400: ["VALIDATION_ERROR"] },
+  },
+  {
+    method: "post",
+    path: "/gallery/:publicId/like",
+    tag: "Gallery",
+    summary: "Like a published build, or remove your like (toggle)",
+    auth: "required",
+    success: { status: 200, description: "Whether you now like it, and its like count.", schema: "LikeToggleDto" },
+    errors: { ...UNAUTHENTICATED, 404: ["CONFIGURATION_NOT_FOUND"], 429: ["RATE_LIMITED"] },
+  },
+  {
+    method: "get",
+    path: "/gallery/:publicId/image/:hash.png",
+    tag: "Gallery",
+    summary: "A published build's captured image (content-addressed, cacheable forever)",
+    auth: "none",
+    success: { status: 200, description: "The PNG.", binaryContentType: "image/png" },
+    errors: { 404: ["CONFIGURATION_NOT_FOUND"] },
+  },
+  {
+    method: "post",
+    path: "/configurations/:publicId/publish",
+    tag: "Gallery",
+    summary: "Publish your own build to the gallery with its captured image",
+    auth: "required",
+    binaryRequestBody: "image/png",
+    success: { status: 200, description: "The build's new gallery status.", schema: "PublishStatusDto" },
+    errors: { 400: ["VALIDATION_ERROR"], ...UNAUTHENTICATED, 404: ["CONFIGURATION_NOT_FOUND"], 429: ["RATE_LIMITED"] },
+  },
+  {
+    method: "post",
+    path: "/configurations/:publicId/unpublish",
+    tag: "Gallery",
+    summary: "Take your own build out of the gallery (likes are kept)",
+    auth: "required",
+    success: { status: 200, description: "The build's new gallery status.", schema: "PublishStatusDto" },
+    errors: { ...UNAUTHENTICATED, 404: ["CONFIGURATION_NOT_FOUND"] },
   },
 
   // --- Environments (Spec 28) -----------------------------------------------------------

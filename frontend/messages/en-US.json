@@ -33,7 +33,8 @@
       "models": "Models",
       "configurator": "Configurator",
       "about": "About",
-      "compare": "Compare"
+      "compare": "Compare",
+      "gallery": "Gallery"
     },
     "account": {
       "admin": "Admin",
@@ -171,5 +172,41 @@
     "saveVideo": "Save Video",
     "fallbackUnsupported": "Video capture isn’t supported in this browser — here’s an image of your build instead.",
     "fallbackFailed": "The video couldn’t be recorded — here’s an image of your build instead."
+  },
+  "gallery": {
+    "eyebrow": "Gallery",
+    "title": "Community Builds",
+    "intro": "Builds published by Apex owners — browse for inspiration, and like the ones you’d drive.",
+    "sortLabel": "Sort builds",
+    "sortRecent": "Most Recent",
+    "sortPopular": "Most Popular This Week",
+    "imageAlt": "{vehicle} build",
+    "likeCount": "{count, plural, one {# like} other {# likes}}",
+    "like": "Like",
+    "likeBuild": "Like this {vehicle} build",
+    "likeFailed": "Couldn’t update your like — try again",
+    "viewBuild": "View Build",
+    "empty": "No builds published yet — be the first!",
+    "emptyCta": "Start Configuring",
+    "loadMore": "Load More",
+    "loadingMore": "Loading…",
+    "retry": "Retry",
+    "signInTitle": "Sign in to like builds",
+    "signInBody": "Anyone can browse the gallery — liking a build needs an account.",
+    "logIn": "Log In",
+    "signUp": "Sign Up",
+    "notNow": "Not Now",
+    "publish": "Publish to Gallery",
+    "saving": "Saving…",
+    "capturing": "Capturing your build…",
+    "publishing": "Publishing…",
+    "published": "Published to the gallery",
+    "publishedBadge": "Published",
+    "unpublish": "Unpublish",
+    "unpublishing": "Removing…",
+    "unpublished": "Removed from the gallery",
+    "viewGallery": "View Gallery",
+    "publishFromConfigurator": "Publish",
+    "publishFromConfiguratorLabel": "Open this build in the configurator to publish it"
   }
 }

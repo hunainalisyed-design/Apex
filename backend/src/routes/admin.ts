@@ -8,6 +8,7 @@ import { listLeads, updateLeadStatus } from "../services/admin/leads.js";
 import { createOption, deactivateOption, listOptions, updateOption } from "../services/admin/options.js";
 import { listReservations } from "../services/admin/reservations.js";
 import { createVehicle, listVehicles, updateVehicle } from "../services/admin/vehicles.js";
+import { unpublishConfiguration } from "../services/gallery.js";
 import { ALL_CATEGORIES, type ApplyMode, type OptionCategory } from "../types/catalog.js";
 import type { ApiResponse } from "../types/api.js";
 import type {
@@ -382,6 +383,30 @@ adminRouter.delete(
       targetId: req.params.id,
     });
     res.status(204).end();
+  }),
+);
+
+// ---------------------------------------------------------------------------------------
+// Gallery (Spec 31) — the moderation safety valve: gallery images are uploaded by the
+// publisher's browser, so an admin can take any build out of the public gallery.
+// ---------------------------------------------------------------------------------------
+
+adminRouter.post(
+  "/admin/gallery/:publicId/unpublish",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const result = await unpublishConfiguration(req.params.publicId, null);
+    if (!result.ok) {
+      sendApiError(res, 404, "CONFIGURATION_NOT_FOUND", "No configuration matches this ID.");
+      return;
+    }
+    await recordAuditLog({
+      adminUserId: req.user!.id,
+      action: "gallery.unpublish",
+      targetType: "Configuration",
+      targetId: req.params.publicId,
+    });
+    res.status(200).json({ data: result.status } satisfies ApiResponse<unknown>);
   }),
 );
 

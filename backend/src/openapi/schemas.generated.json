@@ -627,6 +627,81 @@
     ],
     "additionalProperties": false
   },
+  "GalleryEntryDto": {
+    "type": "object",
+    "properties": {
+      "publicId": {
+        "type": "string"
+      },
+      "vehicleSlug": {
+        "type": "string"
+      },
+      "vehicleName": {
+        "type": "string"
+      },
+      "captureImageUrl": {
+        "type": "string"
+      },
+      "totalPriceCents": {
+        "type": "number"
+      },
+      "currency": {
+        "type": "string"
+      },
+      "likeCount": {
+        "type": "number"
+      },
+      "weeklyLikeCount": {
+        "type": "number"
+      },
+      "likedByMe": {
+        "type": "boolean"
+      },
+      "publishedAt": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "publicId",
+      "vehicleSlug",
+      "vehicleName",
+      "captureImageUrl",
+      "totalPriceCents",
+      "currency",
+      "likeCount",
+      "weeklyLikeCount",
+      "likedByMe",
+      "publishedAt"
+    ],
+    "additionalProperties": false
+  },
+  "GalleryPageDto": {
+    "type": "object",
+    "properties": {
+      "entries": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/GalleryEntryDto"
+        }
+      },
+      "page": {
+        "type": "number"
+      },
+      "pageSize": {
+        "type": "number"
+      },
+      "hasMore": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "entries",
+      "page",
+      "pageSize",
+      "hasMore"
+    ],
+    "additionalProperties": false
+  },
   "HealthResponse": {
     "type": "object",
     "properties": {
@@ -723,6 +798,22 @@
       "requestType",
       "status",
       "createdAt"
+    ],
+    "additionalProperties": false
+  },
+  "LikeToggleDto": {
+    "type": "object",
+    "properties": {
+      "liked": {
+        "type": "boolean"
+      },
+      "likeCount": {
+        "type": "number"
+      }
+    },
+    "required": [
+      "liked",
+      "likeCount"
     ],
     "additionalProperties": false
   },
@@ -1010,6 +1101,29 @@
       "category",
       "name",
       "priceDeltaCents"
+    ],
+    "additionalProperties": false
+  },
+  "PublishStatusDto": {
+    "type": "object",
+    "properties": {
+      "publicId": {
+        "type": "string"
+      },
+      "isPublished": {
+        "type": "boolean"
+      },
+      "publishedAt": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "required": [
+      "publicId",
+      "isPublished",
+      "publishedAt"
     ],
     "additionalProperties": false
   },
@@ -1318,6 +1432,15 @@
           "string",
           "null"
         ]
+      },
+      "isPublished": {
+        "type": "boolean"
+      },
+      "publishedAt": {
+        "type": [
+          "string",
+          "null"
+        ]
       }
     },
     "required": [
@@ -1329,7 +1452,9 @@
       "environmentId",
       "breakdown",
       "createdAt",
-      "ownerId"
+      "ownerId",
+      "isPublished",
+      "publishedAt"
     ],
     "additionalProperties": false
   },
@@ -1514,6 +1639,25 @@
         "items": {
           "$ref": "#/components/schemas/ReservationDto"
         }
+      },
+      "likes": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "configurationPublicId": {
+              "type": "string"
+            },
+            "likedAt": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "configurationPublicId",
+            "likedAt"
+          ],
+          "additionalProperties": false
+        }
       }
     },
     "required": [
@@ -1521,7 +1665,8 @@
       "user",
       "configurations",
       "leads",
-      "reservations"
+      "reservations",
+      "likes"
     ],
     "additionalProperties": false
   },

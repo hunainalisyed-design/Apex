@@ -116,3 +116,19 @@ export const arUploadRateLimit = createRateLimit({
   code: "RATE_LIMITED",
   message: "Too many requests. Try again shortly.",
 });
+
+/** POST /api/configurations/:publicId/publish (Spec 31) — stores up to 3 MB per request. */
+export const publishRateLimit = createRateLimit({
+  windowMs: 60_000,
+  maxRequests: 5,
+  code: "RATE_LIMITED",
+  message: "Too many requests. Try again shortly.",
+});
+
+/** POST /api/gallery/:publicId/like (Spec 31) — generous for real browsing, bounds scripted toggling. */
+export const likeRateLimit = createRateLimit({
+  windowMs: 60_000,
+  maxRequests: 60,
+  code: "RATE_LIMITED",
+  message: "Too many requests. Try again shortly.",
+});

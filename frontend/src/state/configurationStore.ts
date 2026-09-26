@@ -4,6 +4,7 @@ import { getErrorMessage } from "@/lib/errors/getErrorMessage";
 import { MULTI_SELECT_CATEGORIES, SINGLE_SELECT_CATEGORIES } from "@/types/catalog";
 import type { VehicleDetailDto } from "@/types/catalog";
 import type { SavedConfigurationDto } from "@/types/configuration";
+import type { PublishStatusDto } from "@/types/gallery";
 import type { MultiSelectCategory, SingleSelectCategory } from "@/types/pricing";
 
 export type SaveStatus = "idle" | "saving" | "success" | "error";
@@ -93,6 +94,8 @@ export interface ConfigurationState {
    * this configurator session, not the garage list. Replaces savedConfiguration with the
    * now-owned dto on success so the "Save to My Garage" affordance disappears reactively. */
   claim: () => Promise<void>;
+  /** Records a publish/unpublish (Spec 31) on the loaded build, if it's still that one. */
+  setPublishStatus: (status: PublishStatusDto) => void;
 }
 
 /**
@@ -214,6 +217,12 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => {
         state.customPaintHex !== saved.customPaintHex ||
         state.environmentId !== (saved.environmentId ?? null)
       );
+    },
+
+    setPublishStatus: (status) => {
+      const saved = get().savedConfiguration;
+      if (saved?.publicId !== status.publicId) return;
+      set({ savedConfiguration: { ...saved, isPublished: status.isPublished, publishedAt: status.publishedAt } });
     },
 
     claim: async () => {

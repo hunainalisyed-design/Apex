@@ -21,4 +21,7 @@ export interface SavedConfigurationDto {
   createdAt: string; // ISO 8601
   /** null = guest build, claimable (Spec 17 AC-7). Set = owned, never expires. */
   ownerId: string | null;
+  /** Spec 31: whether the build is in the public gallery, and since when (ISO 8601). */
+  isPublished: boolean;
+  publishedAt: string | null;
 }

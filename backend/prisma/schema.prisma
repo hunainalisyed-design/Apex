@@ -123,25 +123,31 @@ model CustomizationOption {
 }
 
 model Configuration {
-  id              String       @id @default(cuid())
-  publicId        String       @unique // e.g. "APEX-7F82-K91X", generated in the save/share spec
+  id              String        @id @default(cuid())
+  publicId        String        @unique // e.g. "APEX-7F82-K91X", generated in the save/share spec
   vehicleId       String
-  vehicle         Vehicle      @relation(fields: [vehicleId], references: [id])
+  vehicle         Vehicle       @relation(fields: [vehicleId], references: [id])
   userId          String? // null = guest build
   // SetNull (not the Prisma default Restrict): a future account deletion (Phase 3 GDPR
   // erasure) must not fail just because the account owns a configuration — the shared
   // publicId link should keep resolving, reverting to a guest-owned-looking row, rather
   // than blocking the deletion (Spec 16 §4 gap, resolved here).
-  user            User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user            User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
   totalPriceCents Int
   customPaintHex  String? // set only when the selected PAINT option is the reserved custom-color entry
   // Spec 28: the scene the build was saved in. null = the default Studio. SetNull: removing an
   // environment must never break a shared build link — it just reverts to Studio.
   environmentId   String?
-  environment     Environment? @relation(fields: [environmentId], references: [id], onDelete: SetNull)
+  environment     Environment?  @relation(fields: [environmentId], references: [id], onDelete: SetNull)
+  // Spec 31: shown in the public gallery. Unpublishing keeps likes (AC-6); deleting the build
+  // removes its likes and image (AC-7, cascades below).
+  isPublished     Boolean       @default(false)
+  publishedAt     DateTime?
+  likes           Like[]
+  galleryImage    GalleryImage?
   expiresAt       DateTime? // null = never expires (reserved for future account-owned builds); guest builds get now+90d, refreshed on every load
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
   selections   ConfigurationSelection[]
   leads        Lead[]
@@ -182,6 +188,7 @@ model User {
   leads               Lead[]
   reservations        Reservation[]
   auditLogEntries     AuditLogEntry[]
+  likes               Like[]
 }
 
 /// Lightweight admin-action audit trail (Spec 21, AC-6) — the first place in this product
@@ -307,4 +314,31 @@ model Environment {
   groundRadius   Float?
   sortOrder      Int             @default(0)
   configurations Configuration[]
+}
+
+/// A signed-in user's like on a published build (Spec 31, AC-3) — one per user per build.
+/// Cascades both ways: deleting the build (AC-7) or the account (Spec 24 erasure) removes it.
+model Like {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  configurationId String
+  configuration   Configuration @relation(fields: [configurationId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+
+  @@unique([userId, configurationId])
+  @@index([configurationId, createdAt])
+}
+
+/// The build's captured image (Spec 11) as shown in the gallery (Spec 31). Uploaded by the
+/// owner's browser at publish time and validated server-side (PNG, exactly the capture size).
+/// Stored in the database so it needs no separate file storage; served with a content-hash URL.
+model GalleryImage {
+  id              String        @id @default(cuid())
+  configurationId String        @unique
+  configuration   Configuration @relation(fields: [configurationId], references: [id], onDelete: Cascade)
+  data            Bytes
+  contentType     String
+  sha256          String
+  createdAt       DateTime      @default(now())
 }

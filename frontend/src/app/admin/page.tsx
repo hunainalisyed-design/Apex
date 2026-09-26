@@ -4,6 +4,7 @@ const SECTIONS = [
   { href: "/admin/vehicles", label: "Vehicles & Options", description: "Create, edit, and deactivate catalog vehicles and their customization options." },
   { href: "/admin/leads", label: "Leads", description: "Review quote and test-drive requests." },
   { href: "/admin/reservations", label: "Reservations", description: "View deposit reservations (read-only)." },
+  { href: "/admin/gallery", label: "Gallery", description: "Review published community builds and take any down." },
 ] as const;
 
 /** No special design polish required beyond functional clarity (Spec 21 §5) — internal
@@ -18,7 +19,7 @@ export default function AdminIndexPage() {
         </h1>
       </div>
 
-      <div className="mx-auto grid w-full max-w-3xl grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="mx-auto grid w-full max-w-3xl grid-cols-1 gap-4 sm:grid-cols-2">
         {SECTIONS.map((section) => (
           <Link
             key={section.href}

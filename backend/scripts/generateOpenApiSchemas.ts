@@ -24,6 +24,7 @@ const TYPE_FILES = [
   "configuration",
   "environments",
   "garage",
+  "gallery",
   "gdpr",
   "health",
   "leads",

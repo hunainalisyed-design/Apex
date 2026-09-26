@@ -66,6 +66,8 @@ function mapConfigurationToDto(configuration: ConfigurationWithRelations): Saved
     breakdown,
     createdAt: configuration.createdAt.toISOString(),
     ownerId: configuration.userId,
+    isPublished: configuration.isPublished,
+    publishedAt: configuration.publishedAt?.toISOString() ?? null,
   };
 }
 
@@ -127,6 +129,8 @@ export async function createConfiguration(input: CreateConfigurationInput): Prom
     breakdown,
     createdAt: configuration.createdAt.toISOString(),
     ownerId: configuration.userId,
+    isPublished: false,
+    publishedAt: null,
   };
 }
 

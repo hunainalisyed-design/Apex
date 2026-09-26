@@ -63,44 +63,9 @@ export function useCaptureBuild(
 
     setStatus("capturing");
     try {
-      const snapshot = controls.getCurrentCameraState();
-      const wasInterior = currentPreset === "interior" || currentPreset === "cockpit";
-
-      await controls.goToPresetAsync("default");
-      const frameDataUrl = controls.captureFrame();
-
-      const latest = useConfigurationStore.getState();
-      const saved = latest.savedConfiguration;
-      if (!saved) {
-        throw new Error("A saved build is required before capturing.");
-      }
-
-      const summary = deriveBuildSummary(
-        vehicle,
-        latest.singleSelections,
-        latest.multiSelections,
-        latest.customPaintHex,
-      );
-      const layout = buildOverlayLayout({
-        vehicleName: vehicle.name,
-        lines: selectOverlayLines(summary),
-        totalPriceCents: saved.breakdown.totalPriceCents,
-        currency: vehicle.currency,
-        publicId: saved.publicId,
-      });
-
-      const blob = await composeCaptureImage({ frameDataUrl, layout });
-
-      // The image is already captured — restoring the camera doesn't need to block
-      // reaching "success". presetId resyncs currentPreset (and therefore
-      // CameraPresetBar's highlighted button) to whatever it was before the
-      // capture-triggered transition to "default", not just the raw position.
-      if (snapshot) {
-        void controls.goToRaw(snapshot, { isInterior: wasInterior, presetId: currentPreset });
-      }
-
+      const { blob, publicId: savedPublicId } = await captureBuildImage(vehicle, controls, currentPreset);
       setCompositedImage(blob);
-      setPublicId(saved.publicId);
+      setPublicId(savedPublicId);
       setStatus("success");
     } catch {
       setStatus("error");
@@ -124,4 +89,53 @@ export function useCaptureBuild(
     capture,
     dismiss,
   };
+}
+
+/**
+ * Captures the current, already-saved build as Spec 11's composited 1600×900 PNG: animates to
+ * the default framing, grabs the frame, composites the overlay, then restores the camera.
+ * Shared by Capture Build and Publish to Gallery (Spec 31), which uploads this same image.
+ */
+export async function captureBuildImage(
+  vehicle: VehicleDetailDto,
+  controls: ShowroomControls,
+  currentPreset: CameraPresetId,
+): Promise<{ blob: Blob; publicId: string }> {
+  const snapshot = controls.getCurrentCameraState();
+  const wasInterior = currentPreset === "interior" || currentPreset === "cockpit";
+
+  await controls.goToPresetAsync("default");
+  const frameDataUrl = controls.captureFrame();
+
+  const latest = useConfigurationStore.getState();
+  const saved = latest.savedConfiguration;
+  if (!saved) {
+    throw new Error("A saved build is required before capturing.");
+  }
+
+  const summary = deriveBuildSummary(
+    vehicle,
+    latest.singleSelections,
+    latest.multiSelections,
+    latest.customPaintHex,
+  );
+  const layout = buildOverlayLayout({
+    vehicleName: vehicle.name,
+    lines: selectOverlayLines(summary),
+    totalPriceCents: saved.breakdown.totalPriceCents,
+    currency: vehicle.currency,
+    publicId: saved.publicId,
+  });
+
+  const blob = await composeCaptureImage({ frameDataUrl, layout });
+
+  // The image is already captured — restoring the camera doesn't need to block
+  // returning. presetId resyncs currentPreset (and therefore
+  // CameraPresetBar's highlighted button) to whatever it was before the
+  // capture-triggered transition to "default", not just the raw position.
+  if (snapshot) {
+    void controls.goToRaw(snapshot, { isInterior: wasInterior, presetId: currentPreset });
+  }
+
+  return { blob, publicId: saved.publicId };
 }

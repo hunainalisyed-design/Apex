@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { DeleteConfirmDialog } from "../GarageList/DeleteConfirmDialog";
 import { formatPriceCents } from "@/lib/format/currency";
 import { formatSavedDate } from "@/lib/format/date";
@@ -38,6 +39,12 @@ export function GarageCard({ configuration, vehicle }: GarageCardProps) {
   const isDeleting = useGarageStore((s) => s.deletingPublicIds[configuration.publicId] ?? false);
   const deleteError = useGarageStore((s) => s.deleteErrors[configuration.publicId] ?? null);
   const deleteConfigurationAction = useGarageStore((s) => s.deleteConfiguration);
+  // Spec 31: publishing needs the 3D scene (it captures the gallery image), so the card links
+  // into the configurator for that; unpublishing needs nothing and happens right here.
+  const isUnpublishing = useGarageStore((s) => s.unpublishingPublicIds[configuration.publicId] ?? false);
+  const unpublishError = useGarageStore((s) => s.unpublishErrors[configuration.publicId] ?? null);
+  const unpublishAction = useGarageStore((s) => s.unpublish);
+  const t = useTranslations("gallery");
 
   if (!vehicle) return <CardSkeleton />;
 
@@ -70,7 +77,14 @@ export function GarageCard({ configuration, vehicle }: GarageCardProps) {
       <img src={vehicle.thumbnailUrl} alt="" className="h-24 w-full rounded-xl object-cover" />
 
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-semibold text-white">{vehicle.name}</p>
+        <p className="flex items-center gap-2 text-sm font-semibold text-white">
+          {vehicle.name}
+          {configuration.isPublished && (
+            <span className="rounded-full bg-emerald-400/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-300">
+              {t("publishedBadge")}
+            </span>
+          )}
+        </p>
         <p className="text-xs text-white/50">{formatSavedDate(configuration.createdAt)}</p>
       </div>
 
@@ -89,6 +103,7 @@ export function GarageCard({ configuration, vehicle }: GarageCardProps) {
       </p>
 
       {deleteError && <p className="text-xs text-red-300">{deleteError}</p>}
+      {unpublishError && <p className="text-xs text-red-300">{unpublishError}</p>}
 
       <div className="flex gap-2">
         <Link
@@ -105,6 +120,25 @@ export function GarageCard({ configuration, vehicle }: GarageCardProps) {
           Delete
         </button>
       </div>
+
+      {configuration.isPublished ? (
+        <button
+          type="button"
+          onClick={() => void unpublishAction(configuration.publicId)}
+          disabled={isUnpublishing}
+          className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white/80 transition hover:border-white/50 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 focus-ring"
+        >
+          {isUnpublishing ? t("unpublishing") : t("unpublish")}
+        </button>
+      ) : (
+        <Link
+          href={`/configure/${configuration.vehicleSlug}?build=${configuration.publicId}`}
+          aria-label={t("publishFromConfiguratorLabel")}
+          className="rounded-full border border-white/20 px-4 py-2 text-center text-xs font-semibold uppercase tracking-wide text-white/80 transition hover:border-white/50 hover:text-white focus-ring"
+        >
+          {t("publishFromConfigurator")}
+        </Link>
+      )}
 
       <DeleteConfirmDialog
         isOpen={isConfirming}

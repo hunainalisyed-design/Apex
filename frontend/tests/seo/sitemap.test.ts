@@ -40,13 +40,14 @@ describe("sitemap (Spec 23, AC-3)", () => {
         "http://localhost:3000/",
         "http://localhost:3000/models",
         "http://localhost:3000/compare",
+        "http://localhost:3000/gallery",
         "http://localhost:3000/about",
         "http://localhost:3000/privacy-policy",
         "http://localhost:3000/configure/apex-gt",
         "http://localhost:3000/configure/apex-rs",
       ]),
     );
-    expect(urls).toHaveLength(7);
+    expect(urls).toHaveLength(8);
   });
 
   it("never includes a user-specific saved-build (?build=) URL, /garage, or /admin", async () => {

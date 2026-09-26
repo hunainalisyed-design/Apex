@@ -1,11 +1,11 @@
-export type NavLinkId = "home" | "models" | "configurator" | "about" | "compare";
+export type NavLinkId = "home" | "models" | "configurator" | "gallery" | "about" | "compare";
 
 export interface NavLink {
   id: NavLinkId;
   href: string;
 }
 
-/** The nav's Home/Models/Configurator/About/Compare links (Spec 13 AC-1, Spec 18 AC-7) —
+/** The nav's Home/Models/Configurator/Gallery/About/Compare links (Spec 13 AC-1, Spec 18 AC-7, Spec 31) —
  * Configurator's href is dynamic (the default vehicle's slug, or a /models fallback when
  * it couldn't be resolved), everything else is fixed. Labels are translated by id at render
  * time (`nav.links.<id>` in messages/, Spec 26). */
@@ -14,6 +14,7 @@ export function buildNavLinks(configureHref: string): NavLink[] {
     { id: "home", href: "/" },
     { id: "models", href: "/models" },
     { id: "configurator", href: configureHref },
+    { id: "gallery", href: "/gallery" },
     { id: "about", href: "/about" },
     { id: "compare", href: "/compare" },
   ];

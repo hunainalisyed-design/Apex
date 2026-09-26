@@ -7,6 +7,7 @@ import type {
   UpdateVehicleRequest,
   VehicleAdminDto,
 } from "@/types/admin";
+import type { PublishStatusDto } from "@/types/gallery";
 import type { LeadDto } from "@/types/leads";
 import type { ReservationDto } from "@/types/reservations";
 import { ApiRequestError } from "./configurations";
@@ -70,4 +71,9 @@ export function updateLeadStatus(id: string, request: UpdateLeadStatusRequest): 
 
 export function listReservations(): Promise<ReservationDto[]> {
   return adminFetch("reservations", { method: "GET" });
+}
+
+/** Spec 31's moderation safety valve: takes any build out of the public gallery. */
+export function unpublishGalleryEntry(publicId: string): Promise<PublishStatusDto> {
+  return adminFetch(`gallery/${publicId}/unpublish`, { method: "POST" });
 }

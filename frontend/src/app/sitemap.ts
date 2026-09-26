@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { getVehicles } from "@/lib/api/vehicles";
 import { SITE_URL } from "@/lib/seo/siteUrl";
 
-const STATIC_ROUTES = ["/", "/models", "/compare", "/about", "/privacy-policy"];
+const STATIC_ROUTES = ["/", "/models", "/compare", "/gallery", "/about", "/privacy-policy"];
 
 /**
  * Spec 23, AC-3: only genuinely public, indexable routes — static marketing pages plus every

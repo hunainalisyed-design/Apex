@@ -9,6 +9,7 @@ import { CaptureBuild } from "@/components/configurator/CaptureBuild/CaptureBuil
 import { CaptureVideo, RecordingOverlay } from "@/components/configurator/CaptureVideo/CaptureVideo";
 import { ExteriorPanel } from "@/components/configurator/ExteriorPanel/ExteriorPanel";
 import { InteriorPanel } from "@/components/configurator/InteriorPanel/InteriorPanel";
+import { PublishToGallery } from "@/components/configurator/PublishToGallery/PublishToGallery";
 import { SaveSharePanel } from "@/components/configurator/SaveSharePanel/SaveSharePanel";
 import { LeadCaptureButtons } from "@/components/leads/LeadCaptureButtons";
 import { ReserveDepositButton } from "@/components/reservations/ReserveDepositButton";
@@ -84,6 +85,9 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null, environm
   // both set the moment a capture is clicked, not when its rendering starts.
   const [videoBusy, setVideoBusy] = useState(false);
   const [imageBusy, setImageBusy] = useState(false);
+  // Spec 31: publishing captures the build image too, so it takes the same lock.
+  const [publishBusy, setPublishBusy] = useState(false);
+  const captureBusy = videoBusy || imageBusy || publishBusy;
   const showroomControlsRef = useRef<ShowroomControls | null>(null);
   const environment = useShowroomEnvironment(environments, showroomControlsRef, reducedMotion);
   const sound = useShowroomSound();
@@ -261,13 +265,13 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null, environm
                     environments={environments}
                     selectedId={environment.selectedId}
                     onSelect={environment.select}
-                    disabled={!sceneReady || videoBusy || imageBusy}
+                    disabled={!sceneReady || captureBusy}
                   />
                 )}
                 <CameraPresetBar
                   currentPreset={currentPreset}
                   onSelect={handleSelectPreset}
-                  disabled={!sceneReady || videoBusy || imageBusy}
+                  disabled={!sceneReady || captureBusy}
                 />
                 <div className="flex flex-wrap items-center gap-3">
                   {hasAnimatedLights && (
@@ -291,17 +295,24 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null, environm
               vehicle={vehicle}
               showroomControlsRef={showroomControlsRef}
               currentPreset={currentPreset}
-              sceneReady={sceneReady && !videoBusy}
+              sceneReady={sceneReady && !videoBusy && !publishBusy}
               onBusyChange={setImageBusy}
             />
             <CaptureVideo
               vehicle={vehicle}
               showroomControlsRef={showroomControlsRef}
               currentPreset={currentPreset}
-              sceneReady={sceneReady && !imageBusy}
+              sceneReady={sceneReady && !imageBusy && !publishBusy}
               reducedMotion={reducedMotion}
               onRecordingProgress={setVideoProgress}
               onBusyChange={setVideoBusy}
+            />
+            <PublishToGallery
+              vehicle={vehicle}
+              showroomControlsRef={showroomControlsRef}
+              currentPreset={currentPreset}
+              sceneReady={sceneReady && !videoBusy && !imageBusy}
+              onBusyChange={setPublishBusy}
             />
             <LeadCaptureButtons />
             <ReserveDepositButton />

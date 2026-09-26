@@ -106,6 +106,8 @@ describe("CaptureVideo (Spec 30)", () => {
         breakdown: { basePriceCents: 8_500_000, lineItems: [], totalPriceCents: 8_500_000, currency: "EUR" } as never,
         createdAt: "2026-09-26T00:00:00Z",
         ownerId: null,
+        isPublished: false,
+        publishedAt: null,
       },
     });
     URL.createObjectURL = vi.fn(() => "blob:clip");
