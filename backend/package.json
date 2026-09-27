@@ -18,6 +18,7 @@
     "assets:version": "tsx scripts/versionAsset.ts",
     "assets:gc": "tsx scripts/gcAssets.ts",
     "openapi:generate": "tsx scripts/generateOpenApiSchemas.ts",
+    "rarity:compute": "tsx scripts/computeComboRarity.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

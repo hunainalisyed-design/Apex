@@ -336,6 +336,36 @@
     ],
     "additionalProperties": false
   },
+  "ComboRarityDto": {
+    "type": "object",
+    "properties": {
+      "sampleSize": {
+        "type": "number"
+      },
+      "computedAt": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "rareCombos": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/RareComboDto"
+        }
+      },
+      "firstOfKind": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "sampleSize",
+      "computedAt",
+      "rareCombos",
+      "firstOfKind"
+    ],
+    "additionalProperties": false
+  },
   "CreateCheckoutSessionRequest": {
     "type": "object",
     "properties": {
@@ -1124,6 +1154,26 @@
       "publicId",
       "isPublished",
       "publishedAt"
+    ],
+    "additionalProperties": false
+  },
+  "RareComboDto": {
+    "type": "object",
+    "properties": {
+      "paintId": {
+        "type": "string"
+      },
+      "wheelsId": {
+        "type": "string"
+      },
+      "percentage": {
+        "type": "number"
+      }
+    },
+    "required": [
+      "paintId",
+      "wheelsId",
+      "percentage"
     ],
     "additionalProperties": false
   },

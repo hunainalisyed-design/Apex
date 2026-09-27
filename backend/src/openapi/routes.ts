@@ -93,6 +93,15 @@ export const DOCUMENTED_ROUTES: RouteDoc[] = [
     success: { status: 200, description: "The options.", schema: "CustomizationOptionDto", array: true },
     errors: { 404: ["VEHICLE_NOT_FOUND"] },
   },
+  {
+    method: "get",
+    path: "/vehicles/:slug/combo-rarity",
+    tag: "Catalog",
+    summary: "Rare paint + wheels pairs for a vehicle, from the hourly aggregation (Spec 32); `?build=` also reports whether that build was the first with its pair",
+    auth: "none",
+    success: { status: 200, description: "The cached rarity data.", schema: "ComboRarityDto" },
+    errors: { 400: ["VALIDATION_ERROR"], 404: ["VEHICLE_NOT_FOUND"] },
+  },
 
   // --- Gallery (Spec 31) ----------------------------------------------------------------
   {

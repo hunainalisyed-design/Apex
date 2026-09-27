@@ -89,8 +89,9 @@ model Vehicle {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  options        CustomizationOption[]
-  configurations Configuration[]
+  options          CustomizationOption[]
+  configurations   Configuration[]
+  comboRarityStats ComboRarityStat[]
 }
 
 model CustomizationOption {
@@ -341,4 +342,24 @@ model GalleryImage {
   contentType     String
   sha256          String
   createdAt       DateTime      @default(now())
+}
+
+/// Spec 32: how often each (PAINT, WHEELS) pair appears among a vehicle's saved builds. A
+/// derived cache — the hourly aggregation job rewrites a vehicle's rows wholesale, so the
+/// option ids are plain columns rather than FKs (a stale id just stops matching until the next
+/// run). Cascade: a stat is meaningless without its vehicle.
+model ComboRarityStat {
+  id                   String   @id @default(cuid())
+  vehicleId            String
+  vehicle              Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  paintId              String
+  wheelsId             String
+  count                Int
+  /// All counted builds for this vehicle at computation time (the percentage's denominator).
+  sampleSize           Int
+  /// The earliest saved build with this pair: the "first to configure" achievement (AC-5).
+  firstConfigurationId String
+  computedAt           DateTime @default(now())
+
+  @@unique([vehicleId, paintId, wheelsId])
 }

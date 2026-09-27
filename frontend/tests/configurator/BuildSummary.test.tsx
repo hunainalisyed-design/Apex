@@ -1,10 +1,13 @@
 import { act, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BuildSummary } from "../../src/components/configurator/BuildSummary/BuildSummary";
 import { formatPriceCents } from "../../src/lib/format/currency";
 import { useConfigurationStore } from "../../src/state/configurationStore";
 import { ALL_CATEGORIES } from "../../src/types/catalog";
 import type { CustomizationOptionDto, OptionCategory, VehicleDetailDto } from "../../src/types/catalog";
+
+// The build summary's rarity badge (Spec 32) fetches its data — no real network in unit tests.
+vi.mock("../../src/lib/api/comboRarity", () => ({ getComboRarity: () => Promise.resolve(null) }));
 
 function makeOption(
   category: OptionCategory,

@@ -1,6 +1,7 @@
 "use client";
 
 import { CategoryGroup } from "../CategoryGroup";
+import { RarityBadge } from "../RarityBadge/RarityBadge";
 import { formatPriceCents } from "@/lib/format/currency";
 import { deriveBuildSummary, type BuildSummaryLine } from "@/lib/showroom/buildSummary";
 import { useConfigurationStore } from "@/state/configurationStore";
@@ -58,6 +59,8 @@ export function BuildSummary({ vehicle }: BuildSummaryProps) {
     <CategoryGroup title="Your Build">
       <div aria-label="Your build summary" className="flex flex-col gap-3">
         <p className="text-sm font-semibold text-white">{vehicle.name}</p>
+        {/* Spec 32: paint + wheels rarity, when genuinely rare over a meaningful sample. */}
+        <RarityBadge vehicle={vehicle} />
 
         <ul className="flex flex-col gap-1.5">
           {summary.alwaysShown.map((line) => (

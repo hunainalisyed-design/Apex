@@ -2,6 +2,9 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ALL_CATEGORIES, type CustomizationOptionDto, type OptionCategory, type VehicleDetailDto } from "../../src/types/catalog";
 
+// The build summary's rarity badge (Spec 32) fetches its data — no real network in unit tests.
+vi.mock("../../src/lib/api/comboRarity", () => ({ getComboRarity: () => Promise.resolve(null) }));
+
 const showroomSceneMock = vi.fn((_props: unknown) => <div data-testid="showroom-scene-mock" />);
 vi.mock("../../src/components/showroom/ShowroomScene", () => ({
   ShowroomScene: (props: unknown) => showroomSceneMock(props),

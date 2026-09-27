@@ -208,5 +208,10 @@
     "viewGallery": "View Gallery",
     "publishFromConfigurator": "Publish",
     "publishFromConfiguratorLabel": "Open this build in the configurator to publish it"
+  },
+  "rarity": {
+    "rareCombo": "Only {percent}% of {vehicle} builds choose this paint and wheel combination",
+    "firstOfKind": "First build ever with this paint and wheel combination",
+    "basis": "Based on {count, plural, one {# saved build} other {# saved builds}}"
   }
 }
