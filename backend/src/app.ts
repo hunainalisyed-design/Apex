@@ -15,6 +15,7 @@ import { environmentsRouter } from "./routes/environments.js";
 import { galleryRouter } from "./routes/gallery.js";
 import { healthRouter } from "./routes/health.js";
 import { leadsRouter } from "./routes/leads.js";
+import { liveSessionsRouter } from "./routes/liveSessions.js";
 import { meRouter } from "./routes/me.js";
 import { pricingRouter } from "./routes/pricing.js";
 import { reservationsRouter, reservationsWebhookHandler } from "./routes/reservations.js";
@@ -50,6 +51,7 @@ export function createApp() {
   app.use("/api", vehiclesRouter);
   app.use("/api", environmentsRouter);
   app.use("/api", galleryRouter);
+  app.use("/api", liveSessionsRouter);
   app.use("/api", pricingRouter);
   app.use("/api", configurationsRouter);
   app.use("/api", aiRouter);

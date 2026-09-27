@@ -103,6 +103,35 @@ export const DOCUMENTED_ROUTES: RouteDoc[] = [
     errors: { 400: ["VALIDATION_ERROR"], 404: ["VEHICLE_NOT_FOUND"] },
   },
 
+  // --- Live sessions (Spec 33) -----------------------------------------------------------
+  // The session itself runs over the WebSocket /ws/live-sessions/:sessionId (messages:
+  // LiveClientMessage / LiveServerMessage schemas), which OpenAPI doesn't describe.
+  {
+    method: "post",
+    path: "/live-sessions",
+    tag: "Live sessions",
+    summary: "Start a live collaborative session from the current build; 5/min per IP",
+    auth: "none",
+    requestBody: "CreateLiveSessionRequest",
+    success: { status: 201, description: "The new session.", schema: "LiveSessionDto" },
+    errors: {
+      400: ["VALIDATION_ERROR"],
+      404: ["VEHICLE_NOT_FOUND"],
+      422: ["OPTION_VEHICLE_MISMATCH"],
+      429: ["RATE_LIMITED"],
+      503: ["LIVE_COLLAB_DISABLED", "LIVE_SESSIONS_FULL"],
+    },
+  },
+  {
+    method: "get",
+    path: "/live-sessions/:sessionId",
+    tag: "Live sessions",
+    summary: "Whether a live session is still open, and its vehicle",
+    auth: "none",
+    success: { status: 200, description: "The session.", schema: "LiveSessionDto" },
+    errors: { 404: ["LIVE_SESSION_NOT_FOUND"], 503: ["LIVE_COLLAB_DISABLED"] },
+  },
+
   // --- Gallery (Spec 31) ----------------------------------------------------------------
   {
     method: "get",

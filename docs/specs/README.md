@@ -65,7 +65,7 @@ All 19 specs below are written (Draft) and awaiting review/approval as a batch.
 | 30 | `30-shareable-video-clip.md` | §35.1 | Implemented |
 | 31 | `31-public-gallery.md` | §35.2 | Implemented |
 | 32 | `32-rarity-achievement-badges.md` | §35.2 | Implemented |
-| 33 | `33-live-collaborative-build.md` | §35.2 | Draft |
+| 33 | `33-live-collaborative-build.md` | §35.2 | Implemented |
 | 34 | `34-voice-driven-carai.md` | §35.3 | Draft |
 | 35 | `35-ai-concept-renders.md` | §35.3 | Draft |
 | 36 | `36-before-after-slider.md` | §35.4 | Draft |

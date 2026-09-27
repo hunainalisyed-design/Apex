@@ -22,7 +22,9 @@ import type { CameraPresetId } from "@/lib/showroom/cameraPresets";
 import { resolveExteriorAppearance } from "@/lib/showroom/exteriorAppearance";
 import { resolveInteriorAppearance } from "@/lib/showroom/interiorAppearance";
 import { isRealGlbVehicle } from "@/lib/showroom/realGlbVehicles";
+import { LIVE_COLLAB_ENABLED } from "@/lib/api/liveSessions";
 import { useCarAiChatStore } from "@/state/carAiChatStore";
+import { useLiveSessionStore } from "@/state/liveSessionStore";
 import { useConfigurationStore } from "@/state/configurationStore";
 import { SINGLE_SELECT_CATEGORIES, type OptionCategory, type VehicleDetailDto } from "@/types/catalog";
 import type { SavedConfigurationDto } from "@/types/configuration";
@@ -35,6 +37,9 @@ import { CameraPresetBar } from "./CameraPresetBar";
 import { EnvironmentSwitcher } from "./EnvironmentSwitcher/EnvironmentSwitcher";
 import { ENVIRONMENT_FADE_MS, useShowroomEnvironment } from "./useShowroomEnvironment";
 import { HotspotLabel } from "./HotspotLabel";
+import type { LiveCursor } from "./LiveSession/LiveCursors";
+import { LiveSessionPanel } from "./LiveSession/LiveSessionPanel";
+import { StartLiveSession } from "./LiveSession/StartLiveSession";
 import { LightingControls } from "./LightingControls";
 import { SoundToggle } from "./SoundToggle";
 import { useShowroomSound } from "./useShowroomSound";
@@ -67,9 +72,11 @@ export interface ConfigureShowroomProps {
   /** The showroom's scene presets (Spec 28); empty when unavailable — the showroom then
    * keeps its plain studio look and shows no switcher. */
   environments?: EnvironmentDto[];
+  /** Spec 33: set on /configure/[slug]/live/[sessionId] — this showroom is a live session. */
+  liveSessionId?: string;
 }
 
-export function ConfigureShowroom({ vehicle, savedConfiguration = null, environments = [] }: ConfigureShowroomProps) {
+export function ConfigureShowroom({ vehicle, savedConfiguration = null, environments = [], liveSessionId }: ConfigureShowroomProps) {
   const reducedMotion = useReducedMotion();
   const [activeTab, setActiveTab] = useState<ConfiguratorTab>("exterior");
   const [currentPreset, setCurrentPreset] = useState<CameraPresetId>("default");
@@ -88,6 +95,26 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null, environm
   // Spec 31: publishing captures the build image too, so it takes the same lock.
   const [publishBusy, setPublishBusy] = useState(false);
   const captureBusy = videoBusy || imageBusy || publishBusy;
+
+  // Spec 33: other participants' pointers, and this user's own pointer sent to them.
+  const liveParticipants = useLiveSessionStore((s) => s.participants);
+  const liveCursorPositions = useLiveSessionStore((s) => s.cursors);
+  const liveSelfId = useLiveSessionStore((s) => s.participantId);
+  const sendCursor = useLiveSessionStore((s) => s.sendCursor);
+  const setHoldRemote = useLiveSessionStore((s) => s.setHoldRemote);
+  const liveCursors = useMemo<LiveCursor[]>(
+    () =>
+      liveParticipants.flatMap((p) =>
+        p.id !== liveSelfId && liveCursorPositions[p.id]
+          ? [{ id: p.id, displayName: p.displayName, color: p.color, position: liveCursorPositions[p.id] }]
+          : [],
+      ),
+    [liveParticipants, liveCursorPositions, liveSelfId],
+  );
+  // A partner's change waits while a capture renders, so it can't change the scene mid-capture.
+  useEffect(() => {
+    if (liveSessionId) setHoldRemote(captureBusy);
+  }, [liveSessionId, captureBusy, setHoldRemote]);
   const showroomControlsRef = useRef<ShowroomControls | null>(null);
   const environment = useShowroomEnvironment(environments, showroomControlsRef, reducedMotion);
   const sound = useShowroomSound();
@@ -227,6 +254,8 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null, environm
                   onEnvironmentReady={environment.onReady}
                   onEnvironmentError={environment.onError}
                   onDoorEvent={sound.onDoorEvent}
+                  liveCursors={liveCursors}
+                  onCarPointer={liveSessionId ? sendCursor : undefined}
                 />
               </Canvas3DErrorBoundary>
               {/* Spec 28, AC-3: the previous environment's last frame, faded out over the new one. */}
@@ -289,6 +318,7 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null, environm
         }
         panel={
           <>
+            {liveSessionId && <LiveSessionPanel vehicle={vehicle} sessionId={liveSessionId} />}
             <BuildSummary vehicle={vehicle} />
             <SaveSharePanel vehicle={vehicle} />
             <CaptureBuild
@@ -314,6 +344,7 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null, environm
               sceneReady={sceneReady && !videoBusy && !imageBusy}
               onBusyChange={setPublishBusy}
             />
+            {LIVE_COLLAB_ENABLED && !liveSessionId && <StartLiveSession vehicle={vehicle} />}
             <LeadCaptureButtons />
             <ReserveDepositButton />
             <ArButton vehicle={vehicle} showroomControlsRef={showroomControlsRef} sceneReady={sceneReady} />

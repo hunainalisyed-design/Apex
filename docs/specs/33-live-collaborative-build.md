@@ -1,7 +1,7 @@
 # Spec: Live Collaborative Build
 
 **File:** `docs/specs/33-live-collaborative-build.md`
-**Status:** Draft
+**Status:** Implemented
 **Author:** Syed Hunain Raza
 **Reviewer:** hunainalisyed@gmail.com
 **Related:** SRS §35.2 (Live collaborative build); depends on `06-exterior-customization.md` (configuration store), `05-3d-showroom-core.md`, `10-save-share-configuration.md`
@@ -24,14 +24,16 @@
 
 | # | Criterion |
 |---|---|
-| AC-1 | **Given** a showroom session **When** the user clicks "Start Live Session" **Then** a `LiveSession` is created (ephemeral, not a saved `Configuration`) and a shareable link (`/configure/{slug}/live/{sessionId}`) is generated |
-| AC-2 | **Given** a second person opens that link **When** they join **Then** both participants' clients connect via WebSocket to the same session and see each other represented as a labeled cursor/presence indicator in the 3D scene |
-| AC-3 | **Given** either participant changes a single-select category (paint, wheels, etc.) **When** applied **Then** the change is broadcast to all participants in the session and applied to everyone's 3D scene and price within roughly one second |
-| AC-4 | **Given** two participants change the *same* category at nearly the same time **When** both changes arrive **Then** the conflict is resolved by last-write-wins per category (the server timestamps and broadcasts the final state; no operational-transform or CRDT merge logic is needed because a single-select category's state is just "one value," not freely-editable text) |
-| AC-5 | **Given** a live session **When** either participant clicks "Save" **Then** it saves as a normal `Configuration` (Spec 10), ending the live-collaborative aspect — the session itself is never itself the persisted artifact, only a real-time editing surface over the same store both specs already share |
-| AC-6 | **Given** a live session with no activity for a defined period (e.g. 30 minutes) **When** that elapses **Then** it's automatically closed and its WebSocket connections terminate gracefully |
-| AC-7 | **Given** a participant leaves or disconnects **When** detected **Then** their cursor/presence disappears for the remaining participant(s) within a few seconds |
-| AC-8 | **Given** this feature requires no account **When** used **Then** it works entirely in guest mode (SRS §36.5) — participants are identified only by an ephemeral session-local display name/color, not a real identity |
+| AC-1 | **Given** a showroom session **When** the user clicks "Start Live Session" (optionally entering a display name) **Then** a `LiveSession` is created from their current build (ephemeral, not a saved `Configuration`; validated against the catalog like a save) and their tab moves onto the shareable link `/configure/{slug}/live/{sessionId}`, where a "Copy Invite Link" button shares it |
+| AC-2 | **Given** a second person opens that link **When** they enter an optional name and join **Then** both participants' clients connect via WebSocket to the same session; each sees who's present (names and colors) and the other's pointer as a labeled, colored marker on the car in the 3D scene (a world-space point, so it lands in the right place whatever each person's own camera angle) |
+| AC-3 | **Given** either participant changes a selection (single-select categories, accessories/packages, the custom paint color, or the scene) **When** applied **Then** the change is broadcast to all participants and applied to everyone's 3D scene and price within roughly one second; the others get a brief message ("Alex changed the Wheels") |
+| AC-4 | **Given** two participants change the *same* single-select category at nearly the same time **When** both changes arrive **Then** the conflict is resolved by last-write-wins per category (the server applies changes in arrival order and sends everyone the resulting state; no operational-transform or CRDT merge logic is needed because a single-select category's state is just "one value"). Accessories and packages are sent as toggles applied to the server's state, so two people adding different ones at once both stick |
+| AC-5 | **Given** a live session **When** any participant saves (the Save button, or the saves inside capture, publish, lead requests and reservations) **Then** it saves as a normal `Configuration` (Spec 10), and the others see "{name} saved this build" with a link to it. The session carries on — the session itself is never the persisted artifact, only a real-time editing surface over the same store |
+| AC-6 | **Given** a live session with no activity for 30 minutes **When** that elapses **Then** it's automatically closed and its WebSocket connections terminate gracefully, with a clear message. A session nobody is connected to closes after 5 minutes |
+| AC-7 | **Given** a participant leaves or disconnects **When** detected **Then** their cursor/presence disappears for the remaining participant(s) within a few seconds — at once for a clean leave, and within about 10 seconds for a dropped connection (5-second heartbeat) |
+| AC-8 | **Given** this feature requires no account **When** used **Then** it works entirely in guest mode (SRS §36.5) — participants are identified only by an ephemeral session-local display name (default "Guest") and an auto-assigned color, not a real identity |
+| AC-9 | **Given** a participant's connection drops **When** the network returns **Then** the page shows "Reconnecting…" and rejoins automatically with the same name and color |
+| AC-10 | **Given** an image capture, video capture or publish is running **When** a partner's change arrives **Then** it waits until the capture finishes, then applies — a partner can never change the scene mid-capture |
 
 ---
 
@@ -41,22 +43,51 @@
 
 | Protocol | Route/Event | Notes |
 |---|---|---|
-| `POST` | `/api/live-sessions` | creates a session, returns `sessionId` |
-| WebSocket | `/ws/live-sessions/:sessionId` | join, presence, and selection-change broadcast |
+| `POST` | `/api/live-sessions` | body `CreateLiveSessionRequest` (the creator's current build); `201` `ApiResponse<LiveSessionDto>`; 5/min per IP |
+| `GET` | `/api/live-sessions/:sessionId` | whether the link still works and its vehicle — the join page checks this first; `200` `ApiResponse<LiveSessionDto>` |
+| WebSocket | `/ws/live-sessions/:sessionId` | on the API's own HTTP server; only pages from `FRONTEND_ORIGIN` may connect (others get `403`); max 4 KB per message |
+
+Session ids are 16 random characters — the link is the only key, so it must be unguessable. Up to 4 people can be in a session (2 are guaranteed), and at most 500 sessions run at once.
 
 ### WebSocket message shapes
 
 ```ts
-type ClientMessage =
-  | { type: "join"; displayName: string }
-  | { type: "cursorMove"; position: [number, number, number] }
-  | { type: "selectionChange"; category: SingleSelectCategory | MultiSelectCategory; value: string | string[] };
+type LiveChange =
+  | { kind: "select"; category: SingleSelectCategory; optionId: string }
+  | { kind: "toggle"; category: MultiSelectCategory; optionId: string }
+  | { kind: "customPaint"; hex: string }
+  | { kind: "environment"; environmentId: string | null };
 
-type ServerMessage =
-  | { type: "presenceUpdate"; participants: { id: string; displayName: string; color: string }[] }
-  | { type: "cursorUpdate"; participantId: string; position: [number, number, number] }
-  | { type: "stateSync"; singleSelections: Record<SingleSelectCategory, string>; multiSelections: Record<MultiSelectCategory, string[]> };
+type LiveClientMessage =
+  | { type: "join"; displayName: string; participantToken?: string } // must be first
+  | { type: "change"; change: LiveChange }
+  | { type: "cursor"; position: [number, number, number] | null } // world space; null = off the car
+  | { type: "saved"; publicId: string }; // relayed only for a build of this vehicle saved in the last 2 minutes
+
+type LiveServerMessage =
+  | { type: "welcome"; participantId: string; participantToken: string; state: LiveStateDto; participants: LiveParticipantDto[] }
+  | { type: "state"; state: LiveStateDto; change: { participantId: string; displayName: string; change: LiveChange } | null }
+  | { type: "presence"; participants: LiveParticipantDto[] }
+  | { type: "cursor"; participantId: string; position: [number, number, number] | null }
+  | { type: "saved"; participantId: string; displayName: string; publicId: string }
+  | { type: "error"; code: string; message: string }; // followed by the corrected state
 ```
+
+Every change is validated against the session's vehicle catalog before it's applied. Cursor moves are throttled to about 20 a second (client and server).
+
+**Close codes** the page maps to its UI states: `4404` not found/expired link, `4410` closed for inactivity, `4409` full, `4411` opened in another tab, `4503` turned off, `4400`/`4429` protocol misuse and `1009` (message too big) end it as "connection lost" without retrying. Anything else is treated as a network drop and retried.
+
+### Error codes
+
+| HTTP | `code` | When |
+|---|---|---|
+| `400` | `VALIDATION_ERROR` | reused — a missing vehicle or malformed starting build |
+| `404` | `VEHICLE_NOT_FOUND` | reused |
+| `404` | `LIVE_SESSION_NOT_FOUND` | **new** — the session has ended or never existed |
+| `422` | `OPTION_VEHICLE_MISMATCH` | reused — the starting build has an option not on this vehicle |
+| `429` | `RATE_LIMITED` | reused |
+| `503` | `LIVE_COLLAB_DISABLED` | **new** — `LIVE_COLLAB_ENABLED=false` |
+| `503` | `LIVE_SESSIONS_FULL` | **new** — 500 sessions already running |
 
 ### Breaking-change check
 
@@ -69,15 +100,16 @@ type ServerMessage =
 `LiveSession` state is held **in-memory on the WebSocket server process** (or a shared cache like Redis if the backend runs multiple instances — see Risk #2), not in Postgres — it's ephemeral by design (AC-5/AC-6), consistent with "don't add persistence beyond what's needed."
 
 ```ts
-// backend/src/services/liveSession/types.ts (in-memory / Redis, not Prisma)
-interface LiveSessionState {
-  sessionId: string;
+// backend/src/services/liveSession/registry.ts (in memory, not Prisma)
+interface LiveSession {
+  id: string;
   vehicleSlug: string;
-  singleSelections: Record<SingleSelectCategory, string>;
-  multiSelections: Record<MultiSelectCategory, string[]>;
-  participants: Map<string, { displayName: string; color: string; lastSeenAt: number }>;
+  catalog: LiveCatalog; // the vehicle's options, custom-paint option and environments, for validation
+  state: LiveStateDto; // singleSelections, multiSelections, customPaintHex, environmentId, version
+  participants: Map<string, { id; token; displayName; color; connected }>;
   createdAt: number;
   lastActivityAt: number;
+  emptySince: number | null;
 }
 ```
 
@@ -90,10 +122,14 @@ interface LiveSessionState {
 | **Connecting** | brief "Joining session..." indicator |
 | **Connected** | normal showroom UI plus presence cursors/avatars |
 | **Session expired/not found** | clear message with an option to start a new solo session |
-| **Disconnected (network issue)** | automatic reconnect attempt with a visible "Reconnecting..." indicator |
+| **Disconnected (network issue)** | automatic reconnect attempts (1 s, 2 s, 4 s, 8 s, then every 10 s, for about 1.5 minutes) with a visible "Reconnecting…" indicator |
+| **Joining by link** | a small card: optional "Your name" and Join. Whoever started or already joined in this tab rejoins without it |
+| **Ended** | why (inactivity, full, turned off, opened in another tab, connection lost), with the build still on screen and a button to start a new live session |
+
+Presence (names and colors) sits at the top of the build panel; a partner's change shows a toast (read by screen readers); a partner's save shows a link to that build. Cursors are markers pinned to the car in 3D. Live links are `noindex` and disallowed in `robots.txt`.
 
 **Route(s):** `/configure/[slug]/live/[sessionId]`
-**Directory:** `frontend/src/components/showroom/LiveSession/`, `backend/src/ws/liveSession.ts`
+**Directory:** `frontend/src/components/showroom/LiveSession/`, `frontend/src/state/liveSessionStore.ts`, `backend/src/ws/liveSession.ts`, `backend/src/services/liveSession/`, `backend/src/routes/liveSessions.ts`
 
 ---
 
@@ -101,9 +137,10 @@ interface LiveSessionState {
 
 | Level | What it covers | Where |
 |---|---|---|
-| **Unit** | last-write-wins conflict resolution, inactivity-timeout logic | `backend/tests/liveSession.test.ts` |
-| **Integration** | WebSocket join/broadcast/leave flow with two mocked clients | `backend/tests/integration/liveSession.int.test.ts` |
-| **E2E** | two browser contexts join the same session, one changes wheels, assert the other's scene/price updates within the expected window | `frontend/e2e/live-collaboration.spec.ts` |
+| **Unit** | last-write-wins, accessory toggles, validation, joining/colors/caps, reconnect identity, inactivity and empty-session timeouts, message parsing | `backend/tests/liveSession.test.ts` |
+| **Integration** | real WebSocket clients on a real server: join, presence, relay under one second, conflicts, invalid changes, cursors, silent drops, reconnect and same-tab takeover, save announcements, full session, other-origin refusal, 4 KB cap, idle expiry, the flag, the rate limit | `backend/tests/integration/liveSession.int.test.ts` |
+| **Store / component** | sync both ways without echoes, holding changes during a capture, cursor throttling, reconnecting, every end reason; the join card, presence, toasts, save link, start errors | `frontend/tests/live/*` |
+| **E2E** | two browser contexts join the same session, see each other, one changes the wheels and the other's summary and price follow; the other's browser closes and they disappear; a dead link says so | `frontend/e2e/live-collaboration.spec.ts` |
 
 **Coverage:** ≥80% on new code; conflict-resolution logic at 100% given its correctness importance.
 
@@ -112,7 +149,7 @@ interface LiveSessionState {
 ## 7. Out of scope
 
 - Voice/video chat between participants — text/cursor presence only.
-- More than two participants — while the design doesn't hard-block a third, it's only tested and guaranteed for two, matching the SRS's "a friend join" framing.
+- More than two participants is only guaranteed for two, matching the SRS's "a friend join" framing; the server allows up to four, mainly as abuse protection.
 - Any persistence of the live session's edit history (who changed what, in order) — only the final state matters, per AC-5's save-ends-it design.
 
 ---
@@ -123,13 +160,13 @@ interface LiveSessionState {
 |---|---|---|---|
 | 1 | This is by a wide margin the most infrastructurally different spec in the whole project — it requires a stateful WebSocket server, which changes the backend's deployment assumptions (a plain serverless/stateless Express deploy doesn't naturally support long-lived WebSocket connections). | Product owner | Resolved — accepted as the necessary cost of this feature; recommend deploying the backend on a platform supporting persistent connections (e.g. a long-running Node process on Render/Fly.io, not a serverless function model) specifically because of this spec. If the hosting choice can't accommodate this, this spec should be the first cut from the backlog. |
 | 2 | If the backend ever runs multiple instances (horizontal scaling), in-memory `LiveSessionState` wouldn't be shared across them — a participant could connect to a different instance than their session lives on. | Implementer | Open — acceptable at this project's expected scale (single instance); would need Redis-backed session state to scale beyond that, deliberately not built now per "don't design for hypothetical future requirements." |
-| 3 | Applying last-write-wins per category (AC-4) means one participant's rapid changes could feel like they're "overwriting" the other's, with no visual indication of whose change won. | Product owner | Open — consider a brief toast ("Alex just changed the wheels") as a UX mitigation during implementation; not required for the feature to function correctly. |
+| 3 | Applying last-write-wins per category (AC-4) means one participant's rapid changes could feel like they're "overwriting" the other's, with no visual indication of whose change won. | Product owner | Resolved — each partner change shows a brief toast ("Alex changed the Wheels"). |
 
 ---
 
 ## 9. Rollout
 
-- **Feature flag:** `LIVE_COLLAB_ENABLED` — given Risk #1's infrastructure implications, this should be the easiest feature in the backlog to fully disable without touching anything else.
+- **Feature flag:** `LIVE_COLLAB_ENABLED` (backend: the API answers `503 LIVE_COLLAB_DISABLED` and the WebSocket refuses) and `NEXT_PUBLIC_LIVE_COLLAB_ENABLED` (frontend: the Start button is hidden and live links show "unavailable") — given Risk #1's infrastructure implications, this is the easiest feature in the backlog to fully disable without touching anything else.
 - **Migration order:** N/A — no Postgres schema.
 - **Rollback:** disable the flag / remove the WebSocket route; the rest of the configurator is completely unaffected since this spec never touches the core `configurationStore` contract, only mirrors it over the network.
-- **Observability:** log session creation/join/close events and message-broadcast latency — the "within roughly one second" target in AC-3 needs real measurement to confirm.
+- **Observability:** logs session creation, joins, leaves and expiry (`[live] created/joined/left/closed`), socket errors, and each change's server relay time at debug level (`[live] change relayed`, `relayMs`). The integration test measures the one-second target end to end.

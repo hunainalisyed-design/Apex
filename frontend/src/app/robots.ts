@@ -9,7 +9,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin", "/garage", "/reservations", "/login", "/signup", "/forgot-password", "/reset-password"],
+      // Spec 33: live-session links are private and short-lived.
+      disallow: ["/admin", "/garage", "/reservations", "/login", "/signup", "/forgot-password", "/reset-password", "/configure/*/live/"],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };

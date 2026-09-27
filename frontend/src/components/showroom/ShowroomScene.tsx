@@ -53,6 +53,8 @@ import {
   type InteriorAppearance,
 } from "@/lib/showroom/interiorAppearance";
 import type { OptionCategory } from "@/types/catalog";
+import type { LiveCursorPosition } from "@/types/liveSession";
+import { LiveCursorLayer, type LiveCursor } from "./LiveSession/LiveCursors";
 
 export interface HoverLabel {
   category: OptionCategory;
@@ -108,6 +110,8 @@ interface ShowroomRigProps {
   onEnvironmentReady: () => void;
   onEnvironmentError: (error: unknown) => void;
   onDoorEvent: (event: Exclude<DoorEvent, null>) => void;
+  liveCursors: LiveCursor[];
+  onCarPointer?: (position: LiveCursorPosition) => void;
 }
 
 function ShowroomRig({
@@ -126,11 +130,14 @@ function ShowroomRig({
   onEnvironmentReady,
   onEnvironmentError,
   onDoorEvent,
+  liveCursors,
+  onCarPointer,
 }: ShowroomRigProps) {
   const { camera, gl } = useThree();
   const cameraRef = useRef<Camera | null>(null);
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const vehicleRef = useRef<Group>(null);
+  const carRef = useRef<Group>(null);
   const getThree = useThree((state) => state.get);
   // Spec 30: while set, the camera follows the scripted orbit instead of the user's controls —
   // by wall-clock time (real-time recording) or at an exact point (frame-by-frame).
@@ -321,25 +328,29 @@ function ShowroomRig({
         intensity={0.35}
         color="#3d6fe0"
       />
-      {realGlbConfig ? (
-        <group ref={vehicleRef}>
-          <RealGlbShowroomRig
-            config={realGlbConfig}
-            modelUrl={modelUrl}
-            appearance={appearance}
+      {/* Spec 33: the whole car, for live-session pointer raycasts. */}
+      <group ref={carRef}>
+        {realGlbConfig ? (
+          <group ref={vehicleRef}>
+            <RealGlbShowroomRig
+              config={realGlbConfig}
+              modelUrl={modelUrl}
+              appearance={appearance}
+            />
+          </group>
+        ) : (
+          <PlaceholderShowroomRig
+            doorOpenAmount={doorOpenAmount}
+            headlightsOn={headlightsOn}
+            brakePulsing={brakePulsing}
+            onHoverMesh={handleHoverMesh}
+            interior={interior}
+            accessories={accessories}
+            {...appearance}
           />
-        </group>
-      ) : (
-        <PlaceholderShowroomRig
-          doorOpenAmount={doorOpenAmount}
-          headlightsOn={headlightsOn}
-          brakePulsing={brakePulsing}
-          onHoverMesh={handleHoverMesh}
-          interior={interior}
-          accessories={accessories}
-          {...appearance}
-        />
-      )}
+        )}
+      </group>
+      <LiveCursorLayer target={carRef} cursors={liveCursors} onCarPointer={onCarPointer} />
       {/* Studio floor: a very subtle mirror-like reflector (low `mirror`/`mixStrength`, per
        * the brief's "very subtle floor reflection") plus drei's ContactShadows for a soft,
        * realistic shadow blob under the vehicle — both purely environment, not part of any
@@ -413,7 +424,13 @@ export interface ShowroomSceneProps {
   onEnvironmentError?: (error: unknown) => void;
   /** Spec 29: the placeholder rig's doors started opening / finished closing. */
   onDoorEvent?: (event: Exclude<DoorEvent, null>) => void;
+  /** Spec 33: other live-session participants' pointers on the car. */
+  liveCursors?: LiveCursor[];
+  /** Spec 33: this user's pointer on the car (world space), or null off it; omitted when not live. */
+  onCarPointer?: (position: LiveCursorPosition) => void;
 }
+
+const NO_CURSORS: LiveCursor[] = [];
 
 export function ShowroomScene({
   appearance = DEFAULT_EXTERIOR_APPEARANCE,
@@ -423,6 +440,7 @@ export function ShowroomScene({
   onEnvironmentReady = noop,
   onEnvironmentError = noop,
   onDoorEvent = noop,
+  liveCursors = NO_CURSORS,
   ...props
 }: ShowroomSceneProps) {
   const defaultPreset = getCameraPreset("default");
@@ -449,6 +467,7 @@ export function ShowroomScene({
         onEnvironmentReady={onEnvironmentReady}
         onEnvironmentError={onEnvironmentError}
         onDoorEvent={onDoorEvent}
+        liveCursors={liveCursors}
       />
     </Canvas>
   );

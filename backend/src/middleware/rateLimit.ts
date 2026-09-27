@@ -125,6 +125,14 @@ export const publishRateLimit = createRateLimit({
   message: "Too many requests. Try again shortly.",
 });
 
+/** POST /api/live-sessions (Spec 33) — starting sessions is cheap but each one holds memory. */
+export const liveSessionRateLimit = createRateLimit({
+  windowMs: 60_000,
+  maxRequests: 5,
+  code: "RATE_LIMITED",
+  message: "Too many live sessions started. Try again shortly.",
+});
+
 /** POST /api/gallery/:publicId/like (Spec 31) — generous for real browsing, bounds scripted toggling. */
 export const likeRateLimit = createRateLimit({
   windowMs: 60_000,

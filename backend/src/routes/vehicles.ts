@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { sendApiError } from "../lib/apiError.js";
+import { asyncHandler } from "../lib/asyncHandler.js";
 import {
   getVehicleWithOptions,
   mapOptionToDto,
@@ -62,20 +63,23 @@ const MAX_BUILD_ID_LENGTH = 32;
  * `?build=` was the first saved build with its pair. Computed hourly, never per request, so
  * it's cheap and safely cacheable for a few minutes.
  */
-vehiclesRouter.get("/vehicles/:slug/combo-rarity", async (req, res) => {
-  const build = req.query.build;
-  if (build !== undefined && (typeof build !== "string" || build.length === 0 || build.length > MAX_BUILD_ID_LENGTH)) {
-    sendApiError(res, 400, "VALIDATION_ERROR", "Invalid build ID.", { build: ["Must be a build ID."] });
-    return;
-  }
+vehiclesRouter.get(
+  "/vehicles/:slug/combo-rarity",
+  asyncHandler(async (req, res) => {
+    const build = req.query.build;
+    if (build !== undefined && (typeof build !== "string" || build.length === 0 || build.length > MAX_BUILD_ID_LENGTH)) {
+      sendApiError(res, 400, "VALIDATION_ERROR", "Invalid build ID.", { build: ["Must be a build ID."] });
+      return;
+    }
 
-  const rarity = await getComboRarity(req.params.slug, build);
-  if (!rarity) {
-    sendApiError(res, 404, "VEHICLE_NOT_FOUND", "No vehicle matches this slug.");
-    return;
-  }
+    const rarity = await getComboRarity(req.params.slug, build);
+    if (!rarity) {
+      sendApiError(res, 404, "VEHICLE_NOT_FOUND", "No vehicle matches this slug.");
+      return;
+    }
 
-  res.set("Cache-Control", "public, max-age=300");
-  const body: ApiResponse<ComboRarityDto> = { data: rarity };
-  res.status(200).json(body);
-});
+    res.set("Cache-Control", "public, max-age=300");
+    const body: ApiResponse<ComboRarityDto> = { data: rarity };
+    res.status(200).json(body);
+  }),
+);

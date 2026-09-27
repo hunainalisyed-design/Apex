@@ -29,6 +29,7 @@ const TYPE_FILES = [
   "gdpr",
   "health",
   "leads",
+  "liveSession",
   "pricing",
   "reservations",
 ];

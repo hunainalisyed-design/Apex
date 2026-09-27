@@ -428,6 +428,128 @@
     ],
     "additionalProperties": false
   },
+  "CreateLiveSessionRequest": {
+    "type": "object",
+    "properties": {
+      "singleSelections": {
+        "type": "object",
+        "properties": {
+          "PAINT": {
+            "type": "string"
+          },
+          "WHEELS": {
+            "type": "string"
+          },
+          "BRAKE_CALIPER": {
+            "type": "string"
+          },
+          "WINDOW_TINT": {
+            "type": "string"
+          },
+          "SPOILER": {
+            "type": "string"
+          },
+          "FRONT_ACCESSORY": {
+            "type": "string"
+          },
+          "REAR_ACCESSORY": {
+            "type": "string"
+          },
+          "BODY_PACKAGE": {
+            "type": "string"
+          },
+          "CARBON_COMPONENT": {
+            "type": "string"
+          },
+          "INTERIOR_MATERIAL": {
+            "type": "string"
+          },
+          "INTERIOR_LIGHTING": {
+            "type": "string"
+          },
+          "INTERIOR_SEATS": {
+            "type": "string"
+          },
+          "INTERIOR_DASHBOARD": {
+            "type": "string"
+          },
+          "INTERIOR_STEERING_WHEEL": {
+            "type": "string"
+          },
+          "INTERIOR_DOOR_PANELS": {
+            "type": "string"
+          },
+          "INTERIOR_FLOOR": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "PAINT",
+          "WHEELS",
+          "BRAKE_CALIPER",
+          "WINDOW_TINT",
+          "SPOILER",
+          "FRONT_ACCESSORY",
+          "REAR_ACCESSORY",
+          "BODY_PACKAGE",
+          "CARBON_COMPONENT",
+          "INTERIOR_MATERIAL",
+          "INTERIOR_LIGHTING",
+          "INTERIOR_SEATS",
+          "INTERIOR_DASHBOARD",
+          "INTERIOR_STEERING_WHEEL",
+          "INTERIOR_DOOR_PANELS",
+          "INTERIOR_FLOOR"
+        ],
+        "additionalProperties": false
+      },
+      "multiSelections": {
+        "type": "object",
+        "properties": {
+          "ACCESSORY": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "PACKAGE": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "ACCESSORY",
+          "PACKAGE"
+        ],
+        "additionalProperties": false
+      },
+      "customPaintHex": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "environmentId": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "vehicleSlug": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "customPaintHex",
+      "environmentId",
+      "multiSelections",
+      "singleSelections",
+      "vehicleSlug"
+    ],
+    "additionalProperties": false
+  },
   "CreateOptionRequest": {
     "type": "object",
     "properties": {
@@ -844,6 +966,627 @@
     "required": [
       "liked",
       "likeCount"
+    ],
+    "additionalProperties": false
+  },
+  "LiveChange": {
+    "anyOf": [
+      {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "select"
+          },
+          "category": {
+            "$ref": "#/components/schemas/SingleSelectCategory"
+          },
+          "optionId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "category",
+          "optionId"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "toggle"
+          },
+          "category": {
+            "$ref": "#/components/schemas/MultiSelectCategory"
+          },
+          "optionId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "category",
+          "optionId"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "customPaint"
+          },
+          "hex": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "hex"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "environment"
+          },
+          "environmentId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "environmentId"
+        ],
+        "additionalProperties": false
+      }
+    ]
+  },
+  "LiveClientMessage": {
+    "anyOf": [
+      {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "join"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "participantToken": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "displayName"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "change"
+          },
+          "change": {
+            "$ref": "#/components/schemas/LiveChange"
+          }
+        },
+        "required": [
+          "type",
+          "change"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "cursor"
+          },
+          "position": {
+            "$ref": "#/components/schemas/LiveCursorPosition"
+          }
+        },
+        "required": [
+          "type",
+          "position"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "saved"
+          },
+          "publicId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "publicId"
+        ],
+        "additionalProperties": false
+      }
+    ]
+  },
+  "LiveCursorPosition": {
+    "anyOf": [
+      {
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "minItems": 3,
+        "maxItems": 3
+      },
+      {
+        "type": "null"
+      }
+    ]
+  },
+  "LiveParticipantDto": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "displayName": {
+        "type": "string"
+      },
+      "color": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "displayName",
+      "color"
+    ],
+    "additionalProperties": false
+  },
+  "LiveSelectionState": {
+    "type": "object",
+    "properties": {
+      "singleSelections": {
+        "type": "object",
+        "properties": {
+          "PAINT": {
+            "type": "string"
+          },
+          "WHEELS": {
+            "type": "string"
+          },
+          "BRAKE_CALIPER": {
+            "type": "string"
+          },
+          "WINDOW_TINT": {
+            "type": "string"
+          },
+          "SPOILER": {
+            "type": "string"
+          },
+          "FRONT_ACCESSORY": {
+            "type": "string"
+          },
+          "REAR_ACCESSORY": {
+            "type": "string"
+          },
+          "BODY_PACKAGE": {
+            "type": "string"
+          },
+          "CARBON_COMPONENT": {
+            "type": "string"
+          },
+          "INTERIOR_MATERIAL": {
+            "type": "string"
+          },
+          "INTERIOR_LIGHTING": {
+            "type": "string"
+          },
+          "INTERIOR_SEATS": {
+            "type": "string"
+          },
+          "INTERIOR_DASHBOARD": {
+            "type": "string"
+          },
+          "INTERIOR_STEERING_WHEEL": {
+            "type": "string"
+          },
+          "INTERIOR_DOOR_PANELS": {
+            "type": "string"
+          },
+          "INTERIOR_FLOOR": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "PAINT",
+          "WHEELS",
+          "BRAKE_CALIPER",
+          "WINDOW_TINT",
+          "SPOILER",
+          "FRONT_ACCESSORY",
+          "REAR_ACCESSORY",
+          "BODY_PACKAGE",
+          "CARBON_COMPONENT",
+          "INTERIOR_MATERIAL",
+          "INTERIOR_LIGHTING",
+          "INTERIOR_SEATS",
+          "INTERIOR_DASHBOARD",
+          "INTERIOR_STEERING_WHEEL",
+          "INTERIOR_DOOR_PANELS",
+          "INTERIOR_FLOOR"
+        ],
+        "additionalProperties": false
+      },
+      "multiSelections": {
+        "type": "object",
+        "properties": {
+          "ACCESSORY": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "PACKAGE": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "ACCESSORY",
+          "PACKAGE"
+        ],
+        "additionalProperties": false
+      },
+      "customPaintHex": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "environmentId": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "required": [
+      "singleSelections",
+      "multiSelections",
+      "customPaintHex",
+      "environmentId"
+    ],
+    "additionalProperties": false
+  },
+  "LiveServerMessage": {
+    "anyOf": [
+      {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "welcome"
+          },
+          "participantId": {
+            "type": "string"
+          },
+          "participantToken": {
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/LiveStateDto"
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LiveParticipantDto"
+            }
+          }
+        },
+        "required": [
+          "type",
+          "participantId",
+          "participantToken",
+          "state",
+          "participants"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "state"
+          },
+          "state": {
+            "$ref": "#/components/schemas/LiveStateDto"
+          },
+          "change": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "participantId": {
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "type": "string"
+                  },
+                  "change": {
+                    "$ref": "#/components/schemas/LiveChange"
+                  }
+                },
+                "required": [
+                  "participantId",
+                  "displayName",
+                  "change"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "state",
+          "change"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "presence"
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LiveParticipantDto"
+            }
+          }
+        },
+        "required": [
+          "type",
+          "participants"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "cursor"
+          },
+          "participantId": {
+            "type": "string"
+          },
+          "position": {
+            "$ref": "#/components/schemas/LiveCursorPosition"
+          }
+        },
+        "required": [
+          "type",
+          "participantId",
+          "position"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "saved"
+          },
+          "participantId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "publicId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "participantId",
+          "displayName",
+          "publicId"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "error"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    ]
+  },
+  "LiveSessionDto": {
+    "type": "object",
+    "properties": {
+      "sessionId": {
+        "type": "string"
+      },
+      "vehicleSlug": {
+        "type": "string"
+      },
+      "participantCount": {
+        "type": "number"
+      }
+    },
+    "required": [
+      "sessionId",
+      "vehicleSlug",
+      "participantCount"
+    ],
+    "additionalProperties": false
+  },
+  "LiveStateDto": {
+    "type": "object",
+    "properties": {
+      "singleSelections": {
+        "type": "object",
+        "properties": {
+          "PAINT": {
+            "type": "string"
+          },
+          "WHEELS": {
+            "type": "string"
+          },
+          "BRAKE_CALIPER": {
+            "type": "string"
+          },
+          "WINDOW_TINT": {
+            "type": "string"
+          },
+          "SPOILER": {
+            "type": "string"
+          },
+          "FRONT_ACCESSORY": {
+            "type": "string"
+          },
+          "REAR_ACCESSORY": {
+            "type": "string"
+          },
+          "BODY_PACKAGE": {
+            "type": "string"
+          },
+          "CARBON_COMPONENT": {
+            "type": "string"
+          },
+          "INTERIOR_MATERIAL": {
+            "type": "string"
+          },
+          "INTERIOR_LIGHTING": {
+            "type": "string"
+          },
+          "INTERIOR_SEATS": {
+            "type": "string"
+          },
+          "INTERIOR_DASHBOARD": {
+            "type": "string"
+          },
+          "INTERIOR_STEERING_WHEEL": {
+            "type": "string"
+          },
+          "INTERIOR_DOOR_PANELS": {
+            "type": "string"
+          },
+          "INTERIOR_FLOOR": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "PAINT",
+          "WHEELS",
+          "BRAKE_CALIPER",
+          "WINDOW_TINT",
+          "SPOILER",
+          "FRONT_ACCESSORY",
+          "REAR_ACCESSORY",
+          "BODY_PACKAGE",
+          "CARBON_COMPONENT",
+          "INTERIOR_MATERIAL",
+          "INTERIOR_LIGHTING",
+          "INTERIOR_SEATS",
+          "INTERIOR_DASHBOARD",
+          "INTERIOR_STEERING_WHEEL",
+          "INTERIOR_DOOR_PANELS",
+          "INTERIOR_FLOOR"
+        ],
+        "additionalProperties": false
+      },
+      "multiSelections": {
+        "type": "object",
+        "properties": {
+          "ACCESSORY": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "PACKAGE": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "ACCESSORY",
+          "PACKAGE"
+        ],
+        "additionalProperties": false
+      },
+      "customPaintHex": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "environmentId": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "version": {
+        "type": "number"
+      }
+    },
+    "required": [
+      "customPaintHex",
+      "environmentId",
+      "multiSelections",
+      "singleSelections",
+      "version"
     ],
     "additionalProperties": false
   },

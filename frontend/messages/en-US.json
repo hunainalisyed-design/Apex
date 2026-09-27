@@ -19,7 +19,10 @@
     "PAYMENT_PROVIDER_ERROR": "We couldn't start checkout. Please try again in a moment.",
     "OPTION_NOT_FOUND": "This option could not be found. Please refresh and try again.",
     "LEAD_NOT_FOUND": "This lead could not be found. Please refresh and try again.",
-    "fallback": "Something went wrong. Please try again."
+    "fallback": "Something went wrong. Please try again.",
+    "LIVE_COLLAB_DISABLED": "Live sessions are turned off right now.",
+    "LIVE_SESSIONS_FULL": "Too many live sessions are running. Try again later.",
+    "LIVE_SESSION_NOT_FOUND": "This live session has ended."
   },
   "nav": {
     "label": "Primary",
@@ -213,5 +216,49 @@
     "rareCombo": "Only {percent}% of {vehicle} builds choose this paint and wheel combination",
     "firstOfKind": "First build ever with this paint and wheel combination",
     "basis": "Based on {count, plural, one {# saved build} other {# saved builds}}"
+  },
+  "live": {
+    "start": "Start Live Session",
+    "starting": "Starting…",
+    "startTitle": "Configure together, live",
+    "startBody": "Anyone with the link can join and change this build with you in real time. No account needed.",
+    "yourName": "Your name",
+    "namePlaceholder": "Guest",
+    "cancel": "Cancel",
+    "startFailed": "Couldn’t start a live session — try again.",
+    "joinTitle": "Join this live session",
+    "joinBody": "You’ll see each other’s changes and cursors as you configure together.",
+    "join": "Join",
+    "joining": "Joining session…",
+    "reconnecting": "Reconnecting…",
+    "label": "Live session",
+    "participants": "In this session",
+    "you": "(you)",
+    "copyLink": "Copy Invite Link",
+    "linkCopied": "Invite link copied",
+    "linkCopyFailed": "Couldn’t copy — try again",
+    "leave": "Leave",
+    "rejoin": "Rejoin",
+    "changedCategory": "{name} changed the {category}",
+    "changedCustomPaint": "{name} changed the paint color",
+    "changedScene": "{name} changed the scene",
+    "saved": "{name} saved this build",
+    "openSaved": "Open saved build",
+    "ended": {
+      "notFound": "This live session has ended or the link is wrong.",
+      "expired": "This live session closed after 30 minutes without activity.",
+      "full": "This live session is full.",
+      "disabled": "Live sessions are turned off right now.",
+      "replaced": "This session is open in another tab.",
+      "failed": "Lost connection to the live session.",
+      "left": "You left the live session. Your build is still here."
+    },
+    "endedHint": "Your build is still here — save it, or start a new live session.",
+    "notFoundTitle": "Live session not found",
+    "notFoundBody": "This live session has ended or the link is wrong. Live sessions close after 30 minutes without activity.",
+    "startSolo": "Configure on Your Own",
+    "unavailableTitle": "Live sessions are unavailable",
+    "unavailableBody": "Live sessions are turned off or can’t be reached right now. You can still configure on your own.",
+    "cursorLabel": "{name}’s pointer"
   }
 }
