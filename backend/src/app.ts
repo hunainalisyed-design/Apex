@@ -9,6 +9,7 @@ import { adminRouter } from "./routes/admin.js";
 import { aiRouter } from "./routes/ai.js";
 import { arRouter } from "./routes/ar.js";
 import { authRouter } from "./routes/auth.js";
+import { conceptRenderRouter } from "./routes/conceptRender.js";
 import { configurationsRouter } from "./routes/configurations.js";
 import { docsRouter } from "./routes/docs.js";
 import { environmentsRouter } from "./routes/environments.js";
@@ -52,6 +53,7 @@ export function createApp() {
   app.use("/api", environmentsRouter);
   app.use("/api", galleryRouter);
   app.use("/api", liveSessionsRouter);
+  app.use("/api", conceptRenderRouter);
   app.use("/api", pricingRouter);
   app.use("/api", configurationsRouter);
   app.use("/api", aiRouter);

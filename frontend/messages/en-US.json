@@ -22,7 +22,10 @@
     "fallback": "Something went wrong. Please try again.",
     "LIVE_COLLAB_DISABLED": "Live sessions are turned off right now.",
     "LIVE_SESSIONS_FULL": "Too many live sessions are running. Try again later.",
-    "LIVE_SESSION_NOT_FOUND": "This live session has ended."
+    "LIVE_SESSION_NOT_FOUND": "This live session has ended.",
+    "IMAGE_PROVIDER_ERROR": "Couldn't generate a concept right now — try again.",
+    "CONCEPT_RENDER_DAILY_LIMIT": "Today's concept renders are used up. Try again tomorrow.",
+    "CONCEPT_RENDERS_DISABLED": "Concept renders aren't available right now."
   },
   "nav": {
     "label": "Primary",
@@ -286,5 +289,17 @@
     "speakReplies": "Speak CarAI's replies aloud",
     "speaking": "Speaking…",
     "stopSpeaking": "Stop speaking"
+  },
+  "conceptRender": {
+    "button": "Imagine the Ultimate Version",
+    "dialogTitle": "The Ultimate Version",
+    "label": "AI Concept — Not a Real Configuration",
+    "explainer": "An AI's imagining of a more extreme take on your build, for inspiration only. It isn't built from real options and can't be ordered or applied.",
+    "loading": "Imagining the ultimate version…",
+    "imageAlt": "AI concept image imagining a more extreme {vehicle} — not a real configuration",
+    "placeholderNote": "Development placeholder — no image provider is connected yet.",
+    "badge": "AI Concept",
+    "retry": "Try Again",
+    "close": "Close"
   }
 }

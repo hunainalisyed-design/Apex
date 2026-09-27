@@ -125,6 +125,22 @@ export const publishRateLimit = createRateLimit({
   message: "Too many requests. Try again shortly.",
 });
 
+/** POST /api/ai/concept-render (Spec 35, AC-5) — tighter than CarAI's: an image costs more than a reply. */
+export const conceptRenderRateLimit = createRateLimit({
+  windowMs: 60_000,
+  maxRequests: 2,
+  code: "RATE_LIMITED",
+  message: "Too many concept renders. Please wait a moment and try again.",
+});
+
+/** POST /api/ai/concept-render (Spec 35, Risk #2) — each visitor's daily allowance. */
+export const conceptRenderDailyLimit = createRateLimit({
+  windowMs: 24 * 60 * 60_000,
+  maxRequests: 10,
+  code: "CONCEPT_RENDER_DAILY_LIMIT",
+  message: "Today's concept renders are used up. Try again tomorrow.",
+});
+
 /** POST /api/live-sessions (Spec 33) — starting sessions is cheap but each one holds memory. */
 export const liveSessionRateLimit = createRateLimit({
   windowMs: 60_000,

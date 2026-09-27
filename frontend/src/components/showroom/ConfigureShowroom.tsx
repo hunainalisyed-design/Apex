@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AccessoriesPanel } from "@/components/configurator/AccessoriesPanel/AccessoriesPanel";
 import { CarAIAssistant } from "@/components/ai/CarAIAssistant";
+import { ConceptRender } from "@/components/ai/ConceptRender/ConceptRender";
 import { BuildSummary } from "@/components/configurator/BuildSummary/BuildSummary";
 import { CaptureBuild } from "@/components/configurator/CaptureBuild/CaptureBuild";
 import { CaptureVideo, RecordingOverlay } from "@/components/configurator/CaptureVideo/CaptureVideo";
@@ -22,6 +23,7 @@ import type { CameraPresetId } from "@/lib/showroom/cameraPresets";
 import { resolveExteriorAppearance } from "@/lib/showroom/exteriorAppearance";
 import { resolveInteriorAppearance } from "@/lib/showroom/interiorAppearance";
 import { isRealGlbVehicle } from "@/lib/showroom/realGlbVehicles";
+import { CONCEPT_RENDERS_ENABLED } from "@/lib/api/conceptRender";
 import { LIVE_COLLAB_ENABLED } from "@/lib/api/liveSessions";
 import { useCarAiChatStore } from "@/state/carAiChatStore";
 import { useLiveSessionStore } from "@/state/liveSessionStore";
@@ -344,6 +346,7 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null, environm
               sceneReady={sceneReady && !videoBusy && !imageBusy}
               onBusyChange={setPublishBusy}
             />
+            {CONCEPT_RENDERS_ENABLED && <ConceptRender vehicle={vehicle} />}
             {LIVE_COLLAB_ENABLED && !liveSessionId && <StartLiveSession vehicle={vehicle} />}
             <LeadCaptureButtons />
             <ReserveDepositButton />

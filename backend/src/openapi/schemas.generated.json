@@ -366,6 +366,136 @@
     ],
     "additionalProperties": false
   },
+  "ConceptRenderDto": {
+    "type": "object",
+    "properties": {
+      "imageUrl": {
+        "type": "string"
+      },
+      "isPlaceholder": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "imageUrl",
+      "isPlaceholder"
+    ],
+    "additionalProperties": false
+  },
+  "ConceptRenderRequest": {
+    "type": "object",
+    "properties": {
+      "vehicleSlug": {
+        "type": "string"
+      },
+      "singleSelections": {
+        "type": "object",
+        "properties": {
+          "PAINT": {
+            "type": "string"
+          },
+          "WHEELS": {
+            "type": "string"
+          },
+          "BRAKE_CALIPER": {
+            "type": "string"
+          },
+          "WINDOW_TINT": {
+            "type": "string"
+          },
+          "SPOILER": {
+            "type": "string"
+          },
+          "FRONT_ACCESSORY": {
+            "type": "string"
+          },
+          "REAR_ACCESSORY": {
+            "type": "string"
+          },
+          "BODY_PACKAGE": {
+            "type": "string"
+          },
+          "CARBON_COMPONENT": {
+            "type": "string"
+          },
+          "INTERIOR_MATERIAL": {
+            "type": "string"
+          },
+          "INTERIOR_LIGHTING": {
+            "type": "string"
+          },
+          "INTERIOR_SEATS": {
+            "type": "string"
+          },
+          "INTERIOR_DASHBOARD": {
+            "type": "string"
+          },
+          "INTERIOR_STEERING_WHEEL": {
+            "type": "string"
+          },
+          "INTERIOR_DOOR_PANELS": {
+            "type": "string"
+          },
+          "INTERIOR_FLOOR": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "PAINT",
+          "WHEELS",
+          "BRAKE_CALIPER",
+          "WINDOW_TINT",
+          "SPOILER",
+          "FRONT_ACCESSORY",
+          "REAR_ACCESSORY",
+          "BODY_PACKAGE",
+          "CARBON_COMPONENT",
+          "INTERIOR_MATERIAL",
+          "INTERIOR_LIGHTING",
+          "INTERIOR_SEATS",
+          "INTERIOR_DASHBOARD",
+          "INTERIOR_STEERING_WHEEL",
+          "INTERIOR_DOOR_PANELS",
+          "INTERIOR_FLOOR"
+        ],
+        "additionalProperties": false
+      },
+      "multiSelections": {
+        "type": "object",
+        "properties": {
+          "ACCESSORY": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "PACKAGE": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "ACCESSORY",
+          "PACKAGE"
+        ],
+        "additionalProperties": false
+      },
+      "customPaintHex": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "required": [
+      "vehicleSlug",
+      "singleSelections",
+      "multiSelections"
+    ],
+    "additionalProperties": false
+  },
   "CreateCheckoutSessionRequest": {
     "type": "object",
     "properties": {

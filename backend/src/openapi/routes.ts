@@ -103,6 +103,23 @@ export const DOCUMENTED_ROUTES: RouteDoc[] = [
     errors: { 400: ["VALIDATION_ERROR"], 404: ["VEHICLE_NOT_FOUND"] },
   },
 
+  // --- AI concept renders (Spec 35) ------------------------------------------------------
+  {
+    method: "post",
+    path: "/ai/concept-render",
+    tag: "CarAI",
+    summary: "An AI concept image of a more extreme version of the build — inspiration only, never buildable. Off unless enabled; 2/min and 10/day per IP, 100/day site-wide",
+    auth: "none",
+    requestBody: "ConceptRenderRequest",
+    success: { status: 200, description: "The generated image (a data: URL, never stored).", schema: "ConceptRenderDto" },
+    errors: {
+      ...PRICING_ERRORS,
+      429: ["RATE_LIMITED", "CONCEPT_RENDER_DAILY_LIMIT"],
+      502: ["IMAGE_PROVIDER_ERROR"],
+      503: ["CONCEPT_RENDERS_DISABLED"],
+    },
+  },
+
   // --- Live sessions (Spec 33) -----------------------------------------------------------
   // The session itself runs over the WebSocket /ws/live-sessions/:sessionId (messages:
   // LiveClientMessage / LiveServerMessage schemas), which OpenAPI doesn't describe.

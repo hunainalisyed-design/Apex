@@ -22,6 +22,7 @@ const TYPE_FILES = [
   "auth",
   "catalog",
   "comboRarity",
+  "conceptRender",
   "configuration",
   "environments",
   "garage",
