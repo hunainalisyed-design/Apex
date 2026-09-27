@@ -313,5 +313,16 @@
     "badge": "AI Concept",
     "retry": "Try Again",
     "close": "Close"
+  },
+  "driveIt": {
+    "button": "Drive It",
+    "exit": "Exit",
+    "steering": "Steering",
+    "steerLeft": "Steer left",
+    "steerRight": "Steer right",
+    "progress": "Drive progress",
+    "hint": "Steer with ← → or A/D · Esc to exit",
+    "getReady": "Getting ready…",
+    "steeringValue": "{value, select, center {Centered} left {Left of the road line} other {Right of the road line}}"
   }
 }

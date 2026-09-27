@@ -45,6 +45,9 @@ export interface ShowroomEnvironment {
   onReady: () => void;
   onError: (error: unknown) => void;
   overlay: EnvironmentOverlay | null;
+  /** Spec 37: another environment's scene settings (right size for this screen) without
+   * selecting it — so "Drive It" can borrow one without changing the build's saved scene. */
+  settingsFor: (id: string) => EnvironmentSceneSettings | null;
 }
 
 /**
@@ -122,5 +125,13 @@ export function useShowroomEnvironment(
     [environment, clearOverlay],
   );
 
-  return { selectedId: environment?.id ?? null, settings, select, onReady, onError, overlay };
+  const settingsFor = useCallback(
+    (id: string) => {
+      const found = environments.find((e) => e.id === id);
+      return found ? environmentSceneSettings(found, smallScreen) : null;
+    },
+    [environments, smallScreen],
+  );
+
+  return { selectedId: environment?.id ?? null, settings, select, onReady, onError, overlay, settingsFor };
 }

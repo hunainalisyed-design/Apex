@@ -5,6 +5,7 @@ import { useGLTF } from "@react-three/drei";
 import { Box3, Mesh, MeshStandardMaterial, Vector3 } from "three";
 import type { RealGlbVehicleConfig } from "@/lib/showroom/realGlbVehicles";
 import type { ExteriorAppearance } from "@/lib/showroom/exteriorAppearance";
+import { clone as cloneWithSkeletons } from "three/examples/jsm/utils/SkeletonUtils.js";
 
 export interface RealGlbShowroomRigProps {
   config: RealGlbVehicleConfig;
@@ -37,7 +38,10 @@ export function RealGlbShowroomRig({ config, modelUrl, appearance }: RealGlbShow
   const { scene } = useGLTF(modelUrl);
 
   const { object, scale, bodyMaterials } = useMemo(() => {
-    const clone = scene.clone(true);
+    // SkeletonUtils.clone, not scene.clone: a plain clone of a skinned mesh (Mustang, Pagani)
+    // keeps following the ORIGINAL skeleton — the cached, never-placed one — so the car would
+    // be drawn at the origin whatever this copy's transform (found by Spec 37's drive).
+    const clone = cloneWithSkeletons(scene);
     const tintedMaterials: MeshStandardMaterial[] = [];
 
     clone.traverse((child) => {
@@ -76,6 +80,9 @@ export function RealGlbShowroomRig({ config, modelUrl, appearance }: RealGlbShow
       child.material = Array.isArray(child.material) ? child.material.map(rename) : rename(child.material);
     });
 
+    // A skinned mesh's box is measured through its bones' world transforms, which a fresh copy
+    // hasn't computed yet — without this the auto-fit reads a garbage box and the car vanishes.
+    clone.updateMatrixWorld(true);
     const box = new Box3().setFromObject(clone);
     const size = box.getSize(new Vector3());
     const center = box.getCenter(new Vector3());

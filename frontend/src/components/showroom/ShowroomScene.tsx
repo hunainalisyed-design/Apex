@@ -10,7 +10,7 @@ import {
   OrbitControls,
 } from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import { PerspectiveCamera, type Camera, type Group } from "three";
+import { PerspectiveCamera, Quaternion, Vector3, type Camera, type Group } from "three";
 import {
   PlaceholderShowroomRig,
   type HoveredMesh,
@@ -54,6 +54,16 @@ import {
 } from "@/lib/showroom/interiorAppearance";
 import type { OptionCategory } from "@/types/catalog";
 import type { LiveCursorPosition } from "@/types/liveSession";
+import {
+  CENTERED,
+  drivePose,
+  DRIVE_DURATION_MS,
+  forwardYaw,
+  pathPoint,
+  pathProgress,
+  stepSteer,
+  type SteerState,
+} from "@/lib/showroom/driveIt";
 import { LiveCursorLayer, type LiveCursor } from "./LiveSession/LiveCursors";
 
 export interface HoverLabel {
@@ -82,7 +92,39 @@ export interface ShowroomControls {
    * encoded video. The scene renders at 720×1280 with a portrait camera for the duration
    * (the page layout doesn't change), then size, camera and controls are restored. */
   recordOrbit: (options: RecordOrbitOptions) => Promise<Blob>;
+  /** Spec 37: drives the car along the fixed path with a chase camera until stopped. */
+  startDrive: (options: DriveOptions) => DriveSession;
 }
+
+export interface DriveOptions {
+  /** Current steering input, -1 (left) … 1 (right) — read every frame, never re-rendered. */
+  input: { current: number };
+  /** Progress 0→1 and the sideways offset, about ten times a second (for the on-screen HUD). */
+  onUpdate: (progress: number, offset: number) => void;
+  /** Called once when the path is complete (AC-4). */
+  onComplete: () => void;
+}
+
+export interface DriveSession {
+  /** Puts the car back where it stood and the camera back where the user had it. */
+  stop: () => void;
+}
+
+interface ActiveDrive {
+  options: DriveOptions;
+  start: number;
+  last: number;
+  steer: SteerState;
+  lastReport: number;
+  completed: boolean;
+}
+
+const DRIVE_REPORT_INTERVAL_MS = 100;
+const Y_AXIS = new Vector3(0, 1, 0);
+const Z_AXIS = new Vector3(0, 0, 1);
+/** Scratch rotations for the drive's per-frame pose (Spec 37), so no frame allocates. */
+const LEAN_ROTATION = new Quaternion();
+const MODEL_ROTATION = new Quaternion();
 
 export interface RecordOrbitOptions {
   /** "frames" (WebCodecs, preferred) or "realtime" (MediaRecorder) — see pickVideoStrategy. */
@@ -142,6 +184,9 @@ function ShowroomRig({
   // Spec 30: while set, the camera follows the scripted orbit instead of the user's controls —
   // by wall-clock time (real-time recording) or at an exact point (frame-by-frame).
   const orbitRef = useRef<{ start: number } | { progress: number } | null>(null);
+  // Spec 37: while set, the car follows the drive path and the camera chases it.
+  const driveRef = useRef<ActiveDrive | null>(null);
+  const shadowRef = useRef<Group>(null);
 
   useFrame((state) => {
     const orbit = orbitRef.current;
@@ -151,6 +196,79 @@ function ShowroomRig({
     state.camera.position.set(...pose.position);
     state.camera.lookAt(...pose.target);
   });
+
+  // Spec 37: which way this car's model faces, so it's turned to face its direction of travel.
+  const driveModelYaw = forwardYaw(getRealGlbVehicleConfig(vehicleSlug)?.forwardAxis ?? "+x");
+
+  useFrame((state) => {
+    const drive = driveRef.current;
+    const car = carRef.current;
+    if (!drive || !car) return;
+    const now = performance.now();
+    const dt = (now - drive.last) / 1000;
+    drive.last = now;
+    const elapsed = now - drive.start;
+    drive.steer = stepSteer(drive.steer, drive.options.input.current, dt);
+    const pose = drivePose(pathPoint(pathProgress(elapsed / DRIVE_DURATION_MS)), drive.steer);
+
+    // Turn the model to its travel heading, lean it about its direction of travel, move it.
+    car.position.set(...pose.position);
+    car.quaternion
+      .setFromAxisAngle(Y_AXIS, pose.heading)
+      .multiply(LEAN_ROTATION.setFromAxisAngle(Z_AXIS, pose.lean))
+      .multiply(MODEL_ROTATION.setFromAxisAngle(Y_AXIS, -driveModelYaw));
+    shadowRef.current?.position.set(pose.position[0], 0, pose.position[2]);
+
+    // Chase camera: exactly at the chase pose every frame. The path and steering are already
+    // smooth, so no easing is needed — and easing would fall behind on a slow device, where the
+    // car covers more ground per frame than a per-frame ease can catch up with.
+    state.camera.position.set(...pose.camera.position);
+    state.camera.lookAt(...pose.camera.target);
+
+    if (now - drive.lastReport >= DRIVE_REPORT_INTERVAL_MS) {
+      drive.lastReport = now;
+      drive.options.onUpdate(Math.min(1, elapsed / DRIVE_DURATION_MS), drive.steer.offset);
+    }
+    if (elapsed >= DRIVE_DURATION_MS && !drive.completed) {
+      drive.completed = true;
+      drive.options.onUpdate(1, drive.steer.offset);
+      drive.options.onComplete();
+    }
+  });
+
+  const startDrive = useCallback(
+    (options: DriveOptions): DriveSession => {
+      const { camera } = getThree();
+      const controls = controlsRef.current;
+      const previous = {
+        position: camera.position.clone(),
+        target: controls?.target.clone(),
+        controlsEnabled: controls?.enabled ?? true,
+      };
+      if (controls) controls.enabled = false; // a disabled OrbitControls doesn't fight the chase camera
+      const now = performance.now();
+      driveRef.current = { options, start: now, last: now, steer: CENTERED, lastReport: 0, completed: false };
+
+      let stopped = false;
+      return {
+        stop: () => {
+          if (stopped) return;
+          stopped = true;
+          driveRef.current = null;
+          carRef.current?.position.set(0, 0, 0);
+          carRef.current?.quaternion.identity();
+          shadowRef.current?.position.set(0, 0, 0);
+          camera.position.copy(previous.position);
+          if (controls) {
+            if (previous.target) controls.target.copy(previous.target);
+            controls.enabled = previous.controlsEnabled;
+            controls.update();
+          }
+        },
+      };
+    },
+    [getThree],
+  );
 
   const recordOrbit = useCallback(
     async ({ strategy, drawOverlay, onProgress, signal }: RecordOrbitOptions): Promise<Blob> => {
@@ -242,9 +360,11 @@ function ShowroomRig({
       captureFrame: () => gl.domElement.toDataURL("image/png"),
       getVehicleObject: () => vehicleRef.current,
       recordOrbit,
+      startDrive,
     });
   }, [
     recordOrbit,
+    startDrive,
     goToPreset,
     goToPresetAsync,
     goToRaw,
@@ -376,15 +496,18 @@ function ShowroomRig({
           />
         </mesh>
       )}
-      <ContactShadows
-        position={[0, floorY + 0.001, 0]}
-        opacity={0.55}
-        scale={12}
-        blur={2.4}
-        far={4}
-        resolution={512}
-        color="#0a0e14"
-      />
+      {/* Spec 37: the shadow travels with the car while it drives. */}
+      <group ref={shadowRef}>
+        <ContactShadows
+          position={[0, floorY + 0.001, 0]}
+          opacity={0.55}
+          scale={12}
+          blur={2.4}
+          far={4}
+          resolution={512}
+          color="#0a0e14"
+        />
+      </group>
       <OrbitControls
         ref={controlsRef}
         enablePan={false}

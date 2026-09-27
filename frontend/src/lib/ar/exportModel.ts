@@ -2,6 +2,7 @@ import { Box3, Group, Mesh, type Object3D, type Texture, Vector3 } from "three";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import { USDZExporter } from "three/examples/jsm/exporters/USDZExporter.js";
 import type { ArPlatform } from "./capability";
+import { clone as cloneWithSkeletons } from "three/examples/jsm/utils/SkeletonUtils.js";
 
 /** An exported AR file — raw bytes plus the media type the viewer expects. Kept as bytes
  * (not a Blob) so callers choose how to hand it off: a blob URL for Quick Look, an upload
@@ -29,7 +30,9 @@ const TEXTURE_SLOTS = ["map", "normalMap", "roughnessMap", "metalnessMap", "aoMa
  * that alter geometry must swap it, never mutate it — simplifyObject does exactly that.
  */
 export function prepareArScene(vehicle: Object3D, lengthMeters: number): Group {
-  const copy = vehicle.clone(true);
+  // SkeletonUtils.clone: a skinned model's copy needs its own skeleton, or its skinned parts
+  // keep following the live car's bones and ignore the rescale/centring below.
+  const copy = cloneWithSkeletons(vehicle);
   copy.position.set(0, 0, 0);
   copy.rotation.set(0, 0, 0);
   copy.scale.set(1, 1, 1);

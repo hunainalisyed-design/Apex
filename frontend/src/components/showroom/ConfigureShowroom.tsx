@@ -20,6 +20,7 @@ import { formatPriceCents } from "@/lib/format/currency";
 import { calculatePrice } from "@/lib/pricing";
 import { resolveAccessoryAppearance } from "@/lib/showroom/accessoryAppearance";
 import type { CameraPresetId } from "@/lib/showroom/cameraPresets";
+import { DRIVE_ENVIRONMENT_ID } from "@/lib/showroom/driveIt";
 import { resolveExteriorAppearance } from "@/lib/showroom/exteriorAppearance";
 import { resolveInteriorAppearance } from "@/lib/showroom/interiorAppearance";
 import { isRealGlbVehicle } from "@/lib/showroom/realGlbVehicles";
@@ -36,6 +37,8 @@ import { Canvas3DErrorBoundary } from "@/components/shell/Canvas3DErrorBoundary"
 import { LoadingScreen } from "@/components/shell/LoadingScreen";
 import { ShowroomLayout } from "@/components/shell/ShowroomLayout";
 import { CameraPresetBar } from "./CameraPresetBar";
+import { DriveItButton, DriveItOverlay } from "./DriveItMode/DriveItMode";
+import { useDriveIt } from "./DriveItMode/useDriveIt";
 import { EnvironmentSwitcher } from "./EnvironmentSwitcher/EnvironmentSwitcher";
 import { ENVIRONMENT_FADE_MS, useShowroomEnvironment } from "./useShowroomEnvironment";
 import { HotspotLabel } from "./HotspotLabel";
@@ -119,6 +122,24 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null, environm
   }, [liveSessionId, captureBusy, setHoldRemote]);
   const showroomControlsRef = useRef<ShowroomControls | null>(null);
   const environment = useShowroomEnvironment(environments, showroomControlsRef, reducedMotion);
+
+  // Spec 37: "Drive It" — borrows the Coastal Road scene for the drive only; the build's own
+  // scene (and everything else about the build) is left untouched and restored afterwards.
+  const driveButtonRef = useRef<HTMLButtonElement>(null);
+  const settingsFor = environment.settingsFor;
+  const driveEnvironment = useMemo(() => settingsFor(DRIVE_ENVIRONMENT_ID), [settingsFor]);
+  // Already in that scene (or it doesn't exist)? Then there's nothing to swap or wait for.
+  const driveNeedsSwap = driveEnvironment !== null && driveEnvironment.hdriUrl !== environment.settings?.hdriUrl;
+  const driveIt = useDriveIt({ controlsRef: showroomControlsRef, hasDriveEnvironment: driveNeedsSwap, returnFocusTo: driveButtonRef });
+  // While driving, nothing else may move the camera, change the scene or capture it.
+  const sceneLocked = captureBusy || driveIt.active;
+  const showDriveEnvironment = driveIt.useDriveEnvironment && driveEnvironment !== null;
+  const environmentReady = environment.onReady;
+  const driveEnvironmentReady = driveIt.onEnvironmentReady;
+  const handleEnvironmentReady = useCallback(() => {
+    if (showDriveEnvironment) driveEnvironmentReady();
+    else environmentReady();
+  }, [showDriveEnvironment, driveEnvironmentReady, environmentReady]);
   const sound = useShowroomSound();
   const playCue = sound.cue;
   // Headlights, brake lights and doors only animate on the placeholder rig — real-model cars
@@ -252,9 +273,9 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null, environm
                   onReady={handleReady}
                   onPresetChange={setCurrentPreset}
                   onHover={setHover}
-                  environment={environment.settings}
-                  onEnvironmentReady={environment.onReady}
-                  onEnvironmentError={environment.onError}
+                  environment={showDriveEnvironment ? driveEnvironment : environment.settings}
+                  onEnvironmentReady={handleEnvironmentReady}
+                  onEnvironmentError={showDriveEnvironment ? driveIt.onEnvironmentError : environment.onError}
                   onDoorEvent={sound.onDoorEvent}
                   liveCursors={liveCursors}
                   onCarPointer={liveSessionId ? sendCursor : undefined}
@@ -272,8 +293,9 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null, environm
                   style={{ opacity: environment.overlay.fading ? 0 : 1, transitionDuration: `${ENVIRONMENT_FADE_MS}ms` }}
                 />
               )}
-              {hover && hoverLabelText && <HotspotLabel label={hoverLabelText} x={hover.x} y={hover.y} />}
+              {hover && hoverLabelText && !driveIt.active && <HotspotLabel label={hoverLabelText} x={hover.x} y={hover.y} />}
               {videoProgress !== null && <RecordingOverlay progress={videoProgress} />}
+              <DriveItOverlay drive={driveIt} />
             </div>
 
             <div className="glass-panel flex flex-col gap-2 rounded-2xl px-6 py-6">
@@ -296,13 +318,13 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null, environm
                     environments={environments}
                     selectedId={environment.selectedId}
                     onSelect={environment.select}
-                    disabled={!sceneReady || captureBusy}
+                    disabled={!sceneReady || sceneLocked}
                   />
                 )}
                 <CameraPresetBar
                   currentPreset={currentPreset}
                   onSelect={handleSelectPreset}
-                  disabled={!sceneReady || captureBusy}
+                  disabled={!sceneReady || sceneLocked}
                 />
                 <div className="flex flex-wrap items-center gap-3">
                   {hasAnimatedLights && (
@@ -313,6 +335,10 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null, environm
                     />
                   )}
                   <SoundToggle enabled={sound.enabled} onToggle={sound.toggle} />
+                  {/* AC-6: not offered at all with reduced motion — it's nothing but camera motion. */}
+                  {!reducedMotion && (
+                    <DriveItButton ref={driveButtonRef} onStart={driveIt.start} disabled={!sceneReady || sceneLocked} />
+                  )}
                 </div>
               </div>
             )}
@@ -327,14 +353,14 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null, environm
               vehicle={vehicle}
               showroomControlsRef={showroomControlsRef}
               currentPreset={currentPreset}
-              sceneReady={sceneReady && !videoBusy && !publishBusy}
+              sceneReady={sceneReady && !videoBusy && !publishBusy && !driveIt.active}
               onBusyChange={setImageBusy}
             />
             <CaptureVideo
               vehicle={vehicle}
               showroomControlsRef={showroomControlsRef}
               currentPreset={currentPreset}
-              sceneReady={sceneReady && !imageBusy && !publishBusy}
+              sceneReady={sceneReady && !imageBusy && !publishBusy && !driveIt.active}
               reducedMotion={reducedMotion}
               onRecordingProgress={setVideoProgress}
               onBusyChange={setVideoBusy}
@@ -343,14 +369,14 @@ export function ConfigureShowroom({ vehicle, savedConfiguration = null, environm
               vehicle={vehicle}
               showroomControlsRef={showroomControlsRef}
               currentPreset={currentPreset}
-              sceneReady={sceneReady && !videoBusy && !imageBusy}
+              sceneReady={sceneReady && !videoBusy && !imageBusy && !driveIt.active}
               onBusyChange={setPublishBusy}
             />
             {CONCEPT_RENDERS_ENABLED && <ConceptRender vehicle={vehicle} />}
             {LIVE_COLLAB_ENABLED && !liveSessionId && <StartLiveSession vehicle={vehicle} />}
             <LeadCaptureButtons />
             <ReserveDepositButton />
-            <ArButton vehicle={vehicle} showroomControlsRef={showroomControlsRef} sceneReady={sceneReady} />
+            <ArButton vehicle={vehicle} showroomControlsRef={showroomControlsRef} sceneReady={sceneReady && !driveIt.active} />
 
             <div className="glass-panel flex gap-1 rounded-full p-1" role="tablist" aria-label="Customization panel">
               {(["exterior", "interior", "accessories"] as const).map((tab) => (

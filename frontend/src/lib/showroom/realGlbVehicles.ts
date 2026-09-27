@@ -1,3 +1,5 @@
+import type { ForwardAxis } from "./driveIt";
+
 // Registry of catalog vehicles backed by a real, downloaded GLB asset rather than the
 // procedural PlaceholderShowroomRig (docs/CLAUDE.md's "Known open blocker"). Started as a
 // single hardcoded PORSCHE_GT3_R_SLUG constant (see git history); generalized here so adding
@@ -29,6 +31,9 @@ export interface RealGlbVehicleConfig {
    * camera presets (cameraPresets.ts) still frame the car correctly without per-vehicle
    * camera tuning. */
   targetLength: number;
+  /** Which way the model's front points in its own file (Spec 37 drives it along a path).
+   * Verified per model from its node positions — headlights vs. tail lights. */
+  forwardAxis: ForwardAxis;
   /** The real car's overall length in metres (approximate published figure), so AR places it
    * life-size (Spec 27, AC-4) — the showroom's targetLength is a framing convention, not a
    * real-world size. */
@@ -50,6 +55,7 @@ export const REAL_GLB_VEHICLES: Record<string, RealGlbVehicleConfig> = {
     slug: "porsche-992-gt3-r",
     paintMaterialNames: ["EXT_Carpaint_Inst"],
     targetLength: 4.2,
+    forwardAxis: "+z",
     lengthMeters: 4.62,
     usdzTriangleRatio: 0.35,
   },
@@ -59,6 +65,7 @@ export const REAL_GLB_VEHICLES: Record<string, RealGlbVehicleConfig> = {
     // textureless, vertex-color-driven material used by the "Paint_Geo_lodA.*" body meshes.
     paintMaterialNames: ["Paint"],
     targetLength: 4.35,
+    forwardAxis: "+z",
     lengthMeters: 4.96,
     usdzTriangleRatio: 0.35,
   },
@@ -73,6 +80,7 @@ export const REAL_GLB_VEHICLES: Record<string, RealGlbVehicleConfig> = {
     // paint.
     paintMaterialNames: ["car_paint_v3_03", "M_CarPaint"],
     targetLength: 4.45,
+    forwardAxis: "+z",
     lengthMeters: 4.95,
     usdzTriangleRatio: 0.3,
   },
@@ -85,6 +93,7 @@ export const REAL_GLB_VEHICLES: Record<string, RealGlbVehicleConfig> = {
     // intentional two-tone look instead of just recoloring the body.
     paintMaterialNames: ["CarPrimaryColor"],
     targetLength: 4.25,
+    forwardAxis: "-z",
     lengthMeters: 4.61,
   },
 };

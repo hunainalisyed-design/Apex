@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
 import { Box3, Vector3 } from "three";
+import { clone as cloneWithSkeletons } from "three/examples/jsm/utils/SkeletonUtils.js";
 
 // The one hardcoded model URL left after Spec 25: the landing hero is a brand visual, not a
 // catalog row, and it must be preloadable at module load (below) before any API data exists.
@@ -59,7 +60,11 @@ export function HeroVehicleModel({
   const { scene } = useGLTF(modelUrl);
 
   const { object, scale } = useMemo(() => {
-    const clone = scene.clone(true);
+    // SkeletonUtils.clone: skinned models must get their own skeleton (see RealGlbShowroomRig).
+    const clone = cloneWithSkeletons(scene);
+    // A skinned mesh's box is measured through its bones' world transforms, which a fresh copy
+    // hasn't computed yet — without this the auto-fit reads a garbage box and the car vanishes.
+    clone.updateMatrixWorld(true);
     const box = new Box3().setFromObject(clone);
     const size = box.getSize(new Vector3());
     const center = box.getCenter(new Vector3());
