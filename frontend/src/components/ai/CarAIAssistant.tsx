@@ -1,9 +1,11 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
+import { useComparisonStore } from "@/state/comparisonStore";
 import type { VehicleDetailDto } from "@/types/catalog";
 import { CarAIButton } from "./CarAIButton/CarAIButton";
 import { ChatWindow } from "./ChatWindow/ChatWindow";
+import { ComparisonStudio } from "./RecommendationCard/BeforeAfterSlider/ComparisonStudio";
 
 export interface CarAIAssistantProps {
   vehicle: VehicleDetailDto;
@@ -23,6 +25,14 @@ const AI_ASSISTANT_ENABLED = process.env.NEXT_PUBLIC_AI_ASSISTANT_ENABLED !== "f
  */
 export function CarAIAssistant({ vehicle }: CarAIAssistantProps) {
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const comparisonVehicle = useComparisonStore((s) => s.vehicleSlug);
+  const resetComparisonsFor = useComparisonStore((s) => s.resetFor);
+
+  // Spec 36: before/after pictures belong to this vehicle's chat, which resets with it — same
+  // shape as ConfigureShowroom's own chat reset.
+  useEffect(() => {
+    if (comparisonVehicle !== vehicle.slug) resetComparisonsFor(vehicle.slug);
+  }, [vehicle.slug, comparisonVehicle, resetComparisonsFor]);
 
   if (!AI_ASSISTANT_ENABLED) return null;
 
@@ -30,6 +40,7 @@ export function CarAIAssistant({ vehicle }: CarAIAssistantProps) {
     <>
       <CarAIButton ref={buttonRef} />
       <ChatWindow vehicle={vehicle} buttonRef={buttonRef} />
+      <ComparisonStudio vehicle={vehicle} />
     </>
   );
 }

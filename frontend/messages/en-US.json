@@ -288,7 +288,19 @@
     },
     "speakReplies": "Speak CarAI's replies aloud",
     "speaking": "Speaking…",
-    "stopSpeaking": "Stop speaking"
+    "stopSpeaking": "Stop speaking",
+    "newTotal": "New total",
+    "apply": "Apply Configuration",
+    "applied": "Applied",
+    "comparison": {
+      "preparing": "Preparing a before/after preview…",
+      "label": "Compare your current build with CarAI's suggestion",
+      "before": "Current",
+      "after": "CarAI's suggestion",
+      "valueText": "{percent}% of CarAI's suggestion shown",
+      "beforeAlt": "Your current build",
+      "afterAlt": "Your build with CarAI's suggestion applied"
+    }
   },
   "conceptRender": {
     "button": "Imagine the Ultimate Version",

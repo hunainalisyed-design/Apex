@@ -1,14 +1,19 @@
+import { useTranslations } from "next-intl";
 import { CATEGORY_LABELS } from "@/components/configurator/categoryLabels";
 import { formatPriceCents } from "@/lib/format/currency";
 import { MULTI_SELECT_CATEGORIES, SINGLE_SELECT_CATEGORIES } from "@/types/catalog";
 import type { AiConfigureRecommendation } from "@/types/ai";
 import type { PriceBreakdownDto } from "@/types/pricing";
+import { RecommendationComparison } from "./BeforeAfterSlider/RecommendationComparison";
 
 export interface RecommendationCardProps {
   recommendation: AiConfigureRecommendation;
   breakdown: PriceBreakdownDto;
   applied: boolean;
   onApply: () => void;
+  /** With both, the card shows a before/after preview (Spec 36); without, just the list. */
+  messageId?: string;
+  vehicleSlug?: string;
 }
 
 interface ChangedLine {
@@ -50,12 +55,17 @@ function buildChangedLines(recommendation: AiConfigureRecommendation, breakdown:
 }
 
 /** CarAI's recommendation card (Spec 15, AC-5) — not rendered at all when the message has
- * no recommendation (AC-6, handled by the caller). */
-export function RecommendationCard({ recommendation, breakdown, applied, onApply }: RecommendationCardProps) {
+ * no recommendation (AC-6, handled by the caller). Spec 36 adds a before/after preview above
+ * the list; the list and the Apply button are unchanged (AC-4). */
+export function RecommendationCard({ recommendation, breakdown, applied, onApply, messageId, vehicleSlug }: RecommendationCardProps) {
+  const t = useTranslations("carai");
   const lines = buildChangedLines(recommendation, breakdown);
 
   return (
     <div className="glass-panel flex flex-col gap-3 rounded-2xl p-4">
+      {messageId && vehicleSlug && (
+        <RecommendationComparison messageId={messageId} vehicleSlug={vehicleSlug} recommendation={recommendation} />
+      )}
       <ul className="flex flex-col gap-1.5 text-sm">
         {lines.map((line) => (
           <li key={line.key} className="flex items-center justify-between gap-3">
@@ -65,7 +75,7 @@ export function RecommendationCard({ recommendation, breakdown, applied, onApply
         ))}
       </ul>
       <div className="flex items-center justify-between border-t border-white/10 pt-3">
-        <span className="text-xs uppercase tracking-wide text-white/50">New total</span>
+        <span className="text-xs uppercase tracking-wide text-white/50">{t("newTotal")}</span>
         <span className="font-semibold text-white">
           {formatPriceCents(breakdown.totalPriceCents, breakdown.currency)}
         </span>
@@ -76,7 +86,7 @@ export function RecommendationCard({ recommendation, breakdown, applied, onApply
         disabled={applied}
         className="focus-ring rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wide text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {applied ? "Applied" : "Apply Configuration"}
+        {applied ? t("applied") : t("apply")}
       </button>
     </div>
   );

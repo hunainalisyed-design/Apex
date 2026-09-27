@@ -68,7 +68,7 @@ All 19 specs below are written (Draft) and awaiting review/approval as a batch.
 | 33 | `33-live-collaborative-build.md` | §35.2 | Implemented |
 | 34 | `34-voice-driven-carai.md` | §35.3 | Implemented |
 | 35 | `35-ai-concept-renders.md` | §35.3 | Implemented |
-| 36 | `36-before-after-slider.md` | §35.4 | Draft |
+| 36 | `36-before-after-slider.md` | §35.4 | Implemented |
 | 37 | `37-drive-it-mini-mode.md` | §35.4 | Draft |
 
 Build-order notes: 19→20→21 (leads, then reservations, then the admin panel that manages both) should land in that order; 25 (asset versioning) should land before or alongside 21, since 21's write endpoints are what it constrains; 24 (GDPR/consent) should land before or alongside 23 (analytics), since 23's tracking is gated on 24's consent state; 31 (gallery) depends on 16 (auth) and 11 (capture); 33 (live collaboration) is the single largest and highest-risk item in the whole backlog — see its own Risk #1 on hosting/infrastructure implications, and it is the first spec anyone should consider cutting if time runs short.

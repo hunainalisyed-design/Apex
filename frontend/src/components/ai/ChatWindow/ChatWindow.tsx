@@ -202,6 +202,8 @@ export function ChatWindow({ vehicle, buttonRef }: ChatWindowProps) {
                     breakdown={message.breakdown}
                     applied={message.applied ?? false}
                     onApply={() => applyRecommendation(message.id)}
+                    messageId={message.id}
+                    vehicleSlug={vehicle.slug}
                   />
                 )}
               </div>
