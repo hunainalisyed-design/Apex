@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { VehicleDetailDto } from "../../src/types/catalog";
 import type { SavedConfigurationDto } from "../../src/types/configuration";
@@ -184,7 +184,7 @@ describe("PublishToGallery (Spec 31)", () => {
     renderPublish();
     expect(screen.getByText("Published")).toBeInTheDocument();
 
-    useConfigurationStore.setState({ customPaintHex: "#123456" });
+    act(() => useConfigurationStore.setState({ customPaintHex: "#123456" }));
     await waitFor(() => expect(screen.getByRole("button", { name: "Publish to Gallery" })).toBeInTheDocument());
   });
 });

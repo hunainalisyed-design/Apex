@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { GalleryEntryDto, GalleryPageDto } from "../../src/types/gallery";
 
@@ -76,8 +76,10 @@ describe("GalleryView (Spec 31)", () => {
     renderGallery();
     expect(fetchGalleryMock).not.toHaveBeenCalled();
 
-    useAuthStore.setState({ user: USER, hydrated: true });
+    act(() => useAuthStore.setState({ user: USER, hydrated: true }));
     await waitFor(() => expect(fetchGalleryMock).toHaveBeenCalledWith("recent", 1));
+    // Let that load finish rendering before the test ends.
+    expect(await screen.findByText("No builds published yet — be the first!")).toBeInTheDocument();
   });
 
   it("lists published builds with image, vehicle name and like count (AC-2)", async () => {

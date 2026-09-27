@@ -260,5 +260,31 @@
     "unavailableTitle": "Live sessions are unavailable",
     "unavailableBody": "Live sessions are turned off or can’t be reached right now. You can still configure on your own.",
     "cursorLabel": "{name}’s pointer"
+  },
+  "carai": {
+    "title": "Ask CarAI",
+    "close": "Close CarAI assistant",
+    "intro": "Tell me what you're looking for, and I'll recommend a build for {vehicle}.",
+    "example1": "Make it sportier",
+    "example2": "I want an elegant daily driver",
+    "example3": "Add some carbon trim",
+    "thinking": "CarAI is thinking…",
+    "placeholder": "Ask CarAI to configure your build…",
+    "send": "Send",
+    "voice": {
+      "start": "Speak your request",
+      "stop": "Stop listening",
+      "listening": "Listening… speak now",
+      "privacyNote": "Voice is turned into text by your browser's speech service.",
+      "errors": {
+        "denied": "Microphone access is blocked — type your request instead.",
+        "noMicrophone": "No microphone found — type your request instead.",
+        "noSpeech": "Didn't catch that — try again, or type your request.",
+        "unavailable": "Voice input isn't available right now — type your request instead."
+      }
+    },
+    "speakReplies": "Speak CarAI's replies aloud",
+    "speaking": "Speaking…",
+    "stopSpeaking": "Stop speaking"
   }
 }

@@ -73,7 +73,8 @@ describe("ReservationConfirmation (Spec 20, AC-4)", () => {
 
     render(<ReservationConfirmation id="res_1" />);
 
-    await vi.waitFor(() => expect(screen.getByText("Almost there")).toBeInTheDocument());
+    // RTL's waitFor (not vi.waitFor) wraps each check in act, so the first load's update is too.
+    await waitFor(() => expect(screen.getByText("Almost there")).toBeInTheDocument());
     expect(screen.getByText(/confirming your payment/i)).toBeInTheDocument();
 
     // 5 poll attempts at 2s each — advance past all of them.

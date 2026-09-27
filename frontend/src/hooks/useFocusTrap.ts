@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type RefObject } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 
 const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
@@ -14,7 +14,12 @@ export interface UseFocusTrapOptions {
 /** Traps Tab/Shift+Tab focus cycling within containerRef while isOpen, moves focus to the
  * first focusable element on open, and calls onDismiss on Escape. Generalized from
  * CaptureBuild's hand-rolled version (Spec 11) now that Nav's mobile menu (Spec 13) needs
- * the identical behavior — one shared implementation instead of two near-duplicates. */
+ * the identical behavior — one shared implementation instead of two near-duplicates.
+ *
+ * Focus moves only when the trap OPENS. onDismiss is read through a ref, so callers passing
+ * an inline function (a new one every render) don't re-run the effect — which used to pull
+ * focus back to the first element on every re-render, e.g. out of CarAI's message box on each
+ * keystroke (found in Spec 34). */
 export function useFocusTrap(
   containerRef: RefObject<HTMLElement | null>,
   isOpen: boolean,
@@ -22,6 +27,10 @@ export function useFocusTrap(
   options?: UseFocusTrapOptions,
 ): void {
   const returnFocusTo = options?.returnFocusTo;
+  const onDismissRef = useRef(onDismiss);
+  useEffect(() => {
+    onDismissRef.current = onDismiss;
+  }, [onDismiss]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -34,7 +43,7 @@ export function useFocusTrap(
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
         e.preventDefault();
-        onDismiss();
+        onDismissRef.current();
         returnFocusTo?.current?.focus();
         return;
       }
@@ -56,5 +65,5 @@ export function useFocusTrap(
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onDismiss, containerRef, returnFocusTo]);
+  }, [isOpen, containerRef, returnFocusTo]);
 }

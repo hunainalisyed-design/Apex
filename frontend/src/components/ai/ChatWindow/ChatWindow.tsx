@@ -1,18 +1,35 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useId, useRef, useState, type FormEvent, type RefObject } from "react";
+import { useTranslations } from "next-intl";
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 import { RecommendationCard } from "@/components/ai/RecommendationCard/RecommendationCard";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { useIsDesktopViewport } from "@/hooks/useIsDesktopViewport";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { DEFAULT_LOCALE } from "@/i18n/config";
 import { withReducedMotion } from "@/lib/motion/withReducedMotion";
+import {
+  cancelSpeech,
+  getServerSpeakingId,
+  getSpeakingId,
+  isSpeechSynthesisSupported,
+  speak,
+  subscribeToSpeaking,
+} from "@/lib/voice/speechSynthesis";
+import {
+  getServerSpeakRepliesSnapshot,
+  getSpeakRepliesSnapshot,
+  setSpeakReplies,
+  subscribeToSpeakReplies,
+} from "@/lib/voice/voicePreferences";
 import { useCarAiChatStore, type ChatMessage } from "@/state/carAiChatStore";
 import type { VehicleDetailDto } from "@/types/catalog";
+import { ChatComposer } from "./ChatComposer";
 
-const MAX_MESSAGE_LENGTH = 500;
+const EXAMPLE_PROMPT_KEYS = ["example1", "example2", "example3"] as const;
 
-const EXAMPLE_PROMPTS = ["Make it sportier", "I want an elegant daily driver", "Add some carbon trim"];
+const noopSubscribe = () => () => {};
 
 export interface ChatWindowProps {
   vehicle: VehicleDetailDto;
@@ -31,8 +48,13 @@ function bubbleClassName(role: ChatMessage["role"]): string {
  * assistant isn't meant to block the rest of the page (the user should be able to watch
  * the 3D scene update while chatting), so this is a corner-anchored floating panel on
  * desktop, switching to a genuine full-screen sheet only below the `lg` breakpoint (AC-12).
+ *
+ * Spec 34 adds voice: a microphone in the composer (ChatComposer), and an optional "speak
+ * replies" switch in the header that reads each new CarAI reply aloud — off by default and
+ * remembered on this device (AC-3/AC-4), stoppable mid-sentence from the reply itself.
  */
 export function ChatWindow({ vehicle, buttonRef }: ChatWindowProps) {
+  const t = useTranslations("carai");
   const isOpen = useCarAiChatStore((s) => s.isOpen);
   const isLoading = useCarAiChatStore((s) => s.isLoading);
   const messages = useCarAiChatStore((s) => s.messages);
@@ -44,10 +66,16 @@ export function ChatWindow({ vehicle, buttonRef }: ChatWindowProps) {
   const isDesktop = useIsDesktopViewport();
   const [draft, setDraft] = useState("");
 
+  const canSpeak = useSyncExternalStore(noopSubscribe, isSpeechSynthesisSupported, () => false);
+  const speakReplies = useSyncExternalStore(subscribeToSpeakReplies, getSpeakRepliesSnapshot, getServerSpeakRepliesSnapshot);
+  const speakingId = useSyncExternalStore(subscribeToSpeaking, getSpeakingId, getServerSpeakingId);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
+  // Replies already in the chat when it mounts are never read out — only new ones.
+  const lastHandledId = useRef<string | undefined>(messages.at(-1)?.id);
 
   const close = () => setOpen(false);
 
@@ -65,12 +93,29 @@ export function ChatWindow({ vehicle, buttonRef }: ChatWindowProps) {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: reducedMotion ? "auto" : "smooth" });
   }, [messages, reducedMotion]);
 
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    const trimmed = draft.trim();
-    if (!trimmed || isLoading) return;
+  // Spec 34, AC-3: read each NEW CarAI reply aloud while "speak replies" is on. Errors aren't read.
+  useEffect(() => {
+    const last = messages.at(-1);
+    if (!last || last.id === lastHandledId.current) return;
+    lastHandledId.current = last.id;
+    if (speakReplies && isOpen && last.role === "assistant") speak(last.id, last.content, DEFAULT_LOCALE);
+  }, [messages, speakReplies, isOpen]);
+
+  // Closing the chat (or leaving the page) stops any reply being read.
+  useEffect(() => {
+    if (!isOpen) cancelSpeech();
+  }, [isOpen]);
+  useEffect(() => () => cancelSpeech(), []);
+
+  function handleSend(text: string) {
+    cancelSpeech();
     setDraft("");
-    void sendMessage(trimmed);
+    void sendMessage(text);
+  }
+
+  function toggleSpeakReplies() {
+    if (speakReplies) cancelSpeech();
+    setSpeakReplies(!speakReplies);
   }
 
   const positionClassName = isDesktop
@@ -95,27 +140,43 @@ export function ChatWindow({ vehicle, buttonRef }: ChatWindowProps) {
           exit={{ opacity: 0, y: 12 }}
           transition={{ duration: withReducedMotion(reducedMotion, 0.2, 0) }}
         >
-          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+          <div className="flex items-center justify-between gap-2 border-b border-white/10 px-4 py-3">
             <h2 id={titleId} className="text-sm font-semibold uppercase tracking-wide text-white">
-              Ask CarAI
+              {t("title")}
             </h2>
-            <button
-              type="button"
-              onClick={close}
-              aria-label="Close CarAI assistant"
-              className="focus-ring text-white/50 hover:text-white"
-            >
-              ✕
-            </button>
+            <div className="flex items-center gap-3">
+              {canSpeak && (
+                <button
+                  type="button"
+                  onClick={toggleSpeakReplies}
+                  aria-pressed={speakReplies}
+                  aria-label={t("speakReplies")}
+                  title={t("speakReplies")}
+                  className={`focus-ring rounded-full p-1 transition ${speakReplies ? "text-white" : "text-white/40 hover:text-white"}`}
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 5 6 9H2v6h4l5 4V5z" />
+                    {speakReplies ? (
+                      <path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14" />
+                    ) : (
+                      <path d="m22 9-6 6M16 9l6 6" />
+                    )}
+                  </svg>
+                </button>
+              )}
+              <button type="button" onClick={close} aria-label={t("close")} className="focus-ring text-white/50 hover:text-white">
+                ✕
+              </button>
+            </div>
           </div>
 
           <div ref={listRef} aria-live="polite" className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">
             {messages.length === 0 && (
               <div className="flex flex-col gap-2 text-sm text-white/60">
-                <p>Tell me what you&apos;re looking for, and I&apos;ll recommend a build for {vehicle.name}.</p>
+                <p>{t("intro", { vehicle: vehicle.name })}</p>
                 <ul className="flex flex-col gap-1 text-xs text-white/40">
-                  {EXAMPLE_PROMPTS.map((prompt) => (
-                    <li key={prompt}>&quot;{prompt}&quot;</li>
+                  {EXAMPLE_PROMPT_KEYS.map((key) => (
+                    <li key={key}>&quot;{t(key)}&quot;</li>
                   ))}
                 </ul>
               </div>
@@ -126,6 +187,15 @@ export function ChatWindow({ vehicle, buttonRef }: ChatWindowProps) {
                 <p className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${bubbleClassName(message.role)}`}>
                   {message.content}
                 </p>
+                {speakingId === message.id && (
+                  <div className="flex items-center gap-2 self-start text-xs text-white/60" data-testid="speaking-indicator">
+                    <span aria-hidden="true" className="h-2 w-2 rounded-full bg-emerald-400 motion-safe:animate-pulse" />
+                    {t("speaking")}
+                    <button type="button" onClick={cancelSpeech} className="focus-ring rounded-full border border-white/20 px-2 py-0.5 text-white/80 hover:text-white">
+                      {t("stopSpeaking")}
+                    </button>
+                  </div>
+                )}
                 {message.recommendation && message.breakdown && (
                   <RecommendationCard
                     recommendation={message.recommendation}
@@ -137,32 +207,10 @@ export function ChatWindow({ vehicle, buttonRef }: ChatWindowProps) {
               </div>
             ))}
 
-            {isLoading && (
-              <p className="self-start rounded-2xl bg-white/10 px-3 py-2 text-sm text-white/60">
-                CarAI is thinking…
-              </p>
-            )}
+            {isLoading && <p className="self-start rounded-2xl bg-white/10 px-3 py-2 text-sm text-white/60">{t("thinking")}</p>}
           </div>
 
-          <form onSubmit={handleSubmit} className="flex gap-2 border-t border-white/10 p-3">
-            <input
-              ref={inputRef}
-              type="text"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              maxLength={MAX_MESSAGE_LENGTH}
-              disabled={isLoading}
-              placeholder="Ask CarAI to configure your build…"
-              className="focus-ring flex-1 rounded-full bg-white/5 px-4 py-2 text-sm text-white placeholder:text-white/40 disabled:opacity-60"
-            />
-            <button
-              type="submit"
-              disabled={isLoading || !draft.trim()}
-              className="focus-ring rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wide text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Send
-            </button>
-          </form>
+          <ChatComposer draft={draft} onDraftChange={setDraft} onSubmit={handleSend} isLoading={isLoading} inputRef={inputRef} />
         </motion.div>
       )}
     </AnimatePresence>

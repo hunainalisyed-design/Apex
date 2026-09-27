@@ -134,6 +134,17 @@ describe("ChatWindow (Spec 15)", () => {
     await waitFor(() => expect(screen.getByPlaceholderText(/Ask CarAI/)).toHaveFocus());
   });
 
+  it("focus stays in the message input while typing — re-renders never move it (AC-10)", async () => {
+    useCarAiChatStore.setState({ isOpen: true });
+    renderChatWindow();
+    const input = screen.getByPlaceholderText(/Ask CarAI/);
+    await waitFor(() => expect(input).toHaveFocus());
+
+    fireEvent.change(input, { target: { value: "m" } });
+    fireEvent.change(input, { target: { value: "ma" } });
+    expect(input).toHaveFocus();
+  });
+
   it("Escape closes the window and returns focus to the floating toggle button (AC-10)", async () => {
     const button = document.createElement("button");
     document.body.appendChild(button);
