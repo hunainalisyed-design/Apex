@@ -62,4 +62,6 @@ The backend's DB-dependent integration test runs separately once Postgres is up:
 npm run test:integration --workspace=backend
 ```
 
+It runs against its own database, `apex_test` (`TEST_DATABASE_URL` in `backend/.env`; derived from `DATABASE_URL` if unset), which it creates and migrates automatically. It wipes and re-seeds that database, so it refuses to start unless the database name ends in `_test`, and re-checks the live connection before each test file — your development data in `apex_dev` is never touched.
+
 See `docs/CLAUDE.md` for the project's spec-first workflow and architectural conventions, and `docs/specs/` for the full feature spec index.

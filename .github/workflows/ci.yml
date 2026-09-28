@@ -59,6 +59,9 @@ jobs:
           --health-retries 5
     env:
       DATABASE_URL: postgresql://apex:apex@localhost:5432/apex_dev?schema=public
+      # The integration suite's own database (it wipes and re-seeds it): created and migrated by
+      # tests/integration/globalSetup.ts, and the suite refuses any database not named *_test.
+      TEST_DATABASE_URL: postgresql://apex:apex@localhost:5432/apex_test?schema=public
       # Integration tests mock the Anthropic/Stripe/Resend clients directly rather than
       # calling out for real (see vi.mock in tests/integration/{ai,reservations,leads}.int.test.ts)
       # — these placeholders only need to be non-empty so app code that checks "is this key
