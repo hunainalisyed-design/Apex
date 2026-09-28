@@ -24,6 +24,9 @@ async function logOut(page: import("@playwright/test").Page) {
 test("save while signed in, appears in My Garage, Load->edit->Save creates a new entry leaving the original untouched, delete, then claim a guest build (AC-2 through AC-7)", async ({
   page,
 }) => {
+  // Several full page loads (including the 3D configurator), so it needs more than the default
+  // 30 s when other tests run alongside it.
+  test.setTimeout(90_000);
   const email = uniqueEmail("e2e-garage");
   const password = "garagepass1";
   await signUp(page, email, "Garage Owner", password);
@@ -67,8 +70,9 @@ test("save while signed in, appears in My Garage, Load->edit->Save creates a new
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: "Delete" }).click();
-  await expect(page.locator(`a[href*="${modifiedPublicId}"]`)).not.toBeVisible();
-  await expect(page.locator(`a[href*="${originalPublicId}"]`)).toBeVisible();
+  // Each card links to its build twice (Load, and Spec 31's Publish) — check the Load link.
+  await expect(page.locator(`a[href*="${modifiedPublicId}"]`, { hasText: "Load" })).not.toBeVisible();
+  await expect(page.locator(`a[href*="${originalPublicId}"]`, { hasText: "Load" })).toBeVisible();
 
   // Save a build as a GUEST (signed out), then claim it after logging back in (AC-7).
   await logOut(page);

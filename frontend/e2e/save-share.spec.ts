@@ -12,6 +12,9 @@ test("saving, copying, and opening a shared link in a fresh browser context recr
   context,
   browser,
 }) => {
+  // Several full page loads (including the 3D configurator), so it needs more than the default
+  // 30 s when other tests run alongside it.
+  test.setTimeout(90_000);
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
   await page.goto("/configure/apex-gt");
