@@ -88,7 +88,7 @@ export function CompareView({ initialLeftSlug, initialRightSlug }: CompareViewPr
   if (status === "error") {
     return (
       <div className="glass-panel flex flex-col items-center gap-3 rounded-2xl p-8 text-center">
-        <p className="text-sm text-red-300">Unable to load vehicles. Please try again.</p>
+        <p className="text-sm text-red-200">Unable to load vehicles. Please try again.</p>
         <button
           type="button"
           onClick={() => void load(initialLeftSlug, initialRightSlug)}
@@ -112,7 +112,7 @@ export function CompareView({ initialLeftSlug, initialRightSlug }: CompareViewPr
           <VehicleSelect label="Vehicle 1" vehicles={leftOptions} value={leftSlug} onChange={handleLeftChange} />
           <Link
             href={`/configure/${leftSlug}`}
-            className="self-start rounded-full border border-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white/80 transition hover:border-white/50 hover:text-white focus-ring"
+            className="self-start rounded-full border border-accent/60 bg-accent/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-ink transition hover:border-accent hover:bg-accent/25 focus-ring"
           >
             Configure This Vehicle
           </Link>
@@ -121,21 +121,21 @@ export function CompareView({ initialLeftSlug, initialRightSlug }: CompareViewPr
           <VehicleSelect label="Vehicle 2" vehicles={rightOptions} value={rightSlug} onChange={handleRightChange} />
           <Link
             href={`/configure/${rightSlug}`}
-            className="self-start rounded-full border border-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white/80 transition hover:border-white/50 hover:text-white focus-ring"
+            className="self-start rounded-full border border-accent/60 bg-accent/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-ink transition hover:border-accent hover:bg-accent/25 focus-ring"
           >
             Configure This Vehicle
           </Link>
         </div>
       </div>
 
-      <div role="tablist" aria-label="Comparison view" className="glass-panel flex w-fit gap-1 rounded-full p-1">
+      <div role="tablist" aria-label="Comparison view" className="flex w-fit gap-1 rounded-full border border-white/15 bg-navy-800/80 p-1">
         <button
           type="button"
           role="tab"
           aria-selected={view === "table"}
           onClick={() => setView("table")}
           className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide transition focus-ring ${
-            view === "table" ? "bg-white text-black" : "text-white/70 hover:bg-white/10 hover:text-white"
+            view === "table" ? "bg-ink text-navy-900" : "text-ink-secondary hover:bg-accent/15 hover:text-ink"
           }`}
         >
           Spec Table
@@ -148,7 +148,7 @@ export function CompareView({ initialLeftSlug, initialRightSlug }: CompareViewPr
           title={threeDUnavailable ? "3D view unavailable" : undefined}
           onClick={() => setView("3d")}
           className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide transition focus-ring disabled:cursor-not-allowed disabled:opacity-40 ${
-            view === "3d" ? "bg-white text-black" : "text-white/70 hover:bg-white/10 hover:text-white"
+            view === "3d" ? "bg-ink text-navy-900" : "text-ink-secondary hover:bg-accent/15 hover:text-ink"
           }`}
         >
           3D View
@@ -162,7 +162,12 @@ export function CompareView({ initialLeftSlug, initialRightSlug }: CompareViewPr
       )}
 
       {view === "3d" && (
-        <div className="aspect-video w-full">
+        // The viewer's frame: deep navy with a soft blue glow behind the cars and a glass edge,
+        // so it reads as a 3D stage (the canvas itself is transparent over it).
+        <div
+          data-testid="compare-viewer"
+          className="aspect-video w-full overflow-hidden rounded-2xl border border-white/15 bg-navy-900 bg-[radial-gradient(ellipse_60%_55%_at_50%_55%,rgb(77_163_255/0.20)_0%,transparent_70%),linear-gradient(180deg,var(--color-navy-800)_0%,var(--color-navy-900)_100%)] shadow-[inset_0_1px_0_rgb(255_255_255/0.08),0_24px_60px_-24px_rgb(0_0_0/0.7)]"
+        >
           {detailsLoading || !leftAppearance || !rightAppearance ? (
             <LoadingScreen label="Loading 3D view…" />
           ) : (

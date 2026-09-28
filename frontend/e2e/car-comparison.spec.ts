@@ -92,3 +92,82 @@ test("on a narrow viewport the spec table scrolls within its own container, neve
 
   await expect(page.getByRole("columnheader", { name: "Apex GT" })).toBeVisible();
 });
+
+test("every piece of text is readable before any hover — labels, dropdown options, buttons, tabs, table", async ({ page }) => {
+  await page.goto("/compare");
+  await expect(page.getByRole("columnheader", { name: "Apex GT" })).toBeVisible();
+  await page.mouse.move(0, 0);
+
+  const results = await page.evaluate(() => {
+    // Any CSS colour (rgb, oklab, lab…) → [r, g, b, a], by letting a canvas resolve it.
+    const ctx = document.createElement("canvas").getContext("2d", { willReadFrequently: true })!;
+    const rgba = (css: string) => {
+      ctx.clearRect(0, 0, 1, 1);
+      ctx.fillStyle = css;
+      ctx.fillRect(0, 0, 1, 1);
+      const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+      return [r, g, b, a / 255];
+    };
+    const over = (top: number[], below: number[]) => [0, 1, 2].map((i) => top[i] * top[3] + below[i] * (1 - top[3])).concat(1);
+    const luminance = ([r, g, b]: number[]) => {
+      const lin = (c: number) => ((c /= 255) <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+      return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+    };
+    const contrast = (a: number[], b: number[]) => {
+      const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+      return (hi + 0.05) / (lo + 0.05);
+    };
+    // The page's backdrop, judged at its lightest gradient stop (the worst case for light text).
+    const backdrop = rgba("#123d5a");
+    const backgroundOf = (el: Element) => {
+      const layers: number[][] = [];
+      for (let node: Element | null = el; node && node.tagName !== "MAIN"; node = node.parentElement) {
+        const bg = rgba(getComputedStyle(node).backgroundColor);
+        if (bg[3] > 0) layers.push(bg);
+        if (bg[3] === 1) break;
+      }
+      return layers.reverse().reduce((below, top) => over(top, below), backdrop);
+    };
+    return [...document.querySelectorAll("main h1, main p, main label, main select, main option, main a, main [role=tab], main th, main td")]
+      // Skip text that's only there for screen readers (visually hidden by design).
+      .filter((el) => {
+        const text = (el.textContent ?? "").trim();
+        const hidden = [...el.querySelectorAll(".sr-only")].map((h) => (h.textContent ?? "").trim()).join("");
+        return text !== "" && !el.closest(".sr-only") && text !== hidden;
+      })
+      .map((el) => {
+        const style = getComputedStyle(el);
+        const bg = el.tagName === "OPTION" ? rgba(style.backgroundColor) : backgroundOf(el);
+        return {
+          text: (el.textContent ?? "").trim().slice(0, 30),
+          ratio: Math.round(contrast(over(rgba(style.color), bg), bg) * 10) / 10,
+          opaqueBackground: el.tagName !== "OPTION" || bg[3] === 1,
+          shown: style.visibility === "visible" && Number(style.opacity) === 1,
+        };
+      });
+  });
+
+  expect(results.length).toBeGreaterThan(20);
+  for (const r of results) {
+    expect(r, `"${r.text}"`).toMatchObject({ shown: true, opaqueBackground: true });
+    expect(r.ratio, `"${r.text}" contrast`).toBeGreaterThanOrEqual(4.5);
+  }
+  // Native controls are drawn dark, so an open option list never shows white text on white.
+  expect(await page.getByLabel("Vehicle 1").evaluate((el) => getComputedStyle(el).colorScheme)).toBe("dark");
+});
+
+test("the 3D view looks and feels grabbable: grab, then grabbing while dragging", async ({ page }) => {
+  await page.goto("/compare");
+  await page.getByRole("tab", { name: "3D View" }).click();
+  const scene = page.locator("[data-compare-scene-ready='true']");
+  await expect(scene).toBeAttached({ timeout: 60000 });
+  expect(await scene.evaluate((el) => getComputedStyle(el).cursor)).toBe("grab");
+  const viewer = page.getByTestId("compare-viewer");
+  await viewer.scrollIntoViewIfNeeded();
+  const box = (await viewer.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 80, box.y + box.height / 2, { steps: 4 });
+  expect(await scene.evaluate((el) => getComputedStyle(el).cursor)).toBe("grabbing");
+  await page.mouse.up();
+});

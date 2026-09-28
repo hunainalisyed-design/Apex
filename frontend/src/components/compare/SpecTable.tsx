@@ -38,26 +38,26 @@ export function SpecTable({ left, right }: SpecTableProps) {
         {t("comparing", { left: left.name, right: right.name })}
       </caption>
       <thead>
-        <tr className="border-b border-white/10">
-          <th scope="col" className="py-2 text-left text-xs uppercase tracking-wide text-white/50">
+        <tr className="border-b border-white/20">
+          <th scope="col" className="py-2 text-left text-xs uppercase tracking-wide text-ink-muted">
             <span className="sr-only">{t("spec")}</span>
           </th>
-          <th scope="col" className="py-2 text-left font-semibold text-white">
+          <th scope="col" className="py-2 text-left font-semibold text-ink">
             {left.name}
           </th>
-          <th scope="col" className="py-2 text-left font-semibold text-white">
+          <th scope="col" className="py-2 text-left font-semibold text-ink">
             {right.name}
           </th>
         </tr>
       </thead>
       <tbody>
         {SPEC_ROWS.map((row) => (
-          <tr key={row.labelKey} className="border-b border-white/5">
-            <th scope="row" className="py-2 pr-4 text-left font-medium text-white/60">
+          <tr key={row.labelKey} className="border-b border-white/10">
+            <th scope="row" className="py-2 pr-4 text-left font-medium text-ink-secondary">
               {t(row.labelKey)}
             </th>
-            <td className="py-2 pr-4 text-white/90">{row.format(left, t)}</td>
-            <td className="py-2 text-white/90">{row.format(right, t)}</td>
+            <td className="py-2 pr-4 text-ink">{row.format(left, t)}</td>
+            <td className="py-2 text-ink">{row.format(right, t)}</td>
           </tr>
         ))}
       </tbody>

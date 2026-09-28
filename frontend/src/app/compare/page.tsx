@@ -17,10 +17,14 @@ export default async function ComparePage({
   const { left, right } = await searchParams;
 
   return (
-    <main id="main-content" tabIndex={-1} className="flex min-h-full flex-1 flex-col gap-10 px-6 py-16">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="flex min-h-full flex-1 flex-col gap-10 bg-navy-900 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,var(--color-navy-700)_0%,var(--color-navy-800)_45%,var(--color-navy-900)_100%)] px-6 py-16 text-ink"
+    >
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 text-center">
-        <p className="text-xs uppercase tracking-[0.3em] text-white/50">Compare</p>
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl" style={{ fontFamily: "var(--font-display)" }}>
+        <p className="text-xs uppercase tracking-[0.3em] text-ink-secondary">Compare</p>
+        <h1 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl" style={{ fontFamily: "var(--font-display)" }}>
           Compare Vehicles
         </h1>
       </div>

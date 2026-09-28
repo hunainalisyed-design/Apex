@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { ContactShadows, Environment, Lightformer, OrbitControls } from "@react-three/drei";
+import { CanvasTexture, SRGBColorSpace } from "three";
 import { PlaceholderShowroomRig } from "@/components/showroom/PlaceholderShowroomRig";
 import { RealGlbShowroomRig } from "@/components/showroom/RealGlbShowroomRig";
 import { getRealGlbVehicleConfig } from "@/lib/showroom/realGlbVehicles";
@@ -42,6 +43,32 @@ const OFFSET_X = 2.6;
 const PLACEHOLDER_GROUND_Y = -0.62;
 
 const noop = () => {};
+
+/** A faint pool of blue light on the floor under the cars, fading to nothing at its edges. */
+function FloorGlow() {
+  const texture = useMemo(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 256;
+    const context = canvas.getContext("2d");
+    if (!context) return null;
+    const gradient = context.createRadialGradient(128, 128, 0, 128, 128, 128);
+    gradient.addColorStop(0, "rgb(77 163 255 / 0.3)");
+    gradient.addColorStop(1, "rgb(77 163 255 / 0)");
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, 256, 256);
+    const made = new CanvasTexture(canvas);
+    made.colorSpace = SRGBColorSpace;
+    return made;
+  }, []);
+  useEffect(() => () => texture?.dispose(), [texture]);
+  if (!texture) return null;
+  return (
+    <mesh position={[0, PLACEHOLDER_GROUND_Y - 0.002, 0]} rotation-x={-Math.PI / 2}>
+      <planeGeometry args={[20, 10]} />
+      <meshBasicMaterial map={texture} transparent depthWrite={false} toneMapped={false} />
+    </mesh>
+  );
+}
 
 /**
  * One comparison slot. Dispatches on the slot's own slug exactly the way ShowroomScene.tsx
@@ -89,22 +116,57 @@ function CompareVehicleRig({ vehicle }: { vehicle: CompareVehicleAppearance }) {
  */
 export function CompareScene({ left, right, reducedMotion }: CompareSceneProps) {
   const [ready, setReady] = useState(false);
+  // "grabbing" while a drag is under way. Tracked by hand: the orbit controls capture the
+  // pointer, so CSS :active can't be relied on to hold for the whole drag.
+  const [dragging, setDragging] = useState(false);
+  useEffect(() => {
+    if (!dragging) return;
+    const stop = () => setDragging(false);
+    window.addEventListener("pointerup", stop);
+    window.addEventListener("pointercancel", stop);
+    window.addEventListener("blur", stop); // released over another window
+    return () => {
+      window.removeEventListener("pointerup", stop);
+      window.removeEventListener("pointercancel", stop);
+      window.removeEventListener("blur", stop);
+    };
+  }, [dragging]);
 
   return (
-    <div data-compare-scene-ready={ready} className="h-full w-full">
+    // grab / grabbing: the cars can be turned by dragging.
+    <div
+      data-compare-scene-ready={ready}
+      onPointerDown={() => setDragging(true)}
+      className={`h-full w-full ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
+    >
       <Canvas
         camera={{ position: [3.5, 2.2, 9], fov: 40 }}
         dpr={[1, 2]}
         gl={{ antialias: true }}
         onCreated={() => setReady(true)}
       >
-        {/* Brighter than the single-vehicle scene's lighting (ambient 0.55, key 1.3) —
-            this view sits farther back to fit two cars, and with many catalog default
-            paints landing on dark colors, the extra contrast keeps both cars legible
-            rather than reading as near-black silhouettes. */}
-        <ambientLight intensity={0.75} />
-        <directionalLight position={[4, 6, 5]} intensity={1.8} />
-        <directionalLight position={[-4, 2, -5]} intensity={0.5} color="#3d6fe0" />
+        {/* A soft studio rig over the navy stage. This view sits farther back to fit two cars,
+            and many catalog default paints are dark, so: a sky/ground fill, a key from the
+            top-front, a cool side fill, and a blue rim from behind that traces each car's
+            silhouette against the background. */}
+        <hemisphereLight args={["#dbe9ff", "#0b2942", 0.9]} />
+        <directionalLight position={[4, 7, 6]} intensity={1.8} />
+        <directionalLight position={[-7, 3, 3]} intensity={0.6} color="#b8c7d9" />
+        <directionalLight position={[0, 4, -8]} intensity={1} color="#a9cdf5" />
+        {/* Soft reflections for paint, glass and chrome — built from light panels in code, so
+            there's nothing to download. Neutral, so every paint shows its true colour. */}
+        <Environment resolution={256} frames={1}>
+          <Lightformer form="rect" intensity={2} color="#ffffff" position={[0, 6, 2]} rotation-x={Math.PI / 2} scale={[12, 3, 1]} />
+          <Lightformer form="rect" intensity={1} color="#b8c7d9" position={[-8, 2, 0]} rotation-y={Math.PI / 2} scale={[10, 2, 1]} />
+          <Lightformer form="rect" intensity={1} color="#ffffff" position={[8, 2, 0]} rotation-y={-Math.PI / 2} scale={[10, 2, 1]} />
+        </Environment>
+
+        {/* The floor: a faint blue pool of light under the cars, and soft contact shadows. The
+            shadows update every frame (kept cheap at 256px): the cars load in asynchronously
+            and can be swapped from the selectors, so a shadow baked once would miss a car
+            that arrives late, or keep the old car's after a swap. */}
+        <FloorGlow />
+        <ContactShadows position={[0, PLACEHOLDER_GROUND_Y, 0]} opacity={0.7} scale={[16, 8]} blur={2.4} far={3} resolution={256} color="#01070d" />
 
         {/* key={slug} so changing one slot's vehicle remounts that slot alone — the new
             car's GLB loads from scratch and the previous one's cloned scene/materials are
@@ -121,6 +183,8 @@ export function CompareScene({ left, right, reducedMotion }: CompareSceneProps) 
           minDistance={6}
           maxDistance={24}
           target={[0, 0.6, 0]}
+          // Turn all the way round, but never below the floor.
+          maxPolarAngle={Math.PI / 2 - 0.05}
           autoRotate={!reducedMotion}
           autoRotateSpeed={0.4}
         />

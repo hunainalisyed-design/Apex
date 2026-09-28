@@ -20,17 +20,18 @@ export function VehicleSelect({ label, vehicles, value, onChange }: VehicleSelec
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-xs font-semibold uppercase tracking-wide text-white/70">
+      <label htmlFor={id} className="text-xs font-semibold uppercase tracking-wide text-ink-secondary">
         {label}
       </label>
       <select
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="focus-ring rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+        className="focus-ring rounded-lg border border-white/20 bg-navy-800 px-3 py-2 text-sm text-ink transition hover:border-accent/70"
       >
         {vehicles.map((vehicle) => (
-          <option key={vehicle.slug} value={vehicle.slug}>
+          // Explicit colours: an open list is drawn by the OS, so it must not rely on inheriting them.
+          <option key={vehicle.slug} value={vehicle.slug} className="bg-navy-800 text-ink">
             {vehicle.name}
           </option>
         ))}

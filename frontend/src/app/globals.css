@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
 :root {
+  /* The whole site is dark: native controls (a <select>'s open list, scrollbars) must be drawn
+     dark too. Without this the browser draws them light — a white option list under the
+     site's white text, readable only on the hovered row. */
+  color-scheme: dark;
   --background: #0a0a0c;
   --foreground: #f5f5f7;
   --font-sans: var(--font-geist-sans);
@@ -14,6 +18,15 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-display: var(--font-display);
+
+  /* Showroom navy + text scale (used by /compare). */
+  --color-navy-900: #071a2b;
+  --color-navy-800: #0b2942;
+  --color-navy-700: #123d5a;
+  --color-ink: #ffffff;
+  --color-ink-secondary: #b8c7d9;
+  --color-ink-muted: #8ea3b8;
+  --color-accent: #4da3ff;
 }
 
 body {
