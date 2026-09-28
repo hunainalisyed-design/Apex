@@ -22,10 +22,23 @@ describe("every async route handler is wrapped", () => {
 
   it.each(fs.readdirSync(routesDir).filter((f) => f.endsWith(".ts")))("%s", (file) => {
     const source = fs.readFileSync(path.join(routesDir, file), "utf8");
-    const unwrapped = source
-      .split(/\r?\n/)
-      .map((line, i) => ({ line: line.trim(), at: i + 1 }))
-      .filter(({ line }) => /async \((_?req|req: )/.test(line) && !line.includes("asyncHandler("));
+    // Each route registration's full argument list (however it's laid out, whatever its params
+    // are called): every `async` function written in it must be the one passed to asyncHandler.
+    const unwrapped: string[] = [];
+    for (const match of source.matchAll(/\b\w+\.(get|post|put|patch|delete|use)\(/g)) {
+      let depth = 0;
+      let end = match.index! + match[0].length - 1;
+      for (; end < source.length; end++) {
+        if (source[end] === "(") depth++;
+        else if (source[end] === ")" && --depth === 0) break;
+      }
+      const args = source.slice(match.index!, end);
+      for (const handler of args.matchAll(/\basync\b/g)) {
+        if (!args.slice(0, handler.index).trimEnd().endsWith("asyncHandler(")) {
+          unwrapped.push(`line ${source.slice(0, match.index).split("\n").length}: ${match[0]}`);
+        }
+      }
+    }
     expect(unwrapped, `unwrapped async handlers in ${file}`).toEqual([]);
   });
 
