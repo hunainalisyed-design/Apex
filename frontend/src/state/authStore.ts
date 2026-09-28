@@ -83,6 +83,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true });
     try {
       await authApi.logout();
+    } catch {
+      // Signing out never fails from the user's side. The usual cause is a session the server
+      // no longer has (expired, or removed): the user is already signed out there, so this
+      // must not surface as an error. Nothing calling logout() awaits a failure either.
     } finally {
       set({ user: null, hydrated: true, isLoading: false });
     }

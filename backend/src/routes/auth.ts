@@ -3,7 +3,7 @@ import { Router } from "express";
 import { sendApiError } from "../lib/apiError.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 import { prisma } from "../lib/prisma.js";
-import { optionalAuth, requireAuth } from "../middleware/auth.js";
+import { optionalAuth } from "../middleware/auth.js";
 import { loginRateLimitByEmail, loginRateLimitByIp } from "../middleware/rateLimit.js";
 import { sendPasswordResetEmail } from "../services/auth/email.js";
 import { hashPassword, validatePasswordPolicy, verifyPassword } from "../services/auth/password.js";
@@ -135,9 +135,11 @@ authRouter.post(
   }),
 );
 
+// Idempotent: signing out without a live session (expired, or already revoked) still
+// succeeds and clears any stale cookie — there's nothing to refuse. Revoking by the cookie's
+// own token means a request can only ever end the session it carries.
 authRouter.post(
   "/auth/logout",
-  requireAuth,
   asyncHandler(async (req, res) => {
     const token = req.cookies?.[SESSION_COOKIE_NAME];
     if (typeof token === "string") {
