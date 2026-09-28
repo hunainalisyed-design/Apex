@@ -13,6 +13,7 @@ import { environmentExists } from "../services/environments.js";
 import { PricingError } from "../services/pricing.js";
 import type { ApiResponse } from "../types/api.js";
 import type { SaveConfigurationRequest, SavedConfigurationDto } from "../types/configuration.js";
+import { asyncHandler } from "../lib/asyncHandler.js";
 
 export const configurationsRouter = Router();
 
@@ -24,97 +25,113 @@ const PRICING_ERROR_STATUS: Record<PricingError["code"], number> = {
 
 // optionalAuth (Spec 17, AC-6): a signed-in save is owned and never expires; a guest save
 // is unchanged. No request/response shape change — driven entirely by the session cookie.
-configurationsRouter.post("/configurations", configurationRateLimit, optionalAuth, async (req, res) => {
-  const body = req.body as Partial<SaveConfigurationRequest> | undefined;
+configurationsRouter.post(
+  "/configurations",
+  configurationRateLimit,
+  optionalAuth,
+  asyncHandler(async (req, res) => {
+    const body = req.body as Partial<SaveConfigurationRequest> | undefined;
 
-  if (!body || typeof body.vehicleSlug !== "string" || !body.vehicleSlug) {
-    sendApiError(res, 400, "VALIDATION_ERROR", "vehicleSlug is required.");
-    return;
-  }
-
-  // Spec 28, AC-4: optional — omitted or null saves the default Studio.
-  const environmentId = body.environmentId ?? null;
-  if (environmentId !== null && (typeof environmentId !== "string" || !(await environmentExists(environmentId)))) {
-    sendApiError(res, 400, "VALIDATION_ERROR", "environmentId must be an existing environment or null.", {
-      environmentId: ["Unknown environment."],
-    });
-    return;
-  }
-
-  const found = await getVehicleWithOptions(body.vehicleSlug);
-  if (!found) {
-    sendApiError(res, 404, "VEHICLE_NOT_FOUND", "No vehicle matches this slug.");
-    return;
-  }
-
-  try {
-    const saved = await createConfiguration({
-      environmentId,
-      vehicle: found.vehicle,
-      options: found.options,
-      singleSelections: body.singleSelections ?? ({} as never),
-      multiSelections: body.multiSelections ?? ({} as never),
-      customPaintHex: body.customPaintHex ?? null,
-      userId: req.user?.id ?? null,
-    });
-
-    const responseBody: ApiResponse<SavedConfigurationDto> = { data: saved };
-    res.status(201).json(responseBody);
-  } catch (err) {
-    if (err instanceof PricingError) {
-      sendApiError(res, PRICING_ERROR_STATUS[err.code], err.code, err.message);
+    if (!body || typeof body.vehicleSlug !== "string" || !body.vehicleSlug) {
+      sendApiError(res, 400, "VALIDATION_ERROR", "vehicleSlug is required.");
       return;
     }
-    throw err;
-  }
-});
 
-configurationsRouter.get("/configurations/:publicId", async (req, res) => {
-  const saved = await getConfigurationByPublicId(req.params.publicId);
-
-  if (!saved) {
-    sendApiError(res, 404, "CONFIGURATION_NOT_FOUND", "No configuration matches this ID.");
-    return;
-  }
-
-  const responseBody: ApiResponse<SavedConfigurationDto> = { data: saved };
-  res.status(200).json(responseBody);
-});
-
-// A non-owner deleting/claiming and a nonexistent publicId are indistinguishable to the
-// caller (Spec 17's own error-table note) — both resolve to the same 404.
-configurationsRouter.delete("/configurations/:publicId", requireAuth, async (req, res) => {
-  const result = await deleteConfigurationForUser(req.params.publicId, req.user!.id);
-
-  if (!result.ok) {
-    if (result.reason === "HAS_DEPENDENTS") {
-      sendApiError(
-        res,
-        409,
-        "CONFIGURATION_IN_USE",
-        "This build has an active request or reservation attached and can't be deleted.",
-      );
+    // Spec 28, AC-4: optional — omitted or null saves the default Studio.
+    const environmentId = body.environmentId ?? null;
+    if (environmentId !== null && (typeof environmentId !== "string" || !(await environmentExists(environmentId)))) {
+      sendApiError(res, 400, "VALIDATION_ERROR", "environmentId must be an existing environment or null.", {
+        environmentId: ["Unknown environment."],
+      });
       return;
     }
-    sendApiError(res, 404, "CONFIGURATION_NOT_FOUND", "No configuration matches this ID.");
-    return;
-  }
 
-  res.status(204).end();
-});
+    const found = await getVehicleWithOptions(body.vehicleSlug);
+    if (!found) {
+      sendApiError(res, 404, "VEHICLE_NOT_FOUND", "No vehicle matches this slug.");
+      return;
+    }
 
-configurationsRouter.post("/configurations/:publicId/claim", requireAuth, async (req, res) => {
-  const result = await claimConfigurationForUser(req.params.publicId, req.user!.id);
+    try {
+      const saved = await createConfiguration({
+        environmentId,
+        vehicle: found.vehicle,
+        options: found.options,
+        singleSelections: body.singleSelections ?? ({} as never),
+        multiSelections: body.multiSelections ?? ({} as never),
+        customPaintHex: body.customPaintHex ?? null,
+        userId: req.user?.id ?? null,
+      });
 
-  if (!result.ok) {
-    if (result.reason === "NOT_FOUND") {
+      const responseBody: ApiResponse<SavedConfigurationDto> = { data: saved };
+      res.status(201).json(responseBody);
+    } catch (err) {
+      if (err instanceof PricingError) {
+        sendApiError(res, PRICING_ERROR_STATUS[err.code], err.code, err.message);
+        return;
+      }
+      throw err;
+    }
+  }),
+);
+
+configurationsRouter.get(
+  "/configurations/:publicId",
+  asyncHandler(async (req, res) => {
+    const saved = await getConfigurationByPublicId(req.params.publicId);
+
+    if (!saved) {
       sendApiError(res, 404, "CONFIGURATION_NOT_FOUND", "No configuration matches this ID.");
       return;
     }
-    sendApiError(res, 409, "ALREADY_CLAIMED", "This build has already been claimed by another account.");
-    return;
-  }
 
-  const responseBody: ApiResponse<SavedConfigurationDto> = { data: result.dto };
-  res.status(200).json(responseBody);
-});
+    const responseBody: ApiResponse<SavedConfigurationDto> = { data: saved };
+    res.status(200).json(responseBody);
+  }),
+);
+
+// A non-owner deleting/claiming and a nonexistent publicId are indistinguishable to the
+// caller (Spec 17's own error-table note) — both resolve to the same 404.
+configurationsRouter.delete(
+  "/configurations/:publicId",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const result = await deleteConfigurationForUser(req.params.publicId, req.user!.id);
+
+    if (!result.ok) {
+      if (result.reason === "HAS_DEPENDENTS") {
+        sendApiError(
+          res,
+          409,
+          "CONFIGURATION_IN_USE",
+          "This build has an active request or reservation attached and can't be deleted.",
+        );
+        return;
+      }
+      sendApiError(res, 404, "CONFIGURATION_NOT_FOUND", "No configuration matches this ID.");
+      return;
+    }
+
+    res.status(204).end();
+  }),
+);
+
+configurationsRouter.post(
+  "/configurations/:publicId/claim",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const result = await claimConfigurationForUser(req.params.publicId, req.user!.id);
+
+    if (!result.ok) {
+      if (result.reason === "NOT_FOUND") {
+        sendApiError(res, 404, "CONFIGURATION_NOT_FOUND", "No configuration matches this ID.");
+        return;
+      }
+      sendApiError(res, 409, "ALREADY_CLAIMED", "This build has already been claimed by another account.");
+      return;
+    }
+
+    const responseBody: ApiResponse<SavedConfigurationDto> = { data: result.dto };
+    res.status(200).json(responseBody);
+  }),
+);

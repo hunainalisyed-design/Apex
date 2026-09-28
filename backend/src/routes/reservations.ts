@@ -10,50 +10,59 @@ import { getReservationById } from "../services/reservations/getReservation.js";
 import { handleCheckoutSessionCompleted, handleCheckoutSessionFailed } from "../services/reservations/webhook.js";
 import type { ApiResponse } from "../types/api.js";
 import type { CheckoutSessionDto, CreateCheckoutSessionRequest, ReservationDto } from "../types/reservations.js";
+import { asyncHandler } from "../lib/asyncHandler.js";
 
 export const reservationsRouter = Router();
 
-reservationsRouter.post("/reservations/checkout-session", reservationRateLimit, optionalAuth, async (req, res) => {
-  if (process.env.RESERVATIONS_ENABLED === "false") {
-    sendApiError(res, 503, "RESERVATIONS_DISABLED", "Reservations are temporarily unavailable.");
-    return;
-  }
-
-  const body = req.body as Partial<CreateCheckoutSessionRequest> | undefined;
-  if (!body || typeof body.configurationPublicId !== "string" || !body.configurationPublicId) {
-    sendApiError(res, 400, "VALIDATION_ERROR", "configurationPublicId is required.");
-    return;
-  }
-
-  const result = await createCheckoutSession(
-    { configurationPublicId: body.configurationPublicId },
-    req.user?.id ?? null,
-  );
-
-  if (!result.ok) {
-    if (result.reason === "NOT_FOUND") {
-      sendApiError(res, 404, "CONFIGURATION_NOT_FOUND", "No configuration matches this ID.");
+reservationsRouter.post(
+  "/reservations/checkout-session",
+  reservationRateLimit,
+  optionalAuth,
+  asyncHandler(async (req, res) => {
+    if (process.env.RESERVATIONS_ENABLED === "false") {
+      sendApiError(res, 503, "RESERVATIONS_DISABLED", "Reservations are temporarily unavailable.");
       return;
     }
-    sendApiError(res, 502, "PAYMENT_PROVIDER_ERROR", "We couldn't start checkout. Please try again in a moment.");
-    return;
-  }
 
-  const responseBody: ApiResponse<CheckoutSessionDto> = { data: { checkoutUrl: result.checkoutUrl } };
-  res.status(200).json(responseBody);
-});
+    const body = req.body as Partial<CreateCheckoutSessionRequest> | undefined;
+    if (!body || typeof body.configurationPublicId !== "string" || !body.configurationPublicId) {
+      sendApiError(res, 400, "VALIDATION_ERROR", "configurationPublicId is required.");
+      return;
+    }
 
-reservationsRouter.get("/reservations/:id", async (req, res) => {
-  const reservation = await getReservationById(req.params.id);
+    const result = await createCheckoutSession(
+      { configurationPublicId: body.configurationPublicId },
+      req.user?.id ?? null,
+    );
 
-  if (!reservation) {
-    sendApiError(res, 404, "RESERVATION_NOT_FOUND", "No reservation matches this ID.");
-    return;
-  }
+    if (!result.ok) {
+      if (result.reason === "NOT_FOUND") {
+        sendApiError(res, 404, "CONFIGURATION_NOT_FOUND", "No configuration matches this ID.");
+        return;
+      }
+      sendApiError(res, 502, "PAYMENT_PROVIDER_ERROR", "We couldn't start checkout. Please try again in a moment.");
+      return;
+    }
 
-  const responseBody: ApiResponse<ReservationDto> = { data: reservation };
-  res.status(200).json(responseBody);
-});
+    const responseBody: ApiResponse<CheckoutSessionDto> = { data: { checkoutUrl: result.checkoutUrl } };
+    res.status(200).json(responseBody);
+  }),
+);
+
+reservationsRouter.get(
+  "/reservations/:id",
+  asyncHandler(async (req, res) => {
+    const reservation = await getReservationById(req.params.id);
+
+    if (!reservation) {
+      sendApiError(res, 404, "RESERVATION_NOT_FOUND", "No reservation matches this ID.");
+      return;
+    }
+
+    const responseBody: ApiResponse<ReservationDto> = { data: reservation };
+    res.status(200).json(responseBody);
+  }),
+);
 
 /**
  * Stripe's webhook receiver (Spec 20, AC-3/AC-5) — deliberately NOT part of

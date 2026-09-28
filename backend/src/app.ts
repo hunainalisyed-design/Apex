@@ -21,6 +21,7 @@ import { meRouter } from "./routes/me.js";
 import { pricingRouter } from "./routes/pricing.js";
 import { reservationsRouter, reservationsWebhookHandler } from "./routes/reservations.js";
 import { vehiclesRouter } from "./routes/vehicles.js";
+import { asyncHandler } from "./lib/asyncHandler.js";
 
 export function createApp() {
   const app = express();
@@ -42,7 +43,9 @@ export function createApp() {
   // reason — every other route on that router is a normal JSON body, mounted after
   // express.json() like the rest of the app. CORS is irrelevant here (Stripe calls this
   // server-to-server, never from a browser), so no carve-out needed there.
-  app.post("/api/reservations/webhook", express.raw({ type: "application/json" }), reservationsWebhookHandler);
+  // asyncHandler: a database error while recording the payment answers 500 (so Stripe retries
+  // the event later) instead of crashing the server.
+  app.post("/api/reservations/webhook", express.raw({ type: "application/json" }), asyncHandler(reservationsWebhookHandler));
 
   app.use(express.json());
   app.use(cookieParser());
